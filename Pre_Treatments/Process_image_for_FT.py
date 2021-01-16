@@ -49,18 +49,15 @@ variables the user can change:
 """
 
 import os
+import sys
 
-os.chdir("../Utility")
-import general_IO as gIO
+import Utility.general_IO as gIO
 
-os.chdir("../Segmentation_Otsu")
-import data
+import Segmentation_Otsu.data as data
 
-os.chdir("../BSAS")
-import bsas
+import BSAS.bsas
 
-os.chdir("../Crops_Rows_Angle_Detection")
-import CRAD
+import Crops_Rows_Angle_Detection.CRAD
 
 
 def All_Pre_Treatment(_path_input_rgb_img, _path_output_root,
@@ -81,6 +78,12 @@ def All_Pre_Treatment(_path_input_rgb_img, _path_output_root,
 # Images Definition
 # =============================================================================
     list_images = os.listdir(_path_input_rgb_img)
+    one_toc_idx = None
+    for i in range(len(list_images)):
+        if list_images[i].endswith("onetoc2"):
+            one_toc_idx = i
+    if one_toc_idx is not None:
+        list_images.pop(one_toc_idx)
     list_images_id = [img_name.split('.')[0] for img_name in list_images]
     nb_images = len(list_images)
     
@@ -132,7 +135,7 @@ def All_Pre_Treatment(_path_input_rgb_img, _path_output_root,
             print()
             print ("Angle Detection process for image", list_images[i], "{0}/{1}".format(i+1, nb_images))
             
-            _AD = CRAD.CRAD(
+            _AD = Crops_Rows_Angle_Detection.CRAD.CRAD(
                            list_images_id[i],
                            path_output_Otsu,
                            path_output_Otsu_R,
@@ -149,7 +152,7 @@ def All_Pre_Treatment(_path_input_rgb_img, _path_output_root,
                 _AD.plot_auto_angle_score(_save = True)
         
         
-        AD_voting = CRAD.CRAD_Voting(AD_object_list)
+        AD_voting = Crops_Rows_Angle_Detection.CRAD.CRAD_Voting(AD_object_list)
         AD_voting.Get_Best_Angle()
         print("The best angle seems to be:", AD_voting.best_angle_min)
         AD_voting.Correct_AD_based_on_best_angle()
@@ -164,7 +167,7 @@ def All_Pre_Treatment(_path_input_rgb_img, _path_output_root,
             for k in range (2):
                 print ("BSAS process in direction", k,
                        "for image", list_images[i], "{0}/{1}".format(i+1, nb_images))
-                bsp1 = bsas.BSAS_Process(path_output_Otsu_R,
+                bsp1 = BSAS.bsas.BSAS_Process(path_output_Otsu_R,
                                          "OTSU_R_"+list_images_id[i]+".jpg",
                                          path_output_BSAS_txt_R[k])
                 bsp1.full_process(k, False, _bsas_threshold)

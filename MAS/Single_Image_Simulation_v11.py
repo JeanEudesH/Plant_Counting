@@ -10,8 +10,7 @@ import json
 import numpy as np
 from PIL import Image
 
-import MAS_v16 as MAS
-
+import MAS.MAS_v16 as MAS
 
 # =============================================================================
 # Utility Functions Definition

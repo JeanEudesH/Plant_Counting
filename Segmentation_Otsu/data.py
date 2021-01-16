@@ -9,7 +9,7 @@ import os
 from skimage.util import random_noise
 path_scripts = os.path.dirname(os.path.abspath(__file__))
 os.chdir(path_scripts)
-import otsu as o
+import Segmentation_Otsu.otsu as o
 
 
 import numpy as np 
