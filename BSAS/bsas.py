@@ -13,7 +13,7 @@ via l'algorithme de Hough donne des résultats satisfaisants.
 """
 
 #source code (modified)
-from bsas_functions import bsas
+from BSAS.bsas_functions import bsas
 
 #other libraries
 import os

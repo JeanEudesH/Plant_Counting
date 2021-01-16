@@ -28,8 +28,8 @@ import os
 import numpy as np
 #import matplotlib.pyplot as plt
 
-os.chdir("../Utility")
-import general_IO as gIO
+# os.chdir("../Utility")
+import Utility.general_IO as gIO
 
 # =============================================================================
 # Utility Functions Definition

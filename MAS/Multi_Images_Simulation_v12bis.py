@@ -10,10 +10,10 @@ import json
 import numpy as np
 from PIL import Image
 
-import MAS_v17 as MAS
+import MAS.MAS_v17 as MAS
 
-os.chdir("../Utility")
-import general_IO as gIO
+# os.chdir("../Utility")
+import Utility.general_IO as gIO
 
 
 # =============================================================================
@@ -30,8 +30,11 @@ def get_json_file_content(_path_json_file):
     return json.load(f)
 
 def get_img_array(path_img):
-    img = Image.open(path_img)
-    return np.array(img)
+    if path_img.endswith("onetoc2"):
+        return
+    else:
+        img = Image.open(path_img)
+        return np.array(img)
 
 def get_file_lines(path_csv_file):
     file_object = open(path_csv_file, 'r')
@@ -92,8 +95,8 @@ def All_Simulations(_path_input_rgb_img, _path_PreTreatment_and_FA,
     # =============================================================================
     # Meta Simulation Definition
     # =============================================================================
-    
     MetaSimulation = MAS.MetaSimulation(meta_simu_name,
+
                                         path_output,
                                         names_input_raw,
                                         data_input_raw,

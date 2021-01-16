@@ -15,8 +15,6 @@ de valeur<th_black correspondent au sol, et ceux de valeur>th_black corresponden
 import math
 import numpy as np
 
-
-
 #==============================================================================
 ##Fonctions
 #==============================================================================

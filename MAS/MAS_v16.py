@@ -28,9 +28,13 @@ import time
 import json
 from sklearn.cluster import KMeans
 from scipy.stats import ttest_ind
+import sys
 
-os.chdir("../Utility")
-import general_IO as gIO
+if "D:/Documents/IODAA/Fil Rouge/Plant_Counting" not in sys.path:
+    sys.path.append("D:/Documents/IODAA/Fil Rouge/Plant_Counting")
+
+# os.chdir("../Utility")
+import Utility.general_IO as gIO
 
 # =============================================================================
 # Utility Functions
@@ -208,7 +212,8 @@ class ReactiveAgent_Leader(object):
     
     def RAs_square_init(self):
         """
-        Instanciate the RAs
+        Instanciate the RAs. Squared built around the RAL, we go
+        from - group_size to + group_size, with a given stride (group_step)
         """
         self.nb_RAs = 0
         self.RA_list = []
@@ -579,6 +584,10 @@ class Row_Agent(object):
 #         for _RAL in self.RALs:
 #             print([_RAL.x, _RAL.y], end=", ")
 # =============================================================================
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+# ZONE A MODIFIER # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
     
     def Get_RALs_mean_points(self):
         for _RAL in self.RALs:
@@ -588,15 +597,19 @@ class Row_Agent(object):
             _RAL.Get_RAs_Mean_Point()
     
     def Get_Row_Mean_X(self):
+        """
+        Get the mean abscisse of the RAL in the row
+        """
         RALs_X = []
         
+        # get position of each RAL
         for _RAL in self.RALs:
-            RALs_X += [_RAL.active_RA_Point[0]]
+            RALs_X += [_RAL.active_RA_Point[0]]  # RAL.active_RA_Point[0] = mean abscisse of the active RA of this RAL
         
 # =============================================================================
 #         print(RALs_X)
 # =============================================================================
-        
+        # self.Row_Mean_X = mean of the abscisse of each RAL 
         self.Row_Mean_X = int(np.mean(RALs_X))
         
     def Get_Inter_Plant_Diffs(self):
@@ -627,13 +640,17 @@ class Row_Agent(object):
         return (up_counter/len(self.RALs) > 0.5)
     
     def ORDER_RALs_to_Correct_X(self):
+        """
+        C'est ici que le repositionnement est effectue, donc qu'on ajoute
+        la ponderation des agents.
+        """
         
         if (len(self.RALs)>0):
             self.Get_Row_Mean_X()
             
             majority_left = self.Is_RALs_majority_on_Left_to_Row_Mean()
         
-        for _RAL in self.RALs:
+        for i, _RAL in enumerate(self.RALs):
             if (majority_left):
                 if (_RAL.active_RA_Point[0] > self.Row_Mean_X):
                     _RAL.active_RA_Point[0] = self.Row_Mean_X
@@ -681,6 +698,10 @@ class Row_Agent(object):
         for _RAL in self.RALs:
             _RAL.Move_Based_on_AD_Order(_RAL.active_RA_Point[0],
                                         _RAL.active_RA_Point[1])
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+# FIN DE LA ZONE A MODIFIER # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
     
     def Destroy_RALs(self, _start, _stop, _nb_RALs):
         """
@@ -1846,7 +1867,7 @@ class MetaSimulation(object):
                 "RALs_fill_factor": _MAS_Simulation.RALs_fill_factor,
                 "RALs_recorded_count": _MAS_Simulation.RALs_recorded_count}
         
-        print(_MAS_Simulation.simu_steps_times)
+        print("Duration per simulation : ", _MAS_Simulation.simu_steps_times)
         print("NB Rals =", _MAS_Simulation.RALs_recorded_count[-1])
         print("Image Labelled = ", _MAS_Simulation.labelled)
         print("NB_labelled_plants", _MAS_Simulation.nb_real_plants)
