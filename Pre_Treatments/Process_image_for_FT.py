@@ -47,49 +47,64 @@ variables the user can change:
     managing the FrequencyAnalysis and the Multi Agent System. 
 
 """
+import sys
 
 import os
 
-os.chdir("../Utility")
-import general_IO as gIO
+if "/home/fort/Documents/APT 3A/Cours/Ekinocs/Plant_Counting" not in sys.path:
+    sys.path.append("/home/fort/Documents/APT 3A/Cours/Ekinocs/Plant_Counting")
 
-os.chdir("../Segmentation_Otsu")
-import data
+os.chdir("/home/fort/Documents/APT 3A/Cours/Ekinocs/Plant_Counting/Utility")
+import Utility.general_IO as gIO
 
-os.chdir("../BSAS")
-import bsas
+os.chdir("/home/fort/Documents/APT 3A/Cours/Ekinocs/Plant_Counting/Segmentation_Otsu")
+import Segmentation_Otsu.data as data
 
-os.chdir("../Crops_Rows_Angle_Detection")
-import CRAD
-    
+os.chdir("/home/fort/Documents/APT 3A/Cours/Ekinocs/Plant_Counting/BSAS")
+import BSAS.bsas as bsas
 
-def All_Pre_Treatment(_path_input_rgb_img, _path_output_root,
-                      _path_position_files = None, _rows_real_angle = 0,
-                      _make_unique_folder_per_session=True, _session=1,
-                      _do_Otsu=True, _do_AD=True,
-                      _save_AD_score_images=False, _save_BSAS_images=False,
-                      _bsas_threshold=1):
-    
-    #Creates new Output folders every time the process is launched
+os.chdir(
+    "/home/fort/Documents/APT 3A/Cours/Ekinocs/Plant_Counting/Crops_Rows_Angle_Detection"
+)
+import Crops_Rows_Angle_Detection.CRAD as CRAD
+
+
+def All_Pre_Treatment(
+    _path_input_rgb_img,
+    _path_output_root,
+    _path_position_files=None,
+    _rows_real_angle=0,
+    _make_unique_folder_per_session=True,
+    _session=1,
+    _do_Otsu=True,
+    _do_AD=True,
+    _save_AD_score_images=False,
+    _save_BSAS_images=False,
+    _bsas_threshold=1,
+):
+
+    # Creates new Output folders every time the process is launched
     gIO.check_make_directory(_path_output_root)
-    session_number=_session
-    if (_make_unique_folder_per_session):
-        while (os.path.exists(_path_output_root+"/Output/Session_{0}".format(session_number))):
+    session_number = _session
+    if _make_unique_folder_per_session:
+        while os.path.exists(
+            _path_output_root + "/Output/Session_{0}".format(session_number)
+        ):
             session_number += 1
-    path_output = _path_output_root+"/Output/Session_{0}".format(session_number)
-    
-# =============================================================================
-# Images Definition
-# =============================================================================
+    path_output = _path_output_root + "/Output/Session_{0}".format(session_number)
+
+    # =============================================================================
+    # Images Definition
+    # =============================================================================
     list_images = os.listdir(_path_input_rgb_img)
-    list_images_id = [img_name.split('.')[0] for img_name in list_images]
+    list_images_id = [img_name.split(".")[0] for img_name in list_images]
     nb_images = len(list_images)
-    
-# =============================================================================
-# Segmentation Otsu
-# Aim to detect the zone that likely contains target plants on the image
-# =============================================================================
-    #Output path for Otsu process
+
+    # =============================================================================
+    # Segmentation Otsu
+    # Aim to detect the zone that likely contains target plants on the image
+    # =============================================================================
+    # Output path for Otsu process
     path_output_Otsu = path_output + "/Otsu"
     path_output_Otsu_R = path_output + "/Otsu_R"
     gIO.check_make_directory(path_output_Otsu)
@@ -97,105 +112,135 @@ def All_Pre_Treatment(_path_input_rgb_img, _path_output_root,
     if _do_Otsu:
         for i in range(nb_images):
             print()
-            print ("Processing Otsu mask for image", list_images[i], "{0}/{1}".format(i+1, nb_images))
+            print(
+                "Processing Otsu mask for image",
+                list_images[i],
+                "{0}/{1}".format(i + 1, nb_images),
+            )
             image = data.Data(list_images[i], _path_input_rgb_img)
-            image.save("mask_Otsu", "OTSU_"+list_images[i], path = path_output_Otsu)
-    
-# =============================================================================
-# Angle Detection (AD)
-# Aims to identify the correct angle to straighten the images vertically
-# =============================================================================
+            image.save("mask_Otsu", "OTSU_" + list_images[i], path=path_output_Otsu)
+
+    # =============================================================================
+    # Angle Detection (AD)
+    # Aims to identify the correct angle to straighten the images vertically
+    # =============================================================================
     path_output_ADp = path_output + "/ADp" + "/" + str(_bsas_threshold)
     path_output_ADp_angle_search_score = path_output_ADp + "/Output_AngleScore"
     path_output_ADp_Images = path_output_ADp + "/Output_Images"
     gIO.check_make_directory(path_output_ADp_angle_search_score)
     gIO.check_make_directory(path_output_ADp_Images)
-    
-    #We apply BSAS procedure by default on the adjusted images
-    path_output_BSAS_R = path_output+"/BSAS"+ "/" + str(_bsas_threshold)+"_R"
-    path_output_BSAS_txt_R_0 = path_output_BSAS_R+"/Output_Positions"+"/direction_0"
-    path_output_BSAS_images_R_0 = path_output_BSAS_R+"/Output_Images"+"/_direction_0"
+
+    # We apply BSAS procedure by default on the adjusted images
+    path_output_BSAS_R = path_output + "/BSAS" + "/" + str(_bsas_threshold) + "_R"
+    path_output_BSAS_txt_R_0 = path_output_BSAS_R + "/Output_Positions" + "/direction_0"
+    path_output_BSAS_images_R_0 = (
+        path_output_BSAS_R + "/Output_Images" + "/_direction_0"
+    )
     gIO.check_make_directory(path_output_BSAS_txt_R_0)
     gIO.check_make_directory(path_output_BSAS_images_R_0)
-    
-    path_output_BSAS_txt_R_1 = path_output_BSAS_R+"/Output_Positions"+"/direction_1"
-    path_output_BSAS_images_R_1 = path_output_BSAS_R+"/Output_Images"+"/_direction_1"
+
+    path_output_BSAS_txt_R_1 = path_output_BSAS_R + "/Output_Positions" + "/direction_1"
+    path_output_BSAS_images_R_1 = (
+        path_output_BSAS_R + "/Output_Images" + "/_direction_1"
+    )
     gIO.check_make_directory(path_output_BSAS_txt_R_1)
     gIO.check_make_directory(path_output_BSAS_images_R_1)
-    
+
     path_output_BSAS_txt_R = [path_output_BSAS_txt_R_0, path_output_BSAS_txt_R_1]
-    path_output_BSAS_images_R = [path_output_BSAS_images_R_0, path_output_BSAS_images_R_1]
-    
+    path_output_BSAS_images_R = [
+        path_output_BSAS_images_R_0,
+        path_output_BSAS_images_R_1,
+    ]
+
     if _do_AD:
         AD_object_list = []
         for i in range(nb_images):
             print()
-            print ("Angle Detection process for image", list_images[i], "{0}/{1}".format(i+1, nb_images))
-            
+            print(
+                "Angle Detection process for image",
+                list_images[i],
+                "{0}/{1}".format(i + 1, nb_images),
+            )
+
             _AD = CRAD.CRAD(
-                           list_images_id[i],
-                           path_output_Otsu,
-                           path_output_Otsu_R,
-                           path_output_ADp_angle_search_score,
-                           path_output_ADp_Images)
-            
+                list_images_id[i],
+                path_output_Otsu,
+                path_output_Otsu_R,
+                path_output_ADp_angle_search_score,
+                path_output_ADp_Images,
+            )
+
             AD_object_list.append(_AD)
-            
+
             _AD.get_coord_map()
-            
+
             _AD.auto_angle2()
-            
-            if (_save_AD_score_images):
-                _AD.plot_auto_angle_score(_save = True)
-        
-        
+
+            if _save_AD_score_images:
+                _AD.plot_auto_angle_score(_save=True)
+
         AD_voting = CRAD.CRAD_Voting(AD_object_list)
         AD_voting.Get_Best_Angle()
         print("The best angle seems to be:", AD_voting.best_angle_min)
         AD_voting.Correct_AD_based_on_best_angle()
-        
-        i=0
+
+        i = 0
         for _AD in AD_voting.AD_objects_List:
-    
+
             _AD.get_auto_angle_rotated_Otsu()
-            
+
             print()
-            
-            for k in range (2):
-                print ("BSAS process in direction", k,
-                       "for image", list_images[i], "{0}/{1}".format(i+1, nb_images))
-                bsp1 = bsas.BSAS_Process(path_output_Otsu_R,
-                                         "OTSU_R_"+list_images_id[i]+".jpg",
-                                         path_output_BSAS_txt_R[k])
+
+            for k in range(2):
+                print(
+                    "BSAS process in direction",
+                    k,
+                    "for image",
+                    list_images[i],
+                    "{0}/{1}".format(i + 1, nb_images),
+                )
+                bsp1 = bsas.BSAS_Process(
+                    path_output_Otsu_R,
+                    "OTSU_R_" + list_images_id[i] + ".jpg",
+                    path_output_BSAS_txt_R[k],
+                )
                 bsp1.full_process(k, False, _bsas_threshold)
-                if (_save_BSAS_images):
+                if _save_BSAS_images:
                     bsp1.save_BSASmap(path_output_BSAS_images_R[k])
-            i+=1
-            
-# =============================================================================
-# If we have the positions of the plants, We rotate the real positions of the
-# plants according ot the real angle.
-# This is equivalent to say that the images are labelled
-# We need the position_files somewhere and Inidicate it in the _path_labelled_position
-# =============================================================================
-    if (_path_position_files!=None):
+            i += 1
+
+    # =============================================================================
+    # If we have the positions of the plants, We rotate the real positions of the
+    # plants according ot the real angle.
+    # This is equivalent to say that the images are labelled
+    # We need the position_files somewhere and Inidicate it in the _path_labelled_position
+    # =============================================================================
+    if _path_position_files != None:
         print("in")
         path_output_adjusted_position_files = path_output + "/Adjusted_Position_Files"
         gIO.check_make_directory(path_output_adjusted_position_files)
-        
-        CRAD.Produce_Adjusted_Position_Files(_path_position_files,
-                                             path_output_adjusted_position_files,
-                                             _rows_real_angle,
-                                             _path_input_rgb_img,
-                                             list_images)
 
-if (__name__=="__main__"):
-    
-    All_Pre_Treatment(_path_input_rgb_img="D:/Projet/Unity/HDRP_PGoCF/Datasets/X_Bell5Keys_Z_InversedBell5Keys/virtual_reality",
-                      _path_output_root="D:/Projet/Unity/HDRP_PGoCF/Datasets/X_Bell5Keys_Z_InversedBell5Keys/Ouput_General",
-                      _path_position_files="D:/Projet/Unity/HDRP_PGoCF/Datasets/X_Bell5Keys_Z_InversedBell5Keys/Position_Files",
-                      _rows_real_angle=80,
-                      _make_unique_folder_per_session=False, _session=1,
-                      _do_Otsu=False, _do_AD=False,
-                      _save_AD_score_images=False, _save_BSAS_images=False,
-                      _bsas_threshold=1)
+        CRAD.Produce_Adjusted_Position_Files(
+            _path_position_files,
+            path_output_adjusted_position_files,
+            _rows_real_angle,
+            _path_input_rgb_img,
+            list_images,
+        )
+
+
+if __name__ == "__main__":
+
+    All_Pre_Treatment(
+        _path_input_rgb_img="/home/fort/Documents/APT 3A/Cours/Ekinocs/Images_Otsu_champs/weed",
+        _path_output_root="/home/fort/Documents/APT 3A/Cours/Ekinocs/output_otsu",
+        _path_position_files="/home/fort/Documents/APT 3A/Cours/Ekinocs/Images_Otsu_champs/2021_1_9_18_37_46/Position_Files",
+        _rows_real_angle=80,
+        _make_unique_folder_per_session=False,
+        _session=1,
+        _do_Otsu=True,
+        _do_AD=False,
+        _save_AD_score_images=False,
+        _save_BSAS_images=False,
+        _bsas_threshold=1,
+    )

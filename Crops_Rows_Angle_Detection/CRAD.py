@@ -12,8 +12,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image #, ImageDraw
 
-os.chdir("../Utility")
-import general_IO as gIO
+os.chdir("/home/fort/Documents/APT 3A/Cours/Ekinocs/Plant_Counting/Utility")
+import Utility.general_IO as gIO
 
 def Produce_Adjusted_Position_Files( _path_position_files,
                                      _path_adjusted_position_files,

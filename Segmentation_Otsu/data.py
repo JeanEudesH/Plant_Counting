@@ -9,7 +9,7 @@ import os
 from skimage.util import random_noise
 path_scripts = os.path.dirname(os.path.abspath(__file__))
 os.chdir(path_scripts)
-import otsu as o
+import Segmentation_Otsu.otsu as o
 
 
 import numpy as np 
@@ -218,7 +218,7 @@ class Data:
         if not hasattr(self, object_name):
             indice=indices.index(object_name)
             fonctions[indice](*args)            
-        _to_save=Image.fromarray(getattr(self, object_name)).convert("RGB")
+        _to_save=Image.fromarray(np.uint8(getattr(self, object_name))).convert("RGB")
         
         #Si un chemin est spécifié, on le joint au nom de l'image
         if path!=None:
