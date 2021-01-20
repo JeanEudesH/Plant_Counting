@@ -15,17 +15,46 @@ import skfuzzy as fuzz
 
 # Image Opening
 path = ""  # path of the OTSU image
-img = Image.open(PATH)
+img = Image.open('PATH')
 
 
 def DBSCAN_clustering(img, eps_, min_samples_):
     """
+    The objective of this function is to differenciate rows of a field.
+    As input, it needs a binarized picture (cf function/package...) taken by an
+    unmanned aerial vehicle (uav). The white pixels representing the plants in
+    are labelled with the DBSCAN algorithm according to the row they belong to.
+    The package Scikit-learn is used to do so.
+    The intensity value of the pixels is 255.
+
+    Extraction of the white pixels of an Image object
     - Extract white pixel (intensity of 255) from
     the image matrix.
     - Clustering coordinates using DBSCAN algorithm
-    - return a dataframe with coordinante of each plants
-    pixel and its cluster label
+
+
+    Parameters
+    ----------
+    img : PIL Image
+        Image opened with the PIL package. It is an image of plants cultivated
+        in a field.
+        The picture can be taken by an unmanned aerial vehicle (uav).
+
+    eps_ : INTEGER
+        Density distance for .
+
+    min_samples_ : TYPE
+        DESCRIPTION.
+
+
+    Returns
+    -------
+    dataframe_coord : Panda Dataframe
+        Dataframe with the X and Y coordinates of the plants' pixels
+        and their cluster's label
+
     """
+
     img_array = np.array(img)
     mat_coord = np.argwhere(
         img_array[:, :, 0] == 255
@@ -45,17 +74,27 @@ def DBSCAN_clustering(img, eps_, min_samples_):
 
 def PlantsDetection(dataframe_coord):
     """
-    Sur l'ensemble de l'image, détection de toutes les plantes
-    Utilise la fonction avec le clustering sur chaque rang
+    The objective of this function is to differenciate the plants in each row
+    of the binarized picture. It is based on predefined rows, the corresponding
+    pixels labelled.
+    It calls for the Fuzzy_Clustering function.
+    The final result cen be used to initialize a grid for a multiple agents
+    system to count more precisely the number of plants in the picture.
+
+
     Parameters
     ----------
-    dataframe_coord : TYPE
-        DESCRIPTION.
+    dataframe_coord : Panda dataframe
+        Dataframe with the X and Y coordinates and as a third column, the row
+        the pixel belongs to.
+        It is obtained with the function DBSCAN_clustering.
+
 
     Returns
     -------
-    None.
-
+    JSON_final : JSON file that can be used as a grid to initialize the agents
+        of a multiple agents system. Its size is the number of rows and the
+        size of a row is the number of plants (centroïd coordinates).
     """
     labels_rangs = np.unique(
         dataframe_coord[["label"]].to_numpy()
