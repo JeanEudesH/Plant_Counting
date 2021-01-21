@@ -16,11 +16,6 @@ A FAIRE :
     - Déterminer quelles variables nous allons utiliser pour vérifier la
     qualité du dénombrement des plantes de l'image.
 
-
-    - Uniformiser les noms des variables (tout mettre en anglais)
-    - Commenter proprement en anglais
-    - Docstrings en anglais
-
 """
 
 # Import of librairies
@@ -28,13 +23,18 @@ from PIL import Image
 import numpy as np
 from sklearn.cluster import DBSCAN
 import pandas as pd
+import sys
+import os
+
 
 # pip install -U scikit-fuzzy
 import skfuzzy as fuzz
 
-# Open the binarized image
-path = ""  # path of the OTSU image
-img = Image.open(path)
+if "/home/fort/Documents/APT 3A/Cours/Ekinocs/Plant_Counting" not in sys.path:
+    sys.path.append("/home/fort/Documents/APT 3A/Cours/Ekinocs/Plant_Counting")
+
+os.chdir("/home/fort/Documents/APT 3A/Cours/Ekinocs/Plant_Counting/Utility")
+import Utility.general_IO as gIO
 
 
 def DBSCAN_clustering(img, epsilon, min_point):
@@ -94,7 +94,7 @@ def DBSCAN_clustering(img, epsilon, min_point):
     return dataframe_coord
 
 
-def PlantsDetection(dataframe_coord):
+def Plants_Detection(dataframe_coord, e, max_iter, m_p, threshold):
     """
     The objective of this function is to differenciate the plants in each row
     of the binarized picture. It is based on predefined rows, the corresponding
@@ -112,7 +112,8 @@ def PlantsDetection(dataframe_coord):
         It is obtained with the function DBSCAN_clustering.
 
     e : FLOAT
-        Steps for the partitionning between two iterations, set at 0.005
+        Stopping criterion for the partitionning between two iterations,
+        set at 0.005
 
     max_iter : INTEGER
         maximum iteration number, set at 2000
@@ -139,17 +140,9 @@ def PlantsDetection(dataframe_coord):
     # [0,1], 1 representing a good result.
     # fpcs = []
 
-    # Parameters for the c-means function.
-    e = 0.005
-    max_iter = 2000
-    m_p = 2
-
     # Historic_cluster save for each row the number of estimate clusters
     # and the final number of clusters
     historic_cluster = [[], []]
-
-    # Threshod to check if a cluster is a row
-    threshold = 999999
 
     # JSON_final contain final plants positions to initialize the MAS.
     # Each list is a row and contain couple of coordinates representing plants.
@@ -173,9 +166,9 @@ def PlantsDetection(dataframe_coord):
             results_fuzzy_clustering, final_nb_clusters = Fuzzy_Clustering(
                 row_pixels, estimate_nb_clusters, e, m_p, max_iter
             )
-            historic_cluster[1].append()
+            historic_cluster[1].append(final_nb_clusters)
 
-            # Append to the final JSON posfinal_nb_clustersitions of plants
+            # Append to the final JSON positions of plants
             # for the considered row.
             JSON_final.append([results_fuzzy_clustering])
     return JSON_final
@@ -262,3 +255,29 @@ def Fuzzy_Clustering(row_pixels, estimate_nb_clusters, e, m_p, max_i):
         position_cluster_center.append([position[0], position[1]])
 
     return position_cluster_center, final_nb_clusters
+
+
+def Total_Plant_Position(
+    path_image_input, path_JSON_output, epsilon, min_point, e, max_iter, m_p, threshold
+):
+    # Open the binarized image
+    # path of the OTSU image
+    img = Image.open(path_image_input)
+    dataframe_coord = DBSCAN_clustering(img, epsilon, min_point)
+    JSON_final = Plants_Detection(dataframe_coord, e, max_iter, m_p, threshold)
+    gIO.WriteJson(path_JSON_output, "Predicting_initial_plant", JSON_final)
+
+    return
+
+
+if __name__ == "__main__":
+    Total_Plant_Position(
+        path_image_input="/home/fort/Documents/APT 3A/Cours/Ekinocs/output_otsu/Output/Session_1/Otsu/OTSU_screen_1920x1080_11_25.jpg",
+        path_JSON_output="/home/fort/Documents/APT 3A/Cours/Ekinocs/output_otsu/Output/Session_1/Otsu/",
+        epsilon=70,
+        min_point=100,
+        e=0.005,
+        max_iter=2000,
+        m_p=2,
+        threshold=0,
+    )
