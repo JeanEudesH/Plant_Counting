@@ -16,6 +16,9 @@ A FAIRE :
     - Déterminer quelles variables nous allons utiliser pour vérifier la
     qualité du dénombrement des plantes de l'image.
 
+    - Attention à définir qqpart les abréviations
+    - Relire tous les commentaires une fois le script fini
+    - Enlever la partie dataframe et la transformer en np.array ?
 """
 
 # Import of librairies
@@ -25,16 +28,34 @@ from sklearn.cluster import DBSCAN
 import pandas as pd
 import sys
 import os
+
 import matplotlib as plt
+
+
 
 # pip install -U scikit-fuzzy
 import skfuzzy as fuzz
+
+# If import does work, use the following lines
+os.chdir('../Utility/')
+import general_IO as gIO
+
+# else
 
 if "/home/fort/Documents/APT 3A/Cours/Ekinocs/Plant_Counting" not in sys.path:
     sys.path.append("/home/fort/Documents/APT 3A/Cours/Ekinocs/Plant_Counting")
 
 os.chdir("/home/fort/Documents/APT 3A/Cours/Ekinocs/Plant_Counting/Utility")
 import Utility.general_IO as gIO
+
+# To get automatically the name and the path of this script.
+# Possible to automatically and apply the script to all pictures in the same
+# working directory than this script.
+ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
+myfile = os.path.basename(__file__)
+myfile_path = os.path.join(ROOT_PATH, myfile)
+
+
 
 
 def DBSCAN_clustering(img, epsilon, min_point):
@@ -122,7 +143,7 @@ def Plants_Detection(dataframe_coord, e, max_iter, m_p, threshold):
         Fuzzy parameters, power apply to U (d'appartenance) matrix. It is
         often set at 2.
 
-    Thresholde : INTEGER
+    Threshold : INTEGER
         Threshod in order to determine if there are enough pixels in the result
         of the DBSCAN_clustering to considere a cluster as a row
 
@@ -194,7 +215,7 @@ def Threshold_Pixels_Row(row_pixels, threshold):
         CONSIDERE OK POUR INITIALISATION D'UN AGENT PLANTE
 
     """
-    # There are enought pixels.
+    # There are enough pixels.
     if len(row_pixels[0]) > threshold:
         return True
     else:
@@ -203,22 +224,27 @@ def Threshold_Pixels_Row(row_pixels, threshold):
 
 def Automatic_Cluster_Number(row_pixels):
     """
-    Make an estimation of the number of clusters to initialize
-    the fuzzy clustering.
+    Objective : to estimate the number of clusters to initialize the fuzzy
+    clustering function.
+
+    Parameters
+    ----------
+    row_pixels : list of np.array
+        Values of X and Y, the coordinates of the pixels in a row.
 
     Returns
     -------
-    Estimating number of clusters in a row
-
+    Estimated_nb_clusters : Integer
+        An estimation of the number of clusters (plants) in a row.
     """
 
-    estimate_nb_clusters = int(len(row_pixels[0]) / 390)
+    estimated_nb_clusters = int(len(row_pixels[0]) / 390)
 
     # If too few pixels, supplementary security
-    if estimate_nb_clusters == 0:
-        estimate_nb_clusters = 1
+    if estimated_nb_clusters == 0:
+        estimated_nb_clusters = 1
 
-    return estimate_nb_clusters
+    return estimated_nb_clusters
 
 
 def Fuzzy_Clustering(row_pixels, estimate_nb_clusters, e, m_p, max_i):
@@ -246,7 +272,12 @@ def Fuzzy_Clustering(row_pixels, estimate_nb_clusters, e, m_p, max_i):
     position_cluster_center = []
 
     centers, u, u0, d, jm, p, fpc = fuzz.cmeans(
-        row_pixels, c=estimate_nb_clusters, m=m_p, error=e, maxiter=max_i
+        row_pixels,
+        c=estimate_nb_clusters,
+        m=m_p,
+        error=e,
+        maxiter=max_i,
+        seed=0
     )
 
     final_nb_clusters = len(u)
@@ -268,6 +299,7 @@ def Total_Plant_Position(
     gIO.WriteJson(path_JSON_output, "Predicting_initial_plant", JSON_final)
 
     return
+
 
 def Controle_plot(image,)
 if __name__ == "__main__":
