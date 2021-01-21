@@ -36,16 +36,15 @@ import matplotlib.pyplot as plt
 import skfuzzy as fuzz
 
 # If import does work, use the following lines
-# os.chdir("../Utility/")
-# import general_IO as gIO
+os.chdir("../Utility/")
+import general_IO as gIO
 
 # else
+# if "/home/fort/Documents/APT 3A/Cours/Ekinocs/Plant_Counting" not in sys.path:
+#     sys.path.append("/home/fort/Documents/APT 3A/Cours/Ekinocs/Plant_Counting")
 
-if "/home/fort/Documents/APT 3A/Cours/Ekinocs/Plant_Counting" not in sys.path:
-    sys.path.append("/home/fort/Documents/APT 3A/Cours/Ekinocs/Plant_Counting")
-
-os.chdir("/home/fort/Documents/APT 3A/Cours/Ekinocs/Plant_Counting/Utility")
-import Utility.general_IO as gIO
+# os.chdir("/home/fort/Documents/APT 3A/Cours/Ekinocs/Plant_Counting/Utility")
+# import Utility.general_IO as gIO
 
 # To get automatically the name and the path of this script.
 # Possible to automatically and apply the script to all pictures in the same
@@ -198,6 +197,7 @@ def Plants_Detection(dataframe_coord, e, max_iter, m_p, threshold):
             JSON_final.append(results_fuzzy_clustering)
 
     # Plot
+    print(historic_cluster)
     Plot(dataframe_coord, XY)
     return JSON_final
 
@@ -245,7 +245,7 @@ def Automatic_Cluster_Number(row_pixels):
         An estimation of the number of clusters (plants) in a row.
     """
 
-    estimated_nb_clusters = int(len(row_pixels[0]) / 390)
+    estimated_nb_clusters = int(len(row_pixels[0]) / 1600)
 
     # If too few pixels, supplementary security
     if estimated_nb_clusters == 0:
@@ -314,7 +314,7 @@ def Plot(mat_coord, centresCoordinates):
         cmap="Paired",
     )
     scatter_plant = plt.scatter(
-        centresCoordinates[0], centresCoordinates[1], s=1, marker="+", color="red"
+        centresCoordinates[1], centresCoordinates[0], s=10, marker="+", color="k"
     )
     plt.show()
 
@@ -335,5 +335,5 @@ if __name__ == "__main__":
         e=0.005,
         max_iter=2000,
         m_p=2,
-        threshold=100,
+        threshold=1000,
     )
