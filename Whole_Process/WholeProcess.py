@@ -42,6 +42,7 @@ def CompleteProcess(_path_input_rgb_img, _path_output_root,
     FA.All_Fourier_Analysis(_path_output_root,
                          _session,
                          _bin_div_X, _bin_div_Y)
+    # Remplacer au dessus par le clutering 
     
     
     MIS.All_Simulations(_path_input_rgb_img,
