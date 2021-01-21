@@ -29,7 +29,7 @@ import pandas as pd
 import sys
 import os
 
-import matplotlib as plt
+import matplotlib.pyplot as plt
 
 
 # pip install -U scikit-fuzzy
@@ -171,7 +171,10 @@ def Plants_Detection(dataframe_coord, e, max_iter, m_p, threshold):
         )
 
         # If the row is really a row.
-        if Threshold_Pixels_Row(row_pixels, threshold) is True:
+        if Threshold_Pixels_Row(row_pixels, threshold) is False:
+            # dataframe_coord = dataframe_coord[dataframe_coord["label"] == row]
+            pass
+        else:
             # Determination of the initial estimating number of clusters,
             # and adding to historic_cluster
             estimate_nb_clusters = Automatic_Cluster_Number(row_pixels)
@@ -186,6 +189,9 @@ def Plants_Detection(dataframe_coord, e, max_iter, m_p, threshold):
             # Append to the final JSON positions of plants
             # for the considered row.
             JSON_final.append(results_fuzzy_clustering)
+
+    # Plot
+    Row_Plot(dataframe_coord)
     return JSON_final
 
 
@@ -290,7 +296,18 @@ def Total_Plant_Position(
     return
 
 
-def Row_Plot(image):
+def Row_Plot(mat_coord):
+    fig = plt.figure(figsize=(8, 10))
+    ax = fig.add_subplot(111)
+    scatter = ax.scatter(
+        mat_coord["Y"].tolist(),
+        mat_coord["X"].tolist(),
+        c=mat_coord["label"].tolist(),
+        s=0.5,
+        cmap="Paired",
+    )
+    plt.show()
+
     return
 
 
@@ -304,7 +321,7 @@ if __name__ == "__main__":
         epsilon=70,
         min_point=100,
         e=0.005,
-        max_iter=2000,
+        max_iter=2,
         m_p=2,
-        threshold=0,
+        threshold=100,
     )
