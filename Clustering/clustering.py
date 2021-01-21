@@ -170,7 +170,7 @@ def Plants_Detection(dataframe_coord, e, max_iter, m_p, threshold):
 
             # Append to the final JSON positions of plants
             # for the considered row.
-            JSON_final.append([results_fuzzy_clustering])
+            JSON_final.append(results_fuzzy_clustering)
     return JSON_final
 
 
@@ -252,7 +252,7 @@ def Fuzzy_Clustering(row_pixels, estimate_nb_clusters, e, m_p, max_i):
     final_nb_clusters = len(u)
 
     for position in centers:
-        position_cluster_center.append([position[0], position[1]])
+        position_cluster_center.append([int(position[0]), int(position[1])])
 
     return position_cluster_center, final_nb_clusters
 
