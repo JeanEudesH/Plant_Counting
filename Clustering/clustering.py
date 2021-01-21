@@ -29,12 +29,15 @@ import pandas as pd
 import sys
 import os
 
+import matplotlib as plt
+
+
 # pip install -U scikit-fuzzy
 import skfuzzy as fuzz
 
 # If import does work, use the following lines
-os.chdir('../Utility/')
-import general_IO as gIO
+# os.chdir("../Utility/")
+# import general_IO as gIO
 
 # else
 
@@ -47,11 +50,6 @@ import general_IO as gIO
 # To get automatically the name and the path of this script.
 # Possible to automatically and apply the script to all pictures in the same
 # working directory than this script.
-ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
-myfile = os.path.basename(__file__)
-myfile_path = os.path.join(ROOT_PATH, myfile)
-
-
 
 
 def DBSCAN_clustering(img, epsilon, min_point):
@@ -268,12 +266,7 @@ def Fuzzy_Clustering(row_pixels, estimate_nb_clusters, e, m_p, max_i):
     position_cluster_center = []
 
     centers, u, u0, d, jm, p, fpc = fuzz.cmeans(
-        row_pixels,
-        c=estimate_nb_clusters,
-        m=m_p,
-        error=e,
-        maxiter=max_i,
-        seed=0
+        row_pixels, c=estimate_nb_clusters, m=m_p, error=e, maxiter=max_i, seed=0
     )
 
     final_nb_clusters = len(u)
@@ -305,6 +298,18 @@ if __name__ == "__main__":
     Total_Plant_Position(
         path_image_input="/home/fort/Documents/APT 3A/Cours/Ekinocs/output_otsu/Output/Session_1/Otsu/OTSU_screen_1920x1080_11_25.jpg",
         path_JSON_output="/home/fort/Documents/APT 3A/Cours/Ekinocs/output_otsu/Output/Session_1/Otsu/",
+
+def Row_Plot(image):
+    return
+
+
+if __name__ == "__main__":
+    ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
+    # myfile = os.path.basename(__file__)
+    # myfile_path = os.path.join(ROOT_PATH, myfile)
+    Total_Plant_Position(
+        path_image_input=ROOT_PATH + "/OTSU_screen_1920x1080_11_25.jpg",
+        path_JSON_output=ROOT_PATH,
         epsilon=70,
         min_point=100,
         e=0.005,

@@ -122,7 +122,7 @@ MAS_Simulation.Perform_Simulation_newEndCrit(Simulation_steps,
                                              _coerced_X=True,
                                              _coerced_Y=False,
                                              _analyse_and_remove_Rows=True,
-                                             _edge_exploration = False)
+                                             _edge_exploration = True)
 # =============================================================================
 # MAS_Simulation.Perform_Simulation(Simulation_steps,
 #                                              _coerced_X=True,
