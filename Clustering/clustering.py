@@ -25,7 +25,7 @@ from sklearn.cluster import DBSCAN
 import pandas as pd
 import sys
 import os
-
+import matplotlib as plt
 
 # pip install -U scikit-fuzzy
 import skfuzzy as fuzz
@@ -269,7 +269,7 @@ def Total_Plant_Position(
 
     return
 
-
+def Controle_plot(image,)
 if __name__ == "__main__":
     Total_Plant_Position(
         path_image_input="/home/fort/Documents/APT 3A/Cours/Ekinocs/output_otsu/Output/Session_1/Otsu/OTSU_screen_1920x1080_11_25.jpg",
