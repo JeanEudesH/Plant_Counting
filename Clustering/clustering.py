@@ -163,6 +163,9 @@ def Plants_Detection(dataframe_coord, e, max_iter, m_p, threshold):
     # Each list is a row and contain couple of coordinates representing plants.
     JSON_final = []
 
+    # Centers of all plants clusters coordinates
+    XY = [[], []]
+
     # For each rows, do the plants detection.
     for row in label_row:
         # row_pixels is a matrix with pixels coordinates belonging to a row.
@@ -178,15 +181,28 @@ def Plants_Detection(dataframe_coord, e, max_iter, m_p, threshold):
             historic_cluster[0].append(estimate_nb_clusters)
 
             # Clustering using Fuzzy_Clustering, and adding to historic_cluster
-            results_fuzzy_clustering, final_nb_clusters = Fuzzy_Clustering(
+            results_fuzzy_clustering, final_nb_clusters, centers = Fuzzy_Clustering(
                 row_pixels, estimate_nb_clusters, e, m_p, max_iter
             )
             historic_cluster[1].append(final_nb_clusters)
 
+            for pt in results_fuzzy_clustering:
+                XY[0].append(pt[0])
+                XY[1].append(pt[1])
+
             # Append to the final JSON positions of plants
             # for the considered row.
             JSON_final.append(results_fuzzy_clustering)
+
+    Plants_plot(XY)
+
     return JSON_final
+
+
+def Plants_plot(centresCoordinates):
+    plt.figure()
+    return plt.scatter(centresCoordinates[0], centresCoordinates[1],
+                s=1, marker='+', color='red')
 
 
 def Threshold_Pixels_Row(row_pixels, threshold):
@@ -265,13 +281,13 @@ def Fuzzy_Clustering(row_pixels, estimate_nb_clusters, e, m_p, max_i):
     """
     position_cluster_center = []
 
-    centers, u, u0, d, jm, p, fpc = fuzz.cmeans(
+    centres, u, u0, d, jm, p, fpc = fuzz.cmeans(
         row_pixels, c=estimate_nb_clusters, m=m_p, error=e, maxiter=max_i, seed=0
     )
 
     final_nb_clusters = len(u)
 
-    for position in centers:
+    for position in centres:
         position_cluster_center.append([int(position[0]), int(position[1])])
 
     return position_cluster_center, final_nb_clusters
@@ -289,19 +305,14 @@ def Total_Plant_Position(
 
     return
 
-# os.walk()
 
-if __name__ == "__main__":
-    ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
-    myfile = os.path.basename(__file__)
-    myfile_path = os.path.join(ROOT_PATH, myfile)
-    Total_Plant_Position(
-        path_image_input="/home/fort/Documents/APT 3A/Cours/Ekinocs/output_otsu/Output/Session_1/Otsu/OTSU_screen_1920x1080_11_25.jpg",
-        path_JSON_output="/home/fort/Documents/APT 3A/Cours/Ekinocs/output_otsu/Output/Session_1/Otsu/",
 
 def Row_Plot(image):
+
     return
 
+
+# os.walk()
 
 if __name__ == "__main__":
     ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
