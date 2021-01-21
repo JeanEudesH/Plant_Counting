@@ -163,6 +163,9 @@ def Plants_Detection(dataframe_coord, e, max_iter, m_p, threshold):
     # Each list is a row and contain couple of coordinates representing plants.
     JSON_final = []
 
+    # Centers of all plants clusters coordinates
+    XY = [[], []]
+
     # For each rows, do the plants detection.
     for row in label_row:
         # row_pixels is a matrix with pixels coordinates belonging to a row.
@@ -186,12 +189,16 @@ def Plants_Detection(dataframe_coord, e, max_iter, m_p, threshold):
             )
             historic_cluster[1].append(final_nb_clusters)
 
+            for pt in results_fuzzy_clustering:
+                XY[0].append(pt[0])
+                XY[1].append(pt[1])
+
             # Append to the final JSON positions of plants
             # for the considered row.
             JSON_final.append(results_fuzzy_clustering)
 
     # Plot
-    Row_Plot(dataframe_coord)
+    Plot(dataframe_coord, XY)
     return JSON_final
 
 
@@ -271,13 +278,13 @@ def Fuzzy_Clustering(row_pixels, estimate_nb_clusters, e, m_p, max_i):
     """
     position_cluster_center = []
 
-    centers, u, u0, d, jm, p, fpc = fuzz.cmeans(
+    centres, u, u0, d, jm, p, fpc = fuzz.cmeans(
         row_pixels, c=estimate_nb_clusters, m=m_p, error=e, maxiter=max_i, seed=0
     )
 
     final_nb_clusters = len(u)
 
-    for position in centers:
+    for position in centres:
         position_cluster_center.append([int(position[0]), int(position[1])])
 
     return position_cluster_center, final_nb_clusters
@@ -296,20 +303,25 @@ def Total_Plant_Position(
     return
 
 
-def Row_Plot(mat_coord):
+def Plot(mat_coord, centresCoordinates):
     fig = plt.figure(figsize=(8, 10))
     ax = fig.add_subplot(111)
-    scatter = ax.scatter(
+    scatter_row = ax.scatter(
         mat_coord["Y"].tolist(),
         mat_coord["X"].tolist(),
         c=mat_coord["label"].tolist(),
         s=0.5,
         cmap="Paired",
     )
+    scatter_plant = plt.scatter(
+        centresCoordinates[0], centresCoordinates[1], s=1, marker="+", color="red"
+    )
     plt.show()
 
     return
 
+
+# os.walk()
 
 if __name__ == "__main__":
     ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
@@ -321,7 +333,7 @@ if __name__ == "__main__":
         epsilon=70,
         min_point=100,
         e=0.005,
-        max_iter=2,
+        max_iter=2000,
         m_p=2,
         threshold=100,
     )
