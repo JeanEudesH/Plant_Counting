@@ -28,15 +28,16 @@ from PIL import Image
 import numpy as np
 from sklearn.cluster import DBSCAN
 import pandas as pd
+
 # pip install -U scikit-fuzzy
 import skfuzzy as fuzz
 
 # Open the binarized image
 path = ""  # path of the OTSU image
-img = Image.open('PATH')
+img = Image.open(path)
 
 
-def DBSCAN_clustering(img, eps_, min_samples_):
+def DBSCAN_clustering(img, epsilon, min_point):
     """
     The objective of this function is to differenciate rows of a field.
     As input, it needs a binarized picture (cf function/package...) taken by an
@@ -58,36 +59,35 @@ def DBSCAN_clustering(img, eps_, min_samples_):
         in a field.
         The picture can be taken by an unmanned aerial vehicle (uav).
 
-    eps_ : INTEGER
-        Density distance for .
+    epsilon : INTEGER
+        Two points are considered neighbors if the distance between the two points is
+        below the threshold epsilon.
 
-    min_samples_ : TYPE
-        DESCRIPTION.
+    min_point : INTEGER
+        The minimum number of neighbors a given point should have in order to be
+        classified as a core point.
 
 
     Returns
     -------
-    dataframe_coord : Panda Dataframe
+    dataframe_coord : PANDAS DATAFRAME
         Dataframe with the X and Y coordinates of the plants' pixels
-        and their cluster's label
+        and their cluster's label.
 
     """
 
     img_array = np.array(img)
-    mat_coord = np.argwhere(
-        img_array[:, :, 0] == 255
-    )  # extraction of white pixels coordinates
-    mat_clustered = DBSCAN(eps=eps_, min_samples=min_samples_).fit(
-        mat_coord
-    )  # clustering using DBSCAN
+    # extraction of white pixels coordinates
+    mat_coord = np.argwhere(img_array[:, :, 0] == 255)
+    # clustering using DBSCAN
+    mat_clustered = DBSCAN(eps=epsilon, min_samples=min_point).fit(mat_coord)
     # Panda dataframe
     dataframe_coord = pd.DataFrame(mat_coord)
     dataframe_coord = dataframe_coord.rename(columns={0: "X", 1: "Y"})
     label = pd.DataFrame(mat_clustered.labels_)
     label = label.rename(columns={0: "label"})
-    dataframe_coord = pd.concat(
-        [dataframe_coord, label], axis=1
-    )  # Dataframe gathering each plants pixel its label
+    # Dataframe gathering each plants pixel its label
+    dataframe_coord = pd.concat([dataframe_coord, label], axis=1)
     return dataframe_coord
 
 
@@ -108,6 +108,15 @@ def PlantsDetection(dataframe_coord):
         the pixel belongs to.
         It is obtained with the function DBSCAN_clustering.
 
+    e : FLOAT
+        Steps for the partitionning between two iterations, set at 0.005
+
+    max_iter : INTEGER
+        maximum iteration number, set at 2000
+
+    m_i : INTEGER
+        Fuzzy parameters, power apply to U (d'appartenance) matrix. It is
+        often set at 2.
 
     Returns
     -------
@@ -115,54 +124,58 @@ def PlantsDetection(dataframe_coord):
         of a multiple agents system. Its size is the number of rows and the
         size of a row is the number of plants (centroïd coordinates).
     """
+    # Number of rows and their label
+    label_row = np.unique(dataframe_coord[["label"]].to_numpy())
 
-    labels_rangs = np.unique(
-        dataframe_coord[["label"]].to_numpy()
-    )  # Number of rows and their label
-    rangs_coord = []
     # empty list of np.array containing plants pixels coordinates from one rang
-    # rangs_clustered = []
+    rangs_coord = []
+
+    # Quality metrics of the Fuzzy clustering method, include in the interval [0,1].
+    # 1 represent a good result.
     fpcs = []
-    # Mesure de qualité du clustering, variable qui permet d'avoir une idée de
-    # la qualité du clustering , comprise entre 0 et 1, bien quand proche de 1
 
-    # Paramètres de la fonction c-means à passer en paramètre par défaut ici
-    e = 0.005  # Pas, pour la différence de partitionnement entre deux
-    # itérations, a voir si on le met en parametre
-    m_i = 2000  # Nombre maximal d'itération
+    # Parameters for the c-means function.
+    e = 0.005
+    max_iter = 2000
     m_p = 2
-    # Paramètre de flou, puissance appliquée à la matrice d'appartenance,
-    # souvent autour de 2, pour le moment en dur
 
-    historique_clusters = [[], []]
-    # Nombre de cluster initialement et finalement, permet de comparer
-    # la différence de cluster entre ce que l'on a mis et ce qui est finalement
-    # retourné.
+    # Historic_cluster save for each row the number of estimate clusters
+    # and the final number of clusters
+    historic_cluster = [[], []]
 
+    # JSON_final contain final plants positions to initialize the MAS. Each list
+    # is a row and contain couple of coordinates representing plants.
     JSON_final = []
-    # liste de liste (la première correspond à un rang et à l'intérieur
-    # chaque couple aux coordonnées du centroïde d'un cluster ie plante)
 
-    for i in labels_rangs:
-        rang = dataframe_coord[
-            dataframe_coord["label"] == i][['X', 'Y']].to_numpy().T
+    # For each rows, do the plants detection.
+    for row in label_row:
+        # row_pixels is a matrix with pixel coordinate belonging to a row.
+        row_pixels = (
+            dataframe_coord[dataframe_coord["label"] == row][["X", "Y"]].to_numpy().T
+        )
 
-        if Threshold_PixelsRang() is True:
-            nb_clusters = AutomaticNbClusters(rang)
-            historique_clusters[0].append(nb_clusters)
-            resultat_fuzzyClustering, nbFinalClusters = Fuzzy_Clustering(rang,
-                                                                         nb_clusters, e, m_p, m_i)
-            historique_clusters[1].append(nbFinalClusters)
+        # If the row is really a row.
+        if Threshold_Pixels_Row() is True:
+            # Determination of the initial estimating number of clusters, and adding
+            # to historic_cluster
+            estimate_nb_clusters = Automatic_Cluster_Number(row_pixels)
+            historic_cluster[0].append(estimate_nb_clusters)
 
-            JSON_final.append([resultat_fuzzyClustering])
+            # Clustering using Fuzzy_Clustering, and adding to historic_cluster
+            results_fuzzy_clustering, final_nb_clusters = Fuzzy_Clustering(
+                row_pixels, estimate_nb_clusters, e, m_p, max_iter
+            )
+            historic_cluster[1].append(final_nb_clusters)
+
+            JSON_final.append([results_fuzzy_clustering])
 
     return JSON_final
 
 
-def Threshold_PixelsRang(rang, seuil):
+def Threshold_Pixels_Row(rang, seuil):
     """
     Determine if there are enough pixels in the result of the DBSCAN_clustering
-    function. It can be considered as a row according to a threshold pixels.
+    function. Define if a cluster can be considered as a row according to a threshold pixels.
 
     Parameters
     ----------
@@ -185,7 +198,7 @@ def Threshold_PixelsRang(rang, seuil):
         return False
 
 
-def AutomaticNbClusters(rang):
+def Automatic_Cluster_Number(rang):
     """
     Nombre de pixels dans chaque rangs en entrée
     (liste de X et Y, les coordonnées de chaque pixel du rang)
@@ -195,7 +208,7 @@ def AutomaticNbClusters(rang):
 
     """
 
-    nb_clusters = int(len(rang[0])/390)
+    nb_clusters = int(len(rang[0]) / 390)
 
     if nb_clusters == 0:  # If too few pixels, supplementary security
         nb_clusters = 1
@@ -214,8 +227,9 @@ def Fuzzy_Clustering(rang, nb_clusters, e, m_p, m_i):
     None.
 
     """
-    cntr, u, u0, d, jm, p, fpc = fuzz.cmeans(rang, c=nb_clusters, m=m_p,
-                                             error=e, maxiter=m_i)
+    cntr, u, u0, d, jm, p, fpc = fuzz.cmeans(
+        rang, c=nb_clusters, m=m_p, error=e, maxiter=m_i
+    )
     # Attribution d'une étiquette à chaque point des données selon son cluster
     # le plus probable (cf matrice u)
 
