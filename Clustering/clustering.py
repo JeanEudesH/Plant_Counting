@@ -38,11 +38,11 @@ import general_IO as gIO
 
 # else
 
-if "/home/fort/Documents/APT 3A/Cours/Ekinocs/Plant_Counting" not in sys.path:
-    sys.path.append("/home/fort/Documents/APT 3A/Cours/Ekinocs/Plant_Counting")
+# if "/home/fort/Documents/APT 3A/Cours/Ekinocs/Plant_Counting" not in sys.path:
+#     sys.path.append("/home/fort/Documents/APT 3A/Cours/Ekinocs/Plant_Counting")
 
-os.chdir("/home/fort/Documents/APT 3A/Cours/Ekinocs/Plant_Counting/Utility")
-import Utility.general_IO as gIO
+# os.chdir("/home/fort/Documents/APT 3A/Cours/Ekinocs/Plant_Counting/Utility")
+# import Utility.general_IO as gIO
 
 # To get automatically the name and the path of this script.
 # Possible to automatically and apply the script to all pictures in the same
@@ -296,15 +296,19 @@ def Total_Plant_Position(
 
     return
 
+# os.walk()
 
-# if __name__ == "__main__":
-#     Total_Plant_Position(
-#         path_image_input="/home/fort/Documents/APT 3A/Cours/Ekinocs/output_otsu/Output/Session_1/Otsu/OTSU_screen_1920x1080_11_25.jpg",
-#         path_JSON_output="/home/fort/Documents/APT 3A/Cours/Ekinocs/output_otsu/Output/Session_1/Otsu/",
-#         epsilon=70,
-#         min_point=100,
-#         e=0.005,
-#         max_iter=2000,
-#         m_p=2,
-#         threshold=0,
-#     )
+if __name__ == "__main__":
+    ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
+    myfile = os.path.basename(__file__)
+    myfile_path = os.path.join(ROOT_PATH, myfile)
+    Total_Plant_Position(
+        path_image_input="/home/fort/Documents/APT 3A/Cours/Ekinocs/output_otsu/Output/Session_1/Otsu/OTSU_screen_1920x1080_11_25.jpg",
+        path_JSON_output="/home/fort/Documents/APT 3A/Cours/Ekinocs/output_otsu/Output/Session_1/Otsu/",
+        epsilon=70,
+        min_point=100,
+        e=0.005,
+        max_iter=2000,
+        m_p=2,
+        threshold=0,
+    )
