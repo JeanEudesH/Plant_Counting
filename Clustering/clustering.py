@@ -16,11 +16,6 @@ A FAIRE :
     - Déterminer quelles variables nous allons utiliser pour vérifier la
     qualité du dénombrement des plantes de l'image.
 
-
-    - Uniformiser les noms des variables (tout mettre en anglais)
-    - Commenter proprement en anglais
-    - Docstrings en anglais
-
 """
 
 # Import of librairies
@@ -28,13 +23,18 @@ from PIL import Image
 import numpy as np
 from sklearn.cluster import DBSCAN
 import pandas as pd
+import sys
+import os
+
 
 # pip install -U scikit-fuzzy
 import skfuzzy as fuzz
 
-# Open the binarized image
-path = ""  # path of the OTSU image
-img = Image.open(path)
+if "/home/fort/Documents/APT 3A/Cours/Ekinocs/Plant_Counting" not in sys.path:
+    sys.path.append("/home/fort/Documents/APT 3A/Cours/Ekinocs/Plant_Counting")
+
+os.chdir("/home/fort/Documents/APT 3A/Cours/Ekinocs/Plant_Counting/Utility")
+import Utility.general_IO as gIO
 
 
 def DBSCAN_clustering(img, epsilon, min_point):
@@ -76,22 +76,25 @@ def DBSCAN_clustering(img, epsilon, min_point):
 
     """
 
-    img_array = np.array(img)
     # extraction of white pixels coordinates
+    img_array = np.array(img)
     mat_coord = np.argwhere(img_array[:, :, 0] == 255)
+
     # clustering using DBSCAN
     mat_clustered = DBSCAN(eps=epsilon, min_samples=min_point).fit(mat_coord)
+
     # Panda dataframe
     dataframe_coord = pd.DataFrame(mat_coord)
     dataframe_coord = dataframe_coord.rename(columns={0: "X", 1: "Y"})
     label = pd.DataFrame(mat_clustered.labels_)
     label = label.rename(columns={0: "label"})
+
     # Dataframe gathering each plants pixel its label
     dataframe_coord = pd.concat([dataframe_coord, label], axis=1)
     return dataframe_coord
 
 
-def PlantsDetection(dataframe_coord):
+def Plants_Detection(dataframe_coord, e, max_iter, m_p, threshold):
     """
     The objective of this function is to differenciate the plants in each row
     of the binarized picture. It is based on predefined rows, the corresponding
@@ -109,7 +112,8 @@ def PlantsDetection(dataframe_coord):
         It is obtained with the function DBSCAN_clustering.
 
     e : FLOAT
-        Steps for the partitionning between two iterations, set at 0.005
+        Stopping criterion for the partitionning between two iterations,
+        set at 0.005
 
     max_iter : INTEGER
         maximum iteration number, set at 2000
@@ -117,6 +121,11 @@ def PlantsDetection(dataframe_coord):
     m_i : INTEGER
         Fuzzy parameters, power apply to U (d'appartenance) matrix. It is
         often set at 2.
+
+    Thresholde : INTEGER
+        Threshod in order to determine if there are enough pixels in the result
+        of the DBSCAN_clustering to considere a cluster as a row
+
 
     Returns
     -------
@@ -127,37 +136,29 @@ def PlantsDetection(dataframe_coord):
     # Number of rows and their label
     label_row = np.unique(dataframe_coord[["label"]].to_numpy())
 
-    # empty list of np.array containing plants pixels coordinates from one rang
-    rangs_coord = []
-
-    # Quality metrics of the Fuzzy clustering method, include in the interval [0,1].
-    # 1 represent a good result.
-    fpcs = []
-
-    # Parameters for the c-means function.
-    e = 0.005
-    max_iter = 2000
-    m_p = 2
+    # Quality metrics of the Fuzzy clustering method, include in the interval
+    # [0,1], 1 representing a good result.
+    # fpcs = []
 
     # Historic_cluster save for each row the number of estimate clusters
     # and the final number of clusters
     historic_cluster = [[], []]
 
-    # JSON_final contain final plants positions to initialize the MAS. Each list
-    # is a row and contain couple of coordinates representing plants.
+    # JSON_final contain final plants positions to initialize the MAS.
+    # Each list is a row and contain couple of coordinates representing plants.
     JSON_final = []
 
     # For each rows, do the plants detection.
     for row in label_row:
-        # row_pixels is a matrix with pixel coordinate belonging to a row.
+        # row_pixels is a matrix with pixels coordinates belonging to a row.
         row_pixels = (
             dataframe_coord[dataframe_coord["label"] == row][["X", "Y"]].to_numpy().T
         )
 
         # If the row is really a row.
-        if Threshold_Pixels_Row() is True:
-            # Determination of the initial estimating number of clusters, and adding
-            # to historic_cluster
+        if Threshold_Pixels_Row(row_pixels, threshold) is True:
+            # Determination of the initial estimating number of clusters,
+            # and adding to historic_cluster
             estimate_nb_clusters = Automatic_Cluster_Number(row_pixels)
             historic_cluster[0].append(estimate_nb_clusters)
 
@@ -167,21 +168,23 @@ def PlantsDetection(dataframe_coord):
             )
             historic_cluster[1].append(final_nb_clusters)
 
-            JSON_final.append([results_fuzzy_clustering])
-
+            # Append to the final JSON positions of plants
+            # for the considered row.
+            JSON_final.append(results_fuzzy_clustering)
     return JSON_final
 
 
-def Threshold_Pixels_Row(rang, seuil):
+def Threshold_Pixels_Row(row_pixels, threshold):
     """
-    Determine if there are enough pixels in the result of the DBSCAN_clustering
-    function. Define if a cluster can be considered as a row according to a threshold pixels.
+    Determine if there are enough pixels in the result of the
+    DBSCAN_clustering function. Define if a cluster can be considered
+    as a row according to a threshold pixels.
 
     Parameters
     ----------
-    rang : List
+    row_pixels : List
         List of 2 lists, the values of X and Y, respectively, coordinates of
-        the pixels representing the plants in the row.
+        pixels representing plants in the row.
 
     Return
     -------
@@ -191,54 +194,90 @@ def Threshold_Pixels_Row(rang, seuil):
         CONSIDERE OK POUR INITIALISATION D'UN AGENT PLANTE
 
     """
-
-    if len(rang[0]) > seuil:
+    # There are enought pixels.
+    if len(row_pixels[0]) > threshold:
         return True
     else:
         return False
 
 
-def Automatic_Cluster_Number(rang):
+def Automatic_Cluster_Number(row_pixels):
     """
-    Nombre de pixels dans chaque rangs en entrée
-    (liste de X et Y, les coordonnées de chaque pixel du rang)
+    Make an estimation of the number of clusters to initialize
+    the fuzzy clustering.
+
     Returns
     -------
-    Nombre de clusters dans le rang
+    Estimating number of clusters in a row
 
     """
 
-    nb_clusters = int(len(rang[0]) / 390)
+    estimate_nb_clusters = int(len(row_pixels[0]) / 390)
 
-    if nb_clusters == 0:  # If too few pixels, supplementary security
-        nb_clusters = 1
+    # If too few pixels, supplementary security
+    if estimate_nb_clusters == 0:
+        estimate_nb_clusters = 1
 
-    return nb_clusters
+    return estimate_nb_clusters
 
 
-def Fuzzy_Clustering(rang, nb_clusters, e, m_p, m_i):
+def Fuzzy_Clustering(row_pixels, estimate_nb_clusters, e, m_p, max_i):
     """
-    En entrée, rang est la liste des coordonnées des pixels du rang
-    (np.array et 2 listes de longueur du nombre de pixels)
+    Apply the Fuzzy clustering algorithm in order to determine the number
+    of clusters, ie the number of plants in a row. Take as an input pixels
+    coordinate for on row : row_pixels, the initial number of cluster :
+    estimate_nb_clusters, and parameters e, m_p, max_i required for
+    cmeans algorithm.
 
-    Fuzzy clustering pour un rang défini par DBSCAN (ici)
     Returns
     -------
-    None.
+    Return information about plants positions for one row. Its also
+    possible to return other parameters like fpc quality score.
+
+    position_cluster_center : LIST
+        List of coordinate couple representing center of clusters
+        position ie the position of each plant.
+
+    final_nb_clusters : INTEGER
+        The final number of cluster, ie of plants, in a row.
+
 
     """
-    cntr, u, u0, d, jm, p, fpc = fuzz.cmeans(
-        rang, c=nb_clusters, m=m_p, error=e, maxiter=m_i
+    position_cluster_center = []
+
+    centers, u, u0, d, jm, p, fpc = fuzz.cmeans(
+        row_pixels, c=estimate_nb_clusters, m=m_p, error=e, maxiter=max_i
     )
-    # Attribution d'une étiquette à chaque point des données selon son cluster
-    # le plus probable (cf matrice u)
 
-    nbClusterFinal = len(u)
+    final_nb_clusters = len(u)
 
-    PosCentCcluster = []
-    for pt in cntr:
-        PosCentCcluster.append([pt[0], pt[1]])
+    for position in centers:
+        position_cluster_center.append([int(position[0]), int(position[1])])
 
-    # Ajouter d'autres paramètres pour vérifier
-    # la qualité du clustering comme fpc ou jm
-    return PosCentCcluster, nbClusterFinal
+    return position_cluster_center, final_nb_clusters
+
+
+def Total_Plant_Position(
+    path_image_input, path_JSON_output, epsilon, min_point, e, max_iter, m_p, threshold
+):
+    # Open the binarized image
+    # path of the OTSU image
+    img = Image.open(path_image_input)
+    dataframe_coord = DBSCAN_clustering(img, epsilon, min_point)
+    JSON_final = Plants_Detection(dataframe_coord, e, max_iter, m_p, threshold)
+    gIO.WriteJson(path_JSON_output, "Predicting_initial_plant", JSON_final)
+
+    return
+
+
+if __name__ == "__main__":
+    Total_Plant_Position(
+        path_image_input="/home/fort/Documents/APT 3A/Cours/Ekinocs/output_otsu/Output/Session_1/Otsu/OTSU_screen_1920x1080_11_25.jpg",
+        path_JSON_output="/home/fort/Documents/APT 3A/Cours/Ekinocs/output_otsu/Output/Session_1/Otsu/",
+        epsilon=70,
+        min_point=100,
+        e=0.005,
+        max_iter=2000,
+        m_p=2,
+        threshold=0,
+    )
