@@ -60,12 +60,12 @@ def DBSCAN_clustering(img, epsilon, min_point):
         The picture can be taken by an unmanned aerial vehicle (uav).
 
     epsilon : INTEGER
-        Two points are considered neighbors if the distance between the two points is
-        below the threshold epsilon.
+        Two points are considered neighbors if the distance between the two
+        points is below the threshold epsilon.
 
     min_point : INTEGER
-        The minimum number of neighbors a given point should have in order to be
-        classified as a core point.
+        The minimum number of neighbors a given point should have in order to
+        be classified as a core point.
 
 
     Returns
