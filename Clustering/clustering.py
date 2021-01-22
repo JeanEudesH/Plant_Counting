@@ -316,8 +316,8 @@ def Plot(mat_coord, centresCoordinates):
     scatter_plant = plt.scatter(
         centresCoordinates[1], centresCoordinates[0], s=10, marker="+", color="k"
     )
-    plt.show()
-
+    # plt.show()
+    fig.savefig("/home/fort/Bureau/lineaire_cluster.png")
     return
 
 

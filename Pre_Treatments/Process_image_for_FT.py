@@ -232,9 +232,9 @@ def All_Pre_Treatment(
 if __name__ == "__main__":
 
     All_Pre_Treatment(
-        _path_input_rgb_img="/home/fort/Documents/APT 3A/Cours/Ekinocs/Images_Otsu_champs/weed",
-        _path_output_root="/home/fort/Documents/APT 3A/Cours/Ekinocs/output_otsu",
-        _path_position_files="/home/fort/Documents/APT 3A/Cours/Ekinocs/Images_Otsu_champs/2021_1_9_18_37_46/Position_Files",
+        _path_input_rgb_img="/home/fort/Documents/APT 3A/Cours/Ekinocs/dIP_vs_dIR/2_4/virtual_reality",
+        _path_output_root="/home/fort/Documents/APT 3A/Cours/Ekinocs/Ouput_General/Ouput_General",
+        _path_position_files="/home/fort/Documents/APT 3A/Cours/Ekinocs/dIP_vs_dIR/2_4/Position_Files",
         _rows_real_angle=80,
         _make_unique_folder_per_session=False,
         _session=1,

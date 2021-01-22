@@ -28,8 +28,8 @@ import os
 import numpy as np
 #import matplotlib.pyplot as plt
 
-os.chdir("../Utility")
-import general_IO as gIO
+os.chdir("/home/fort/Documents/APT 3A/Cours/Ekinocs/Plant_Counting/Utility")
+import Utility.general_IO as gIO
 
 # =============================================================================
 # Utility Functions Definition
@@ -224,7 +224,7 @@ def All_Fourier_Analysis(_path_input_output,
     path_output_FT_predictions = path_output_root+"/Plant_FT_Predictions"
     gIO.check_make_directory(path_output_FT_predictions)
     
-    subset_size = 4
+    subset_size = 6
     
 ################## Import Data
     data_bsas_dir0 = import_data(path_input_bsas_dir0,
@@ -308,6 +308,6 @@ def All_Fourier_Analysis(_path_input_output,
 
 if (__name__ == "__main__"):
     
-    All_Fourier_Analysis(_path_input_output="C:/Users/eliot/Documents/Scolarité/AgroParisTech/3A/Stage_Tournesols/Code/Ouput_General",
+    All_Fourier_Analysis(_path_input_output="/home/fort/Documents/APT 3A/Cours/Ekinocs/Ouput_General",
                          _session_number=1,
                          _bin_div_X=2, _bin_div_Y=4)

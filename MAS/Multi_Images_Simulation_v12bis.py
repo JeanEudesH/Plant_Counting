@@ -10,10 +10,10 @@ import json
 import numpy as np
 from PIL import Image
 
-import MAS_v17 as MAS
+import MAS.MAS_v17 as MAS
 
-os.chdir("../Utility")
-import general_IO as gIO
+os.chdir("/home/fort/Documents/APT 3A/Cours/Ekinocs/Plant_Counting/Utility")
+import Utility.general_IO as gIO
 
 
 # =============================================================================
@@ -128,8 +128,8 @@ def All_Simulations(_path_input_rgb_img, _path_PreTreatment_and_FA,
     
 if (__name__=="__main__"):
 
-    All_Simulations(_path_input_rgb_img="D:/Projet/Unity/HDRP_PGoCF/Datasets/X_Bell5Keys_Z_InversedBell5Keys/virtual_reality",
-                    _path_PreTreatment_and_FA="D:/Projet/Unity/HDRP_PGoCF/Datasets/X_Bell5Keys_Z_InversedBell5Keys/Ouput_General",
+    All_Simulations(_path_input_rgb_img="/home/fort/Documents/APT 3A/Cours/Ekinocs/dIP_vs_dIR/2_4/virtual_reality",
+                    _path_PreTreatment_and_FA="/home/fort/Documents/APT 3A/Cours/Ekinocs/dIP_vs_dIR/2_4/Ouput_General/Output_general",
                     _labelled_images = True,
                     _session_number=1,
                     _RAs_group_size=10, _RAs_group_steps=2, _Simulation_steps=50,
