@@ -319,17 +319,29 @@ def Total_Plant_Position(
     list_image = listdir(path_image_input)
     print(list_image)
     for image in list_image:
+        print("start ", image)
         img = Image.open(path_image_input + "/" + image)
         print("DBSCAN")
         dataframe_coord = DBSCAN_clustering(img, epsilon, min_point)
+        fig = plt.figure(figsize=(8, 10))
+        ax = fig.add_subplot(111)
+        scatter_row = ax.scatter(
+            dataframe_coord["Y"].tolist(),
+            dataframe_coord["X"].tolist(),
+            c=dataframe_coord["label"].tolist(),
+            s=0.5,
+            cmap="Paired",
+        )
+        plt.show()
+        break
         print("Plant_detection")
-        JSON_final = Plants_Detection(dataframe_coord, e, max_iter, m_p, threshold)
+        """JSON_final = Plants_Detection(dataframe_coord, e, max_iter, m_p, threshold)
         print("write_json")
         gIO.WriteJson(
             path_JSON_output,
             "Predicting_initial_plant_" + image.split(".")[0],
             JSON_final,
-        )
+        )"""
 
     return
 
@@ -341,8 +353,8 @@ if __name__ == "__main__":
     Total_Plant_Position(
         path_image_input="/home/fort/Documents/APT 3A/Cours/Ekinocs/Output_General/Output/Session_1/Otsu",
         path_JSON_output=ROOT_PATH,
-        epsilon=70,
-        min_point=100,
+        epsilon=7,
+        min_point=6,
         e=0.005,
         max_iter=2000,
         m_p=2,
