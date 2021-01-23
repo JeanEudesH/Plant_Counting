@@ -28,6 +28,7 @@ from sklearn.cluster import DBSCAN
 import pandas as pd
 import sys
 import os
+from os import listdir
 
 import matplotlib.pyplot as plt
 
@@ -36,8 +37,8 @@ import matplotlib.pyplot as plt
 import skfuzzy as fuzz
 
 # If import does work, use the following lines
-#os.chdir("../Utility/")
-#import general_IO as gIO
+# os.chdir("../Utility/")
+# import general_IO as gIO
 
 # else
 if "/home/fort/Documents/APT 3A/Cours/Ekinocs/Plant_Counting" not in sys.path:
@@ -290,19 +291,6 @@ def Fuzzy_Clustering(row_pixels, estimate_nb_clusters, e, m_p, max_i):
     return position_cluster_center, final_nb_clusters
 
 
-def Total_Plant_Position(
-    path_image_input, path_JSON_output, epsilon, min_point, e, max_iter, m_p, threshold
-):
-    # Open the binarized image
-    # path of the OTSU image
-    img = Image.open(path_image_input)
-    dataframe_coord = DBSCAN_clustering(img, epsilon, min_point)
-    JSON_final = Plants_Detection(dataframe_coord, e, max_iter, m_p, threshold)
-    gIO.WriteJson(path_JSON_output, "Predicting_initial_plant", JSON_final)
-
-    return
-
-
 def Plot(mat_coord, centresCoordinates):
     fig = plt.figure(figsize=(8, 10))
     ax = fig.add_subplot(111)
@@ -317,18 +305,41 @@ def Plot(mat_coord, centresCoordinates):
         centresCoordinates[1], centresCoordinates[0], s=10, marker="+", color="k"
     )
     # plt.show()
-    fig.savefig("/home/fort/Bureau/lineaire_cluster.png")
+    # fig.savefig("/home/fort/Bureau/lineaire_cluster.png")
     return
 
 
 # os.walk()
+def Total_Plant_Position(
+    path_image_input, path_JSON_output, epsilon, min_point, e, max_iter, m_p, threshold
+):
+    # Open the binarized image
+    # path of the OTSU image
+
+    list_image = listdir(path_image_input)
+    print(list_image)
+    for image in list_image:
+        img = Image.open(path_image_input + "/" + image)
+        print("DBSCAN")
+        dataframe_coord = DBSCAN_clustering(img, epsilon, min_point)
+        print("Plant_detection")
+        JSON_final = Plants_Detection(dataframe_coord, e, max_iter, m_p, threshold)
+        print("write_json")
+        gIO.WriteJson(
+            path_JSON_output,
+            "Predicting_initial_plant_" + image.split(".")[0],
+            JSON_final,
+        )
+
+    return
+
 
 if __name__ == "__main__":
     ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
     # myfile = os.path.basename(__file__)
     # myfile_path = os.path.join(ROOT_PATH, myfile)
     Total_Plant_Position(
-        path_image_input=ROOT_PATH + "/OTSU_screen_1920x1080_11_25.jpg",
+        path_image_input="/home/fort/Documents/APT 3A/Cours/Ekinocs/Output_General/Output/Session_1/Otsu",
         path_JSON_output=ROOT_PATH,
         epsilon=70,
         min_point=100,
