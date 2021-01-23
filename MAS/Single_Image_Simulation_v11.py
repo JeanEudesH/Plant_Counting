@@ -110,7 +110,9 @@ print(names_input_PLANT_FT_PRED[_image_index])
 # Simulation Definition
 # =============================================================================
 print("Simulation Definition:")
-MAS_Simulation = MAS.Simulation_MAS(data_input_raw[_image_index],
+recon_policy = input("Please enter the type of model to be implemented (global or local)")
+MAS_Simulation = MAS.Simulation_MAS(recon_policy,
+                                    data_input_raw[_image_index],
                                     data_input_PLANT_FT_PRED[_image_index],
                                     data_input_OTSU[_image_index],
                                     RAs_group_size, RAs_group_steps,

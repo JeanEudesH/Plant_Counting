@@ -84,11 +84,14 @@ def All_Simulations(_path_input_rgb_img, _path_PreTreatment_and_FA,
     
     meta_simu_name = "Session_"+str(_session_number)
     
+    recon_policy = input("Please enter the type of model to be implemented (global or local)")
+    
     # =============================================================================
     # Meta Simulation Definition
     # =============================================================================
         
-    MetaSimulation = MAS.MetaSimulation(meta_simu_name,
+    MetaSimulation = MAS.MetaSimulation(recon_policy,
+                                        meta_simu_name,
                                         path_output,
                                         names_input_raw,
                                         data_input_raw,

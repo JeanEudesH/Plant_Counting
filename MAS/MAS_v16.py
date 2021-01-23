@@ -319,7 +319,7 @@ class Row_Agent(object):
         be coherent at the field level.
     
     """
-    def __init__(self, _plant_FT_pred_in_crop_row, _OTSU_img_array,
+    def __init__(self, recon_policy, _plant_FT_pred_in_crop_row, _OTSU_img_array,
                  _group_size = 50, _group_step = 5,
                  _field_offset = [0,0]):
         
@@ -336,6 +336,8 @@ class Row_Agent(object):
         self.group_step = _group_step
         
         self.field_offset = _field_offset
+        
+        self.recon_policy = recon_policy
         
         self.RALs = []
         
@@ -580,7 +582,7 @@ class Row_Agent(object):
 #             print([_RAL.x, _RAL.y], end=", ")
 # =============================================================================
     
-    def Get_RALs_mean_points(self):
+    def Get_RALs_mean_points(self):    #RAL = agent plante
         for _RAL in self.RALs:
 # =============================================================================
 #             print("Getting mean active RAs point for RAL", [_RAL.x, _RAL.y])
@@ -598,6 +600,40 @@ class Row_Agent(object):
 # =============================================================================
         
         self.Row_Mean_X = int(np.mean(RALs_X))
+        
+    def Neighbor_Weighted_Mean_X(self, i):
+        """
+        
+
+        Parameters
+        ----------
+        i : rank of the Plant Agent of interest within the row
+
+        Returns
+        -------
+        Weighted mean position on the X axis of the 20 nearest neighbors 
+
+        """
+        
+        poids = 10
+        j = 1
+        somme_ponderee_x = self.RALs[i][0]*poids
+        somme_poids = poids
+        
+        while poids > 0:
+            
+            if i-j >= 0:
+                somme_ponderee_x += self.RALs[i-j][0]*poids
+                somme_poids += poids
+                
+            if i+j < len(self.RALs):
+                somme_ponderee_x += self.RALs[i-j][0]*poids
+                somme_poids += poids
+            
+            j+=1
+            poids += -1
+        
+        return(somme_ponderee_x/somme_poids)
         
     def Get_Inter_Plant_Diffs(self):
         self.InterPlant_Diffs = []
@@ -627,6 +663,12 @@ class Row_Agent(object):
         return (up_counter/len(self.RALs) > 0.5)
     
     def ORDER_RALs_to_Correct_X(self):
+        if self.recon_policy == "global":
+            self.STRAIGHT_LINE_correction()
+        elif self.recon_policy == "local":
+            self.CURB_correction
+        
+    def STRAIGHT_LINE_correction(self):
         
         if (len(self.RALs)>0):
             self.Get_Row_Mean_X()
@@ -640,6 +682,11 @@ class Row_Agent(object):
             else:
                 if (_RAL.active_RA_Point[0] < self.Row_Mean_X):
                     _RAL.active_RA_Point[0] = self.Row_Mean_X
+                    
+    def CURB_correction(self):
+        for i in range(len(self.RALs)):
+            _RAL = self.RALs[i]
+            _RAL.active_RA_Point[0] = self.Neighbor_Weighted_Mean_X(i)
     
     def Get_Mean_Majority_Y_movement(self, _direction):
         """
@@ -748,7 +795,7 @@ class Agents_Director(object):
         be coherent at the field level.
     
     """
-    def __init__(self, _plant_FT_pred_per_crop_rows, _OTSU_img_array,
+    def __init__(self, _plant_FT_pred_per_crop_rows, _OTSU_img_array, recon_policy,
                  _group_size = 50, _group_step = 5,
                  _RALs_fuse_factor = 0.5, _RALs_fill_factor = 1.5,
                  _field_offset = [0,0]):
@@ -770,6 +817,8 @@ class Agents_Director(object):
         
         self.field_offset = _field_offset
         
+        self.recon_policy = recon_policy
+        
         self.RowAs = []
         
 # =============================================================================
@@ -788,7 +837,7 @@ class Agents_Director(object):
             if (nb_RALs > 0):
                 self.RowAs_start_x += [_crop_row[0][0]]
                 self.RowAs_start_nbRALs += [nb_RALs]
-                RowA = Row_Agent(_crop_row, self.OTSU_img_array,
+                RowA = Row_Agent(self.recon_policy, _crop_row, self.OTSU_img_array,
                                  self.group_size, self.group_step,
                                  self.field_offset)
                 
@@ -969,7 +1018,7 @@ class Agents_Director(object):
                 new_plant_FT = self.RowAs[i].plant_FT_pred_in_crop_row + self.RowAs[i].plant_FT_pred_in_crop_row
                 new_plant_FT.sort()
             
-                RowA = Row_Agent(new_plant_FT,
+                RowA = Row_Agent(self.recon_policy, new_plant_FT,
                                  self.OTSU_img_array,
                                  self.group_size,
                                  self.group_step,
@@ -1031,7 +1080,7 @@ class Simulation_MAS(object):
         the csv files. So the positions are still in the string format.
     """
     
-    def __init__(self, _RAW_img_array,
+    def __init__(self, recon_policy, _RAW_img_array,
                  _plant_FT_pred_per_crop_rows, _OTSU_img_array, 
                  _group_size = 50, _group_step = 5,
                  _RALs_fuse_factor = 0.5, _RALs_fill_factor = 1.5,
@@ -1061,6 +1110,8 @@ class Simulation_MAS(object):
             
         self.field_offset = _field_offset
         
+        self.recon_policy = recon_policy
+        
         self.simu_steps_times = []
         self.simu_steps_time_detailed=[]
         self.RALs_recorded_count = []
@@ -1075,6 +1126,7 @@ class Simulation_MAS(object):
     def Initialize_AD(self):
         self.AD = Agents_Director(self.plant_FT_pred_par_crop_rows,
                              self.OTSU_img_array,
+                             self.recon_policy,
                              self.group_size, self.group_step,
                              self.RALs_fuse_factor, self.RALs_fill_factor,
                              self.field_offset)
@@ -1563,6 +1615,7 @@ class MetaSimulation(object):
     """
     
     def __init__(self,
+                 recon_policy,
                  _simu_name,
                  _path_output,
                  _names_input_raw,
@@ -1574,6 +1627,8 @@ class MetaSimulation(object):
                  _simulation_step = 10,
                  _data_adjusted_position_files = None,
                  _field_shape = (2,2)):
+        
+        self.recon_policy = recon_policy
         
         self.simu_name = _simu_name
         
@@ -1665,12 +1720,14 @@ class MetaSimulation(object):
         print("all offsets=", self.all_offsets)       
     
     def Launch_Meta_Simu_Labels(self,
+                                recon_policy,
                              _coerced_X = False,
                              _coerced_Y = False,
                              _extensive_Init = False,
                              _new_end_crit = False,
                              _analyse_and_remove_Rows = False,
-                             _rows_edges_exploration = False):
+                             _rows_edges_exploration = False
+                             ):
 
         """
         Launch an MAS simulation for each images. The raw images are labelled.
@@ -1696,7 +1753,7 @@ class MetaSimulation(object):
             print("Simulation Definition for image {0}/{1}".format(i+1, self.nb_images) )
             
             try:
-                MAS_Simulation = Simulation_MAS(
+                MAS_Simulation = Simulation_MAS(self.recon_policy,
                                         self.data_input_raw[i],
                                         self.data_input_PLANT_FT_PRED[i],
                                         self.data_input_OTSU[i],
@@ -1753,7 +1810,7 @@ class MetaSimulation(object):
 
         """
         Launch an MAS simulation for each images. The raw images are NOT labelled.
-,        """
+        """
         
         self.log = []
         
@@ -1777,7 +1834,7 @@ class MetaSimulation(object):
             print("Simulation Definition for image {0}/{1}".format(i+1, self.nb_images))
             
             try:
-                MAS_Simulation = Simulation_MAS(
+                MAS_Simulation = Simulation_MAS( self.recon_policy,
                                         self.data_input_raw[i],
                                         self.data_input_PLANT_FT_PRED[i],
                                         self.data_input_OTSU[i],
