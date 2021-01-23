@@ -1883,7 +1883,7 @@ class MetaSimulation(object):
         _extensive_Init=False,
         _new_end_crit=False,
         _analyse_and_remove_Rows=False,
-        _rows_edges_exploration=False,
+        _rows_edges_exploration=True,
     ):
 
         """

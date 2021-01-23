@@ -36,15 +36,15 @@ import matplotlib.pyplot as plt
 import skfuzzy as fuzz
 
 # If import does work, use the following lines
-os.chdir("../Utility/")
-import general_IO as gIO
+#os.chdir("../Utility/")
+#import general_IO as gIO
 
 # else
-# if "/home/fort/Documents/APT 3A/Cours/Ekinocs/Plant_Counting" not in sys.path:
-#     sys.path.append("/home/fort/Documents/APT 3A/Cours/Ekinocs/Plant_Counting")
+if "/home/fort/Documents/APT 3A/Cours/Ekinocs/Plant_Counting" not in sys.path:
+    sys.path.append("/home/fort/Documents/APT 3A/Cours/Ekinocs/Plant_Counting")
 
-# os.chdir("/home/fort/Documents/APT 3A/Cours/Ekinocs/Plant_Counting/Utility")
-# import Utility.general_IO as gIO
+os.chdir("/home/fort/Documents/APT 3A/Cours/Ekinocs/Plant_Counting/Utility")
+import Utility.general_IO as gIO
 
 # To get automatically the name and the path of this script.
 # Possible to automatically and apply the script to all pictures in the same
