@@ -52,11 +52,11 @@ def CompleteProcess(_path_input_rgb_img, _path_output_root,
                     _RALs_fuse_factor, _RALs_fill_factor)
 
 if (__name__=="__main__"):
-    CompleteProcess(_path_input_rgb_img="D:/Projet/Unity/HDRP_PGoCF/Datasets/X_Bell5Keys_Z_InversedBell5Keys/virtual_reality",
-                    _path_output_root="D:/Projet/Unity/HDRP_PGoCF/Datasets/X_Bell5Keys_Z_InversedBell5Keys/Ouput_General",
+    CompleteProcess(_path_input_rgb_img="D:/Documents/IODAA/Fil Rouge/Resultats/2021_1_17_15_2_33/virtual_reality",
+                    _path_output_root="D:/Documents/IODAA/Fil Rouge/Resultats/2021_1_17_15_2_33_analysis",
                     
                      _labelled_images = True,
-                     _path_position_files="D:/Projet/Unity/HDRP_PGoCF/Datasets/X_Bell5Keys_Z_InversedBell5Keys/Position_Files",
+                     _path_position_files="D:/Documents/IODAA/Fil Rouge/Resultats/2021_1_17_15_2_33/Position_Files",
                      _rows_real_angle=80,
 
                     
@@ -67,10 +67,11 @@ if (__name__=="__main__"):
                     
                     _bin_div_X=2, _bin_div_Y=4,
                     
-                    _RAs_group_size=10, _RAs_group_steps=2, _Simulation_steps=50,
+                    _RAs_group_size=15, _RAs_group_steps=2, _Simulation_steps=50,
                     # nombre de PXA sous les ordres d'agent plante
-                    # RAs_group_size = 2 * cote du carre => 
+                    # RAs_group_size * 2 = cote du carre => 
                     # passer a 25 augmente la taille du PA.
 
-                    _RALs_fuse_factor=0.5, _RALs_fill_factor=1.5)
+                    # see MAS.MetaSimulation
+                    _RALs_fuse_factor=0.7, _RALs_fill_factor=1.5)
     

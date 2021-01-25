@@ -34,8 +34,10 @@ import json
 from sklearn.cluster import KMeans
 from scipy.stats import ttest_ind
 
-os.chdir("../Utility")
-import general_IO as gIO
+# os.chdir("../Utility")
+# import general_IO as gIO
+
+import Utility.general_IO as gIO
 
 # =============================================================================
 # Utility Functions
@@ -1247,7 +1249,7 @@ class Simulation_MAS(object):
                                       _coerced_X = False,
                                       _coerced_Y = False,
                                       _analyse_and_remove_Rows = False,
-                                      _edge_exploration = False):
+                                      _edge_exploration = True):
         
         print("Starting MAS simulation with new end Criterion:")
         self.steps = _steps
@@ -1406,8 +1408,7 @@ class Simulation_MAS(object):
         self.real_plant_keys = []
         for adj_pos_string in self.ADJUSTED_img_plant_positions:
             [_rx, _ry, x, y] = adj_pos_string.split(",")
-            self.corrected_adjusted_plant_positions += [[int(x),
-                                                        self.OTSU_img_array.shape[0]-int(y)]]
+            self.corrected_adjusted_plant_positions += [[int(x), int(y)]]
             self.real_plant_keys += [_rx + "_" + _ry]
         
     def Count_RALs(self):
@@ -1532,6 +1533,7 @@ class Simulation_MAS(object):
         """
         if (_ax == None):
             fig, ax = plt.subplots(1)
+            ax.set_title("Adjusted positions of the plants")
             ax.imshow(self.OTSU_img_array)
         else:
             ax = _ax
@@ -1547,13 +1549,14 @@ class Simulation_MAS(object):
     def Show_Adjusted_And_RALs_positions(self,
                                         _recorded_position_indeces = [-1],
                                         _colors_recorded = ['g'],
-                                        _color_adjusted = "b",
+                                        _color_adjusted = "r",
                                         _save=False,
                                         _save_path=""):
         
         fig = plt.figure(figsize=(5,5),dpi=300)
         ax = fig.add_subplot(111)
         ax.imshow(self.OTSU_img_array)
+        ax.set_title("Adjusted and RALs positions")
         
         self.Show_RALs_Position(_ax = ax,
                                 _recorded_position_indeces = _recorded_position_indeces,
@@ -1575,12 +1578,14 @@ class Simulation_MAS(object):
             for _RAL in _RowsA.RALs:
                 ax.plot([i for i in range (len(_RAL.recorded_Decision_Score))],
                          _RAL.recorded_Decision_Score, marker = "o")
+        ax.set_title("Show RALs decision scores")
     
     def Show_nb_RALs(self):
         fig = plt.figure()
         ax = fig.add_subplot(111)
         ax.plot([i for i in range (len(self.RALs_recorded_count))],
                          self.RALs_recorded_count, marker = "o")
+        ax.set_title("Show number of RALs")
 
 class MetaSimulation(object):
     """
@@ -1696,6 +1701,7 @@ class MetaSimulation(object):
         
         for _data in [self.data_input_OTSU,
                       self.data_input_PLANT_FT_PRED]:
+            print(len(_data), self.nb_images)
             assert len(_data) == self.nb_images
     
         if (self.data_adjusted_position_files != None):
@@ -1750,7 +1756,7 @@ class MetaSimulation(object):
                              _extensive_Init = False,
                              _new_end_crit = False,
                              _analyse_and_remove_Rows = False,
-                             _rows_edges_exploration = False):
+                             _rows_edges_exploration = True):
 
         """
         Launch an MAS simulation for each images. The raw images are labelled.

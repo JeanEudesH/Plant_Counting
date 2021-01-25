@@ -131,9 +131,8 @@ def All_Simulations(_path_input_rgb_img, _path_PreTreatment_and_FA,
     
 if (__name__=="__main__"):
 
-    All_Simulations(_path_input_rgb_img="D:/Projet/Unity/HDRP_PGoCF/Datasets/X_Bell5Keys_Z_InversedBell5Keys/virtual_reality",
-                    _path_PreTreatment_and_FA="D:/Projet/Unity/HDRP_PGoCF/Datasets/X_Bell5Keys_Z_InversedBell5Keys/Ouput_General",
-                    _labelled_images = True,
+    All_Simulations(_path_input_rgb_img="D:/Documents/IODAA/Fil Rouge/Resultats/2021_1_9_18_37_46/virtual_reality",
+                    _path_PreTreatment_and_FA="D:/Documents/IODAA/Fil Rouge/Resultats/2021_1_9_18_37_46_analysis",
                     _session_number=1,
                     _RAs_group_size=10, _RAs_group_steps=2, _Simulation_steps=50,
                     _RALs_fuse_factor=0.5, _RALs_fill_factor=1.5)

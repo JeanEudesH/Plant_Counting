@@ -55,9 +55,9 @@ import Utility.general_IO as gIO
 
 import Segmentation_Otsu.data as data
 
-import BSAS.bsas
+import BSAS.bsas as bsas
 
-import Crops_Rows_Angle_Detection.CRAD
+import Crops_Rows_Angle_Detection.CRAD as CRAD
 
 def All_Pre_Treatment(_path_input_rgb_img, _path_output_root,
                       _path_position_files = None, _rows_real_angle = 0,
@@ -134,7 +134,7 @@ def All_Pre_Treatment(_path_input_rgb_img, _path_output_root,
             print()
             print ("Angle Detection process for image", list_images[i], "{0}/{1}".format(i+1, nb_images))
             
-            _AD = Crops_Rows_Angle_Detection.CRAD.CRAD(
+            _AD = CRAD.CRAD(
                            list_images_id[i],
                            path_output_Otsu,
                            path_output_Otsu_R,
@@ -151,7 +151,7 @@ def All_Pre_Treatment(_path_input_rgb_img, _path_output_root,
                 _AD.plot_auto_angle_score(_save = True)
         
         
-        AD_voting = Crops_Rows_Angle_Detection.CRAD.CRAD_Voting(AD_object_list)
+        AD_voting = CRAD.CRAD_Voting(AD_object_list)
         AD_voting.Get_Best_Angle()
         print("The best angle seems to be:", AD_voting.best_angle_min)
         AD_voting.Correct_AD_based_on_best_angle()
@@ -166,7 +166,7 @@ def All_Pre_Treatment(_path_input_rgb_img, _path_output_root,
             for k in range (2):
                 print ("BSAS process in direction", k,
                        "for image", list_images[i], "{0}/{1}".format(i+1, nb_images))
-                bsp1 = BSAS.bsas.BSAS_Process(path_output_Otsu_R,
+                bsp1 = bsas.BSAS_Process(path_output_Otsu_R,
                                          "OTSU_R_"+list_images_id[i]+".jpg",
                                          path_output_BSAS_txt_R[k])
                 bsp1.full_process(k, False, _bsas_threshold)
