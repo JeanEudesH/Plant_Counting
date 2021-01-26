@@ -1565,7 +1565,7 @@ class Simulation_MAS(object):
                                      _color = _color_adjusted)
         
         if (_save):
-            fig.savefig(_save_path+"/Otsu_Adjusted_and_RALs_positions.jpg")
+            fig.savefig(_save_path+".svg", format="svg")
     
     def Show_RALs_Deicision_Scores(self):
         """
@@ -1949,6 +1949,8 @@ class MetaSimulation(object):
         Initialize the keys of the dictionnary self.whole_field_counted_plants
         """
         for i in range (self.nb_images):
+            print(self.data_adjusted_position_files)
+            print(len(self.data_adjusted_position_files))
             for adj_pos_string in self.data_adjusted_position_files[i]:
                 [_rx, _ry, x, y] = adj_pos_string.split(",")
                 self.whole_field_counted_plants[_rx + "_" + _ry]=0
