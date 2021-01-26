@@ -10,8 +10,7 @@ import json
 import numpy as np
 from PIL import Image
 
-import MAS_v16 as MAS
-
+import MAS.MAS_v16 as MAS
 
 # =============================================================================
 # Utility Functions Definition
@@ -52,16 +51,10 @@ path_input_root = "C:/Users/eliot/Documents/Scolarité/AgroParisTech/3A/Stage_To
 # path_input_PLANT_FT_PRED = path_input_root+"/Travaux_Fil_Rouge/code_tournesol_4/Output_FT/Session_{0}/Plant_FT_Predictions".format(session_number)
 # =============================================================================
 
-path_input_raw = path_input_root+"/Unity/Screenshots/MetaCapture_Session_{0}".format(session_number)+\
-                "/"+unity_date+"/virtual_reality"
-path_input_adjusted_position_files = path_input_root+"/Travaux_Fil_Rouge/code_tournesol_4/Output_FT/MetaCapture_Session_{0}".format(session_number)+\
-                                    "/"+unity_date+\
-                                    "/Adjusted_Position_Files"
-path_input_OTSU = path_input_root+"/Travaux_Fil_Rouge/code_tournesol_4/Output/MetaCapture_Session_{0}".format(session_number)+\
-                "/"+unity_date+"/Otsu_R"
-path_input_PLANT_FT_PRED = path_input_root+"/Travaux_Fil_Rouge/code_tournesol_4/Output_FT/MetaCapture_Session_{0}".format(session_number)+\
-                            "/"+unity_date + \
-                            "/Plant_FT_Predictions"
+path_input_raw = "D:\Documents\IODAA\Fil Rouge\Resultats\dIP_vs_dIR_linear_fixed_density\densite=5\0.22_0.88\virtual_reality"
+path_input_adjusted_position_files = "D:\Documents\IODAA\Fil Rouge\Resultats\dIP_vs_dIR_analysis\densite=5\0.22_0.88\Output\Adjusted_Position_Files"
+path_input_OTSU = "D:\Documents\IODAA\Fil Rouge\Resultats\dIP_vs_dIR_analysis\densite=5\0.22_0.88\Output\Adjusted_Position_Files"
+path_input_PLANT_FT_PRED = "D:\Documents\IODAA\Fil Rouge\Resultats\dIP_vs_dIR_analysis\densite=5\0.22_0.88\Output_FA\Plant_FT_Predictions"
 
 names_input_raw = os.listdir(path_input_raw)
 names_input_adjusted_position_files = os.listdir(path_input_adjusted_position_files)
@@ -73,7 +66,7 @@ names_input_PLANT_FT_PRED = os.listdir(path_input_PLANT_FT_PRED)
 # =============================================================================
 print("Data Collection...", end = " ")
 
-subset_size = 4
+subset_size = 1
 
 data_input_raw = import_data(path_input_raw,
                              names_input_raw[:subset_size],
@@ -124,7 +117,7 @@ MAS_Simulation.Perform_Simulation_newEndCrit(Simulation_steps,
                                              _coerced_X=True,
                                              _coerced_Y=False,
                                              _analyse_and_remove_Rows=True,
-                                             _edge_exploration = False)
+                                             _edge_exploration = True)
 # =============================================================================
 # MAS_Simulation.Perform_Simulation(Simulation_steps,
 #                                              _coerced_X=True,

@@ -50,18 +50,21 @@ variables the user can change:
 
 import os
 
-os.chdir("../Utility")
-import general_IO as gIO
+# os.chdir("../Utility")
+# import general_IO as gIO
+import Utility.general_IO as gIO
 
-os.chdir("../Segmentation_Otsu")
-import data
+# os.chdir("../Segmentation_Otsu")
+# import data
+import Segmentation_Otsu.data as data
 
-os.chdir("../BSAS")
-import bsas
+# os.chdir("../BSAS")
+# import bsas
+import BSAS.bsas as bsas
 
-os.chdir("../Crops_Rows_Angle_Detection")
-import CRAD
-
+# os.chdir("../Crops_Rows_Angle_Detection")
+# import CRAD
+import Crops_Rows_Angle_Detection.CRAD as CRAD
 
 def All_Pre_Treatment(_path_input_rgb_img, _path_output_root,
                       _make_unique_folder_per_session=True, _session=1,

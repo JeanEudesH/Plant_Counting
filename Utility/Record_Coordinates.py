@@ -21,8 +21,7 @@ from PIL import Image
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
-import general_IO as gIO
-
+import Utility.general_IO as gIO
 
 # =============================================================================
 # Utility Functions Definition

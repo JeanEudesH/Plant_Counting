@@ -5,15 +5,23 @@ Created on Mon Oct 26 15:55:35 2020
 @author: eliot
 """
 import os
+import sys
 
-os.chdir("../Pre_Treatments")
-import Process_image_for_FT as PiFT
+# os.chdir("../Pre_Treatments")
+# import Process_image_for_FT as PiFT
 
-os.chdir("../Fourier")
-import FrequencyAnalysis as FA
+# os.chdir("../Fourier")
+# import FrequencyAnalysis as FA
 
-os.chdir("../MAS")
-import Multi_Images_Simulation_v12bis as MIS
+# os.chdir("../MAS")
+# import Multi_Images_Simulation_v12bis as MIS
+
+if not "D:/Documents/IODAA/Fil Rouge/Plant_Counting" in sys.path:
+    sys.path.append("D:/Documents/IODAA/Fil Rouge/Plant_Counting")
+
+import Pre_Treatments.Process_image_for_FT as PiFT
+import Fourier.FrequencyAnalysis as FA
+import MAS.Multi_Images_Simulation_v12bis as MIS
 
 def CompleteProcess(_path_input_rgb_img, _path_output_root,
                     
@@ -46,9 +54,8 @@ def CompleteProcess(_path_input_rgb_img, _path_output_root,
                     _RALs_fuse_factor, _RALs_fill_factor)
 
 if (__name__=="__main__"):
-    CompleteProcess(_path_input_rgb_img="/home/baptiste/Documents/IODAA/fil rouge/PFR_images_UNITY/2021_1_9_18_37_46/virtual_reality",
-                    _path_output_root="/home/baptiste/Documents/IODAA/fil rouge/output_comptage",
-                    
+    CompleteProcess(_path_input_rgb_img="D:/Documents/IODAA/Fil Rouge/Resultats/dIP_vs_dIR_linear_fixed_density/densite=5/0.22_0.88/virtual_reality",
+                    _path_output_root="D:/Documents/IODAA/Fil Rouge/Resultats/dIP_vs_dIR_analysis/densite=5/0.22_0.88",
                     _make_unique_folder_per_session=False, _session=1,
                     _do_Otsu=True, _do_AD=True,
                     _save_AD_score_images=False, _save_BSAS_images=False,

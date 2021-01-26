@@ -29,8 +29,10 @@ import json
 from sklearn.cluster import KMeans
 from scipy.stats import ttest_ind
 
-os.chdir("../Utility")
-import general_IO as gIO
+# os.chdir("../Utility")
+# import general_IO as gIO
+
+import Utility.general_IO as gIO
 
 # =============================================================================
 # Utility Functions
@@ -666,7 +668,7 @@ class Row_Agent(object):
         if self.recon_policy == "global":
             self.STRAIGHT_LINE_correction()
         elif self.recon_policy == "local":
-            self.CURB_correction
+            self.CURB_correction()
         
     def STRAIGHT_LINE_correction(self):
         
@@ -1671,6 +1673,7 @@ class MetaSimulation(object):
         
         for _data in [self.data_input_OTSU,
                       self.data_input_PLANT_FT_PRED]:
+            print("Checking data_input_OTSU and input_FT_Pred")
             assert len(_data) == self.nb_images
     
         if (self.data_adjusted_position_files != None):

@@ -10,11 +10,11 @@ import json
 import numpy as np
 from PIL import Image
 
-import MAS_v16 as MAS
+import MAS.MAS_v16 as MAS
 
-os.chdir("../Utility")
-import general_IO as gIO
-
+# os.chdir("../Utility")
+# import general_IO as gIO
+import Utility.general_IO as gIO
 
 # =============================================================================
 # Utility Functions Definition
