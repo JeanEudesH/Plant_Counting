@@ -389,7 +389,7 @@ class Row_Agent(object):
     """
     def __init__(self, _plant_FT_pred_in_crop_row, _OTSU_img_array,
                  _group_size = 50, _group_step = 5,
-                 _field_offset = [0,0]):
+                 _field_offset = [0,0], recon_policy="global"):
         
 # =============================================================================
 #         print()
@@ -408,6 +408,8 @@ class Row_Agent(object):
         self.RALs = []
         
         self.extensive_init = False
+
+        self.recon_policy = recon_policy
         
 # =============================================================================
 #         print("Done")
@@ -695,12 +697,27 @@ class Row_Agent(object):
         return (up_counter/len(self.RALs) > 0.5)
     
     def ORDER_RALs_to_Correct_X(self):
+        """
+        self.recon_policy = "global", "local_weighted" or "local_threshold"
+        """
+        if self.recon_policy == "global":
+            self.Global_repositioning()
+        elif self.recon_policy.startswith("local"):
+            self.Local_repositioning()
+        else:
+            print("No implemented repositioning policy")
+
+
+    # Improve the repositoning by separating the (i) detection of which RAL has to be repostioned
+    # and (ii) The policy of the repositioning
+    def Global_repositioning(self):
+        majority_left = False
         
         if (len(self.RALs)>0):
             self.Get_Row_Mean_X()
             
             majority_left = self.Is_RALs_majority_on_Left_to_Row_Mean()
-        
+
         for _RAL in self.RALs:
             if (majority_left):
                 if (_RAL.active_RA_Point[0] > self.Row_Mean_X):
@@ -708,7 +725,66 @@ class Row_Agent(object):
             else:
                 if (_RAL.active_RA_Point[0] < self.Row_Mean_X):
                     _RAL.active_RA_Point[0] = self.Row_Mean_X
+
+
+    def Local_repositioning(self):
+        """
+        Local repositioning policy for agents. Several local policies can be implemented
+        """
+        if self.recon_policy == "local_weighted":
+            init_weight = 10
+            n_neighbors = 5
+            self.Neighbor_Weighted_Mean_X(init_weight, n_neighbors)
+        elif self.recon_policy == "local_threshold":
+            n_neighbors = 5
+            self.Neighbor_Threshold_Mean_X(n_neighbors)
     
+
+    def Neighbor_Weighted_Mean_X(self, init_weight, n_neighbors=5):
+        """
+        Parameters
+        ----------
+        init_weight : maximum weight to take into account
+        n_neighbours : number of neighbours to take into account on each side
+        """
+        assert (init_weight > 0)
+        poids = init_weight
+        j = 1
+
+        for i, _RAL in enumerate(self.RALs):
+            somme_ponderee_x = self.RALs[i][0] * poids
+            somme_poids = poids
+        
+            while poids > 0:
+                
+                if i-j >= 0:
+                    somme_ponderee_x += self.RALs[i-j][0]*poids
+                    somme_poids += poids
+                    
+                if i+j < len(self.RALs):
+                    somme_ponderee_x += self.RALs[i+j][0]*poids
+                    somme_poids += poids
+                
+                j+=1
+                poids -= poids / n_neighbors
+
+            self.RALs[i][0] = somme_ponderee_x / somme_poids
+
+    def Neighbor_Threshold_Mean_X(self, n_neighbors):
+        """
+        Repositioning each RAL by taking the mean abscissis of its n_neighbors closest neighbors
+        giving the same weight to each neighbor (threshold policy).
+        Parameters
+        ----------
+        n_neighbors : number of neighbours to take into account on each side
+        """
+        nb_RALs = len(self.RALs)
+        for i, _RAL in enumerate(self.RALs):
+            min_idx, max_idx = max(i - n_neighbors, 0), min(i + n_neighbors, nb_RALs)
+
+            self.RALs[i][0] = np.mean(self.RALs[min_idx:max_idx])
+
+
     def Get_Mean_Majority_Y_movement(self, _direction):
         """
         computes the average of the movement of the RALs moving in the
@@ -825,7 +901,7 @@ class Agents_Director(object):
     def __init__(self, _plant_FT_pred_per_crop_rows, _OTSU_img_array,
                  _group_size = 50, _group_step = 5,
                  _RALs_fuse_factor = 0.5, _RALs_fill_factor = 1.5,
-                 _field_offset = [0,0]):
+                 _field_offset = [0,0], recon_policy="global"):
         
 # =============================================================================
 #         print()
@@ -845,6 +921,8 @@ class Agents_Director(object):
         self.field_offset = _field_offset
         
         self.RowAs = []
+
+        self.recon_policy = recon_policy
         
 # =============================================================================
 #         print("Done")
@@ -864,7 +942,7 @@ class Agents_Director(object):
                 self.RowAs_start_nbRALs += [nb_RALs]
                 RowA = Row_Agent(_crop_row, self.OTSU_img_array,
                                  self.group_size, self.group_step,
-                                 self.field_offset)
+                                 self.field_offset, recon_policy=self.recon_policy)
                 
                 self.RowAs += [RowA]
     
@@ -1114,7 +1192,8 @@ class Simulation_MAS(object):
                  _group_size = 50, _group_step = 5,
                  _RALs_fuse_factor = 0.5, _RALs_fill_factor = 1.5,
                  _field_offset = [0,0],
-                 _ADJUSTED_img_plant_positions = None):
+                 _ADJUSTED_img_plant_positions = None,
+                 recon_policy="global"):
         
         print("Initializing Simulation class...", end = " ")
         
@@ -1129,6 +1208,8 @@ class Simulation_MAS(object):
         
         self.RALs_fuse_factor = _RALs_fuse_factor
         self.RALs_fill_factor = _RALs_fill_factor
+
+        self.recon_policy = recon_policy
         
         self.ADJUSTED_img_plant_positions = _ADJUSTED_img_plant_positions
         if (self.ADJUSTED_img_plant_positions != None):
@@ -1155,14 +1236,14 @@ class Simulation_MAS(object):
                              self.OTSU_img_array,
                              self.group_size, self.group_step,
                              self.RALs_fuse_factor, self.RALs_fill_factor,
-                             self.field_offset)
+                             self.field_offset, recon_policy=self.recon_policy)
         self.AD.Initialize_RowAs()
     
     def Perform_Simulation(self, _steps = 10,
                            _coerced_X = False,
                            _coerced_Y = False,
                            _analyse_and_remove_Rows = False,
-                           _edge_exploration = False):
+                           _edge_exploration = True):
         
         print("Starting MAS simulation:")
         self.steps = _steps

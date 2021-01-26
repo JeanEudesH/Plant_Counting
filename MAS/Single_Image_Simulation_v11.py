@@ -49,6 +49,7 @@ unity_date = "dIP_vs_dIR"
     
 path_input_root = "D:/Documents/IODAA/Fil Rouge/Resultats"
 
+recon_policy = "local_threshold"
 densite = 5
 dIP_dIR = "0.22_0.88"
 
@@ -143,7 +144,7 @@ print("FN =", MAS_Simulation.FN)
 print("FP =", MAS_Simulation.FP)
 # =============================================================================
 
-MAS_Simulation.Show_Adjusted_And_RALs_positions(_save=True, _save_path=f"{path_input_root}/{unity_date}_analysis/densite={densite}/{dIP_dIR}/Images_MAS/global_repositioning")
+MAS_Simulation.Show_Adjusted_And_RALs_positions(_save=True, _save_path=f"{path_input_root}/{unity_date}_analysis/densite={densite}/{dIP_dIR}/Images_MAS/{recon_policy}_repositioning")
 MAS_Simulation.Show_nb_RALs()
 MAS_Simulation.Show_RALs_Deicision_Scores()
 
