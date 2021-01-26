@@ -701,45 +701,63 @@ class Row_Agent(object):
         self.recon_policy = "global", "local_weighted" or "local_threshold"
         """
         if self.recon_policy == "global":
-            self.Global_repositioning()
+            to_reposition = self.Get_RALs_to_reposition_global()
+            self.Global_repositioning(to_reposition)
         elif self.recon_policy.startswith("local"):
-            self.Local_repositioning()
+            n_neighbors = 5
+            to_reposition = self.Get_RALs_to_reposition_local(n_neighbors)
+            self.Local_repositioning(to_reposition, n_neighbors)
         else:
             print("No implemented repositioning policy")
 
+    def Get_RALs_to_reposition_global(self):
+        """
+        Returns the indices of the RAL to reposition in the global repositioning framework
+        """
+        to_reposition_idx = []
+        
+        # find where is majority
+        majority_left = False
+        if (len(self.RALs)>0):
+            self.Get_Row_Mean_X()
+            majority_left = self.Is_RALs_majority_on_Left_to_Row_Mean()
+
+        for i, _RAL in enumerate(self.RALs):
+            if majority_left:
+                if _RAL.active_RA_Point[0] > self.Row_Mean_X:
+                    to_reposition_idx.append(i)
+            else:
+                if (_RAL.active_RA_Point[0] < self.Row_Mean_X):
+                    to_reposition_idx.append(i)
+        
+        return to_reposition_idx
+
+    # not ended
+    def Get_RALs_to_reposition_local(self, n_neighbors):
+        local_mean = []
+        for i in range(len(self.RALs)):
+            s = []
+            min_idx, max_idx = max(0, i - n_neighbors), min(len(self.RALs), i + n_neighbors)
+            for j in range(min_idx, max_idx):
+                s.append(self.RALs[j][0])
+            local_mean.append(np.array(s).mean())
 
     # Improve the repositoning by separating the (i) detection of which RAL has to be repostioned
     # and (ii) The policy of the repositioning
-    def Global_repositioning(self):
-        majority_left = False
-        
-        if (len(self.RALs)>0):
-            self.Get_Row_Mean_X()
+    def Global_repositioning(self, to_reposition_indices):
+        for idx in to_reposition_indices:
+            self.RALs[idx].active_RA_Point[0] = self.Row_Mean_X
             
-            majority_left = self.Is_RALs_majority_on_Left_to_Row_Mean()
-
-        for _RAL in self.RALs:
-            if (majority_left):
-                if (_RAL.active_RA_Point[0] > self.Row_Mean_X):
-                    _RAL.active_RA_Point[0] = self.Row_Mean_X
-            else:
-                if (_RAL.active_RA_Point[0] < self.Row_Mean_X):
-                    _RAL.active_RA_Point[0] = self.Row_Mean_X
-
-
-    def Local_repositioning(self):
+    def Local_repositioning(self, n_neighbors):
         """
         Local repositioning policy for agents. Several local policies can be implemented
         """
         if self.recon_policy == "local_weighted":
             init_weight = 10
-            n_neighbors = 5
             self.Neighbor_Weighted_Mean_X(init_weight, n_neighbors)
         elif self.recon_policy == "local_threshold":
-            n_neighbors = 5
             self.Neighbor_Threshold_Mean_X(n_neighbors)
-    
-
+              
     def Neighbor_Weighted_Mean_X(self, init_weight, n_neighbors=5):
         """
         Parameters
@@ -783,7 +801,6 @@ class Row_Agent(object):
             min_idx, max_idx = max(i - n_neighbors, 0), min(i + n_neighbors, nb_RALs)
 
             self.RALs[i][0] = np.mean(self.RALs[min_idx:max_idx])
-
 
     def Get_Mean_Majority_Y_movement(self, _direction):
         """
