@@ -712,7 +712,7 @@ class Row_Agent(object):
 
     def Get_RALs_to_reposition_global(self):
         """
-        Returns the indices of the RAL to reposition in the global repositioning framework
+        Returns the indices of the RAL which should be repositionned in the global repositioning framework
         """
         to_reposition_idx = []
         
@@ -732,74 +732,94 @@ class Row_Agent(object):
         
         return to_reposition_idx
 
-    # not ended
     def Get_RALs_to_reposition_local(self, n_neighbors):
-        local_mean = []
+        """
+        Get the indices 
+        """
+        to_reposition_idx = []
+
         for i in range(len(self.RALs)):
             s = []
             min_idx, max_idx = max(0, i - n_neighbors), min(len(self.RALs), i + n_neighbors)
+            
+            # get the local X mean
             for j in range(min_idx, max_idx):
                 s.append(self.RALs[j][0])
-            local_mean.append(np.array(s).mean())
+            local_mean = np.mean(np.array(s))
+            
+            # if majority on left to local mean and RA to the right, reposition
+            left_counter = 0
+            for j in range(min_idx, max_idx):
+                if (self.RALs[j].active_RA_Point[0] < local_mean):
+                    left_counter += 1
+            majority_left = (left_counter/(max_idx - min_idx) > 0.5)
 
-    # Improve the repositoning by separating the (i) detection of which RAL has to be repostioned
-    # and (ii) The policy of the repositioning
+            if majority_left:
+                if self.RALs[i].active_RA_Point[0] > local_mean:
+                    to_reposition_idx.append(i)
+            else:
+                if (self.RALs[i].active_RA_Point[0] < local_mean):
+                    to_reposition_idx.append(i)
+
+        return to_reposition_idx
+
     def Global_repositioning(self, to_reposition_indices):
         for idx in to_reposition_indices:
             self.RALs[idx].active_RA_Point[0] = self.Row_Mean_X
             
-    def Local_repositioning(self, n_neighbors):
+    def Local_repositioning(self, to_reposition, n_neighbors):
         """
         Local repositioning policy for agents. Several local policies can be implemented
         """
         if self.recon_policy == "local_weighted":
             init_weight = 10
-            self.Neighbor_Weighted_Mean_X(init_weight, n_neighbors)
+            self.Neighbor_Weighted_Mean_X(to_reposition, init_weight, n_neighbors)
         elif self.recon_policy == "local_threshold":
-            self.Neighbor_Threshold_Mean_X(n_neighbors)
+            self.Neighbor_Threshold_Mean_X(to_reposition, n_neighbors)
               
-    def Neighbor_Weighted_Mean_X(self, init_weight, n_neighbors=5):
+    def Neighbor_Weighted_Mean_X(self, to_reposition, init_weight=10, n_neighbors=5):
         """
+        For each RAL that should be repositioned, compute the new position which is the
+        linearly weighted position of its n_neighbors closest neighbors and assigns it
+        to the RAL.
         Parameters
         ----------
+        to_reposition (list) : list of indices of the RAL that need to be repositioned
         init_weight : maximum weight to take into account
         n_neighbours : number of neighbours to take into account on each side
         """
         assert (init_weight > 0)
+        assert (n_neighbors > 0)
         poids = init_weight
         j = 1
 
-        for i, _RAL in enumerate(self.RALs):
-            somme_ponderee_x = self.RALs[i][0] * poids
-            somme_poids = poids
-        
-            while poids > 0:
-                
-                if i-j >= 0:
-                    somme_ponderee_x += self.RALs[i-j][0]*poids
-                    somme_poids += poids
-                    
-                if i+j < len(self.RALs):
-                    somme_ponderee_x += self.RALs[i+j][0]*poids
-                    somme_poids += poids
-                
-                j+=1
-                poids -= poids / n_neighbors
+        for i in to_reposition:
+            _RAL = self.RALs[i]
+            min_idx, max_idx = max(0, i - n_neighbors), min(len(self.RALs), i + n_neighbors)
+            neighborhood = self.RALs[min_idx:max_idx]
+            neighborhood_absc = np.array([r.active_RA_Point[0] for r in neighborhood])
+            weights = []  # extend to other weights functions (non linear functions)
+            for j in range(min_idx, max_idx):
+                if j < i:
+                    weights.append(init_weight / max(0.1, i - min_idx) * (j - min_idx))
+                else:
+                    weights.append(- init_weight / max(0.1, max_idx - i) * (j - max_idx))
+            weights = np.array(weights)
+            new_pos = np.mean(weights * neighborhood)
 
-            self.RALs[i][0] = somme_ponderee_x / somme_poids
+            self.RALs[i][0] = new_pos
 
-    def Neighbor_Threshold_Mean_X(self, n_neighbors):
+    def Neighbor_Threshold_Mean_X(self, to_reposition, n_neighbors):
         """
         Repositioning each RAL by taking the mean abscissis of its n_neighbors closest neighbors
         giving the same weight to each neighbor (threshold policy).
         Parameters
         ----------
+        to_reposition : list of indices of RALs that should be repositioned
         n_neighbors : number of neighbours to take into account on each side
         """
-        nb_RALs = len(self.RALs)
-        for i, _RAL in enumerate(self.RALs):
-            min_idx, max_idx = max(i - n_neighbors, 0), min(i + n_neighbors, nb_RALs)
-
+        for i in to_reposition:
+            min_idx, max_idx = max(i - n_neighbors, 0), min(i + n_neighbors, len(self.RALs))
             self.RALs[i][0] = np.mean(self.RALs[min_idx:max_idx])
 
     def Get_Mean_Majority_Y_movement(self, _direction):
