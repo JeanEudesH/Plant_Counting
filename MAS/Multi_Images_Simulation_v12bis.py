@@ -5,6 +5,9 @@ Created on Sat May 23 11:55:31 2020
 @author: eliot
 """
 
+if not "D:/Documents/IODAA/Fil Rouge/Plant_Counting" in sys.path:
+    sys.path.append("D:/Documents/IODAA/Fil Rouge/Plant_Counting")
+
 import os
 import json
 import numpy as np
@@ -13,8 +16,8 @@ from PIL import Image
 import MAS.MAS_v17 as MAS
 
 # os.chdir("../Utility")
+# import general_IO as gIO
 import Utility.general_IO as gIO
-
 
 # =============================================================================
 # Utility Functions Definition
@@ -92,11 +95,12 @@ def All_Simulations(_path_input_rgb_img, _path_PreTreatment_and_FA,
     
     meta_simu_name = "Session_"+str(_session_number)
     
+    # recon_policy = input("Please enter the type of model to be implemented (global or local)")
+    
     # =============================================================================
     # Meta Simulation Definition
     # =============================================================================
     MetaSimulation = MAS.MetaSimulation(meta_simu_name,
-
                                         path_output,
                                         names_input_raw,
                                         data_input_raw,

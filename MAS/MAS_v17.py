@@ -36,7 +36,6 @@ from scipy.stats import ttest_ind
 
 # os.chdir("../Utility")
 # import general_IO as gIO
-
 import Utility.general_IO as gIO
 
 # =============================================================================
@@ -1819,7 +1818,6 @@ class MetaSimulation(object):
         
         for _data in [self.data_input_OTSU,
                       self.data_input_PLANT_FT_PRED]:
-            print(len(_data), self.nb_images)
             assert len(_data) == self.nb_images
     
         if (self.data_adjusted_position_files != None):

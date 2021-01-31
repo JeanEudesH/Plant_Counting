@@ -11,10 +11,10 @@ import numpy as np
 from PIL import Image
 import sys
 
-if "D:/Documents/IODAA/Fil Rouge/Plant_Counting" not in sys.path:
+if not "D:/Documents/IODAA/Fil Rouge/Plant_Counting" in sys.path:
     sys.path.append("D:/Documents/IODAA/Fil Rouge/Plant_Counting")
 
-import MAS.MAS_v17 as MAS
+import MAS_v17 as MAS
 
 # =============================================================================
 # Utility Functions Definition
@@ -45,18 +45,22 @@ def get_file_lines(path_csv_file):
 #path of the images 
 ### TO BE CHANGED AS PER USER NEED
 session_number = 1
-unity_date = "dIP_vs_dIR"
+unity_date = "2021_1_31_11_48_4"
     
 path_input_root = "D:/Documents/IODAA/Fil Rouge/Resultats"
 
-recon_policy = "local_threshold"
+recon_policy = "global"
 densite = 5
 dIP_dIR = "0.22_0.88"
 
-path_input_raw = f"{path_input_root}/{unity_date}_linear_fixed_density/densite={densite}/{dIP_dIR}/virtual_reality"
-path_input_adjusted_position_files = f"{path_input_root}/{unity_date}_analysis/densite={densite}/{dIP_dIR}/Output/Session_1/Adjusted_Position_Files"
-path_input_OTSU = f"{path_input_root}/{unity_date}_analysis/densite={densite}/{dIP_dIR}/Output/Session_1/Otsu_R"
-path_input_PLANT_FT_PRED = f"{path_input_root}/{unity_date}_analysis/densite={densite}/{dIP_dIR}/Output_FA/Session_1/Plant_FT_Predictions"
+# path_input_raw = f"{path_input_root}/{unity_date}_linear_fixed_density/densite={densite}/{dIP_dIR}/virtual_reality"
+# path_input_adjusted_position_files = f"{path_input_root}/{unity_date}_analysis/densite={densite}/{dIP_dIR}/Output/Session_1/Adjusted_Position_Files"
+# path_input_OTSU = f"{path_input_root}/{unity_date}_analysis/densite={densite}/{dIP_dIR}/Output/Session_1/Otsu_R"
+# path_input_PLANT_FT_PRED = f"{path_input_root}/{unity_date}_analysis/densite={densite}/{dIP_dIR}/Output_FA/Session_1/Plant_FT_Predictions"
+path_input_raw = f"{path_input_root}/{unity_date}/virtual_reality"
+path_input_adjusted_position_files = f"{path_input_root}/{unity_date}_analysis/Output/Session_1/Adjusted_Position_Files"
+path_input_OTSU = f"{path_input_root}/{unity_date}_analysis/Output/Session_1/Otsu_R"
+path_input_PLANT_FT_PRED = f"{path_input_root}/{unity_date}_analysis/Output_FA/Session_1/Plant_FT_Predictions"
 
 names_input_raw = os.listdir(path_input_raw)
 names_input_adjusted_position_files = os.listdir(path_input_adjusted_position_files)
@@ -111,7 +115,8 @@ MAS_Simulation = MAS.Simulation_MAS(data_input_raw[_image_index],
                                     RAs_group_size, RAs_group_steps,
                                     RALs_fuse_factor, RALs_fill_factor,
                                     [0,0],
-                                    data_adjusted_position_files[_image_index])
+                                    data_adjusted_position_files[_image_index],
+                                    recon_policy=recon_policy)
 MAS_Simulation.Initialize_AD()
 MAS_Simulation.Perform_Simulation_newEndCrit(Simulation_steps,
                                              _coerced_X=True,
@@ -144,7 +149,7 @@ print("FN =", MAS_Simulation.FN)
 print("FP =", MAS_Simulation.FP)
 # =============================================================================
 
-MAS_Simulation.Show_Adjusted_And_RALs_positions(_save=True, _save_path=f"{path_input_root}/{unity_date}_analysis/densite={densite}/{dIP_dIR}/Images_MAS/{recon_policy}_repositioning")
+MAS_Simulation.Show_Adjusted_And_RALs_positions(_save=True, _save_path=f"{path_input_root}/{unity_date}_analysis/Images_MAS/{recon_policy}_repositioning")
 MAS_Simulation.Show_nb_RALs()
 MAS_Simulation.Show_RALs_Deicision_Scores()
 

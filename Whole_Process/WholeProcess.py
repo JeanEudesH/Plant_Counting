@@ -7,13 +7,20 @@ Created on Mon Oct 26 15:55:35 2020
 import os
 import sys
 
-if "D:/Documents/IODAA/Fil Rouge/Plant_Counting" not in sys.path:
+# os.chdir("../Pre_Treatments")
+# import Process_image_for_FT as PiFT
+
+# os.chdir("../Fourier")
+# import FrequencyAnalysis as FA
+
+# os.chdir("../MAS")
+# import Multi_Images_Simulation_v12bis as MIS
+
+if not "D:/Documents/IODAA/Fil Rouge/Plant_Counting" in sys.path:
     sys.path.append("D:/Documents/IODAA/Fil Rouge/Plant_Counting")
 
 import Pre_Treatments.Process_image_for_FT as PiFT
-
 import Fourier.FrequencyAnalysis as FA
-
 import MAS.Multi_Images_Simulation_v12bis as MIS
 
 def CompleteProcess(_path_input_rgb_img, _path_output_root,
@@ -52,13 +59,14 @@ def CompleteProcess(_path_input_rgb_img, _path_output_root,
                     _RALs_fuse_factor, _RALs_fill_factor)
 
 if (__name__=="__main__"):
-    CompleteProcess(_path_input_rgb_img="D:/Documents/IODAA/Fil Rouge/Resultats/dIP_vs_dIR_linear_fixed_density/densite=5/0.22_0.88/virtual_reality",
-                    _path_output_root="D:/Documents/IODAA/Fil Rouge/Resultats/dIP_vs_dIR_analysis/densite=5/0.22_0.88",
+    CompleteProcess(_path_input_rgb_img="D:/Documents/IODAA/Fil Rouge/Resultats/2021_1_31_11_48_4/virtual_reality",
+                    _path_output_root="D:/Documents/IODAA/Fil Rouge/Resultats/2021_1_31_11_48_4_analysis",
                     
+    # Trois lignes sur ma branche (pas a jour) et pas presentes sur la ligne de Baptiste
                      _labelled_images = True,
-                     _path_position_files="D:/Documents/IODAA/Fil Rouge/Resultats/dIP_vs_dIR_linear_fixed_density/densite=5/0.22_0.88/Position_Files",
+                     _path_position_files="D:/Documents/IODAA/Fil Rouge/Resultats/2021_1_31_11_48_4/Position_Files",
                      _rows_real_angle=80,
-                    
+
                     _make_unique_folder_per_session=False, _session=1,
                     _do_Otsu=True, _do_AD=True,
                     _save_AD_score_images=False, _save_BSAS_images=False,
