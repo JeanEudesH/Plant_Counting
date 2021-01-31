@@ -54,8 +54,8 @@ def CompleteProcess(_path_input_rgb_img, _path_output_root,
                     _RALs_fuse_factor, _RALs_fill_factor)
 
 if (__name__=="__main__"):
-    CompleteProcess(_path_input_rgb_img="D:/Documents/IODAA/Fil Rouge/Resultats/dIP_vs_dIR_linear_fixed_density/densite=5/0.22_0.88/virtual_reality",
-                    _path_output_root="D:/Documents/IODAA/Fil Rouge/Resultats/dIP_vs_dIR_analysis/densite=5/0.22_0.88",
+    CompleteProcess(_path_input_rgb_img="D:/Documents/IODAA/Fil Rouge/Resultats/2021_1_31_11_48_4/virtual_reality",
+                    _path_output_root="D:/Documents/IODAA/Fil Rouge/Resultats/2021_1_31_11_48_4/",
                     _make_unique_folder_per_session=False, _session=1,
                     _do_Otsu=True, _do_AD=True,
                     _save_AD_score_images=False, _save_BSAS_images=False,
