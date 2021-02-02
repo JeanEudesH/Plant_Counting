@@ -246,7 +246,7 @@ def Automatic_Cluster_Number(row_pixels):
         An estimation of the number of clusters (plants) in a row.
     """
 
-    estimated_nb_clusters = int(len(row_pixels[0]) / 1600)
+    estimated_nb_clusters = int(len(row_pixels[0]) / 10)
 
     # If too few pixels, supplementary security
     if estimated_nb_clusters == 0:
@@ -332,17 +332,16 @@ def Total_Plant_Position(
             s=0.5,
             cmap="Paired",
         )
-        plt.show()
-        break
-        print("Plant_detection")
-        """JSON_final = Plants_Detection(dataframe_coord, e, max_iter, m_p, threshold)
-        print("write_json")
-        gIO.WriteJson(
-            path_JSON_output,
-            "Predicting_initial_plant_" + image.split(".")[0],
-            JSON_final,
-        )"""
 
+        fig.savefig("/home/fort/Bureau/results/" + image.split(".")[0] + ".png")
+        # print("Plant_detection")
+        # JSON_final = Plants_Detection(dataframe_coord, e, max_iter, m_p, threshold)
+        # print("write_json")
+        # gIO.WriteJson(
+        #    path_JSON_output,
+        #    "Predicting_initial_plant_" + image.split(".")[0],
+        #    JSON_final,
+        # )
     return
 
 
@@ -353,8 +352,8 @@ if __name__ == "__main__":
     Total_Plant_Position(
         path_image_input="/home/fort/Documents/APT 3A/Cours/Ekinocs/Output_General/Output/Session_1/Otsu",
         path_JSON_output=ROOT_PATH,
-        epsilon=7,
-        min_point=6,
+        epsilon=10,
+        min_point=20,
         e=0.005,
         max_iter=2000,
         m_p=2,
