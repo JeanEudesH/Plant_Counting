@@ -7,20 +7,32 @@ Created on Mon Oct 26 15:55:35 2020
 import os
 import sys
 
-if "/home/fort/Documents/APT 3A/Cours/Ekinocs/Plant_Counting" not in sys.path:
-    sys.path.append("/home/fort/Documents/APT 3A/Cours/Ekinocs/Plant_Counting")
+# if "/home/fort/Documents/APT 3A/Cours/Ekinocs/Plant_Counting" not in sys.path:
+#     sys.path.append("/home/fort/Documents/APT 3A/Cours/Ekinocs/Plant_Counting")
 
-os.chdir("/home/fort/Documents/APT 3A/Cours/Ekinocs/Plant_Counting/Pre_Treatments")
-import Pre_Treatments.Process_image_for_FT as PiFT
+# os.chdir("/home/fort/Documents/APT 3A/Cours/Ekinocs/Plant_Counting/Pre_Treatments")
+# import Pre_Treatments.Process_image_for_FT as PiFT
 
-os.chdir("/home/fort/Documents/APT 3A/Cours/Ekinocs/Plant_Counting/Fourier")
-import Fourier.FrequencyAnalysis as FA
+os.chdir("../Pre_Treatments/")
+import Process_image_for_FT as PiFT
 
-os.chdir("/home/fort/Documents/APT 3A/Cours/Ekinocs/Plant_Counting/MAS")
-import MAS.Multi_Images_Simulation_v12bis as MIS
+# os.chdir("/home/fort/Documents/APT 3A/Cours/Ekinocs/Plant_Counting/Fourier")
+# import Fourier.FrequencyAnalysis as FA
 
-os.chdir("/home/fort/Documents/APT 3A/Cours/Ekinocs/Plant_Counting/Clustering")
-import Clustering.clustering as CLS
+os.chdir("../Fourier/")
+import FrequencyAnalysis as FA
+
+# os.chdir("/home/fort/Documents/APT 3A/Cours/Ekinocs/Plant_Counting/MAS")
+# import MAS.Multi_Images_Simulation_v12bis as MIS
+
+os.chdir("../MAS/")
+import Multi_Images_Simulation_v12bis as MIS
+
+# os.chdir("/home/fort/Documents/APT 3A/Cours/Ekinocs/Plant_Counting/Clustering")
+# import Clustering.clustering as CLS
+
+os.chdir("../Clustering/")
+import clustering as CLS
 
 
 def CompleteProcess(
@@ -87,10 +99,10 @@ def CompleteProcess(
 
 if __name__ == "__main__":
     CompleteProcess(
-        _path_input_rgb_img="/home/fort/Documents/APT 3A/Cours/Ekinocs/dIP_vs_dIR_linear_fixed_density/densite=5/0.22_0.88/virtual_reality",
-        _path_output_root="/home/fort/Documents/APT 3A/Cours/Ekinocs/Ouput_General/Ouput_General",
+        _path_input_rgb_img="../virtual_reality",
+        _path_output_root="../Ouput_General",
         _labelled_images=True,
-        _path_position_files="/home/fort/Documents/APT 3A/Cours/Ekinocs/dIP_vs_dIR_linear_fixed_density/densite=5/0.22_0.88/Position_Files",
+        _path_position_files="../Position_Files",
         _rows_real_angle=80,
         _make_unique_folder_per_session=True,
         _session=1,
