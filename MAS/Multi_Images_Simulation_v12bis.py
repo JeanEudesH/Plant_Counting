@@ -5,6 +5,8 @@ Created on Sat May 23 11:55:31 2020
 @author: eliot
 """
 
+import sys
+
 if not "D:/Documents/IODAA/Fil Rouge/Plant_Counting" in sys.path:
     sys.path.append("D:/Documents/IODAA/Fil Rouge/Plant_Counting")
 

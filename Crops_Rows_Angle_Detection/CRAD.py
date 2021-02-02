@@ -11,10 +11,10 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image #, ImageDraw
+import sys 
 
 # os.chdir("../Utility")
 # import general_IO as gIO
-
 import Utility.general_IO as gIO
 
 def Produce_Adjusted_Position_Files( _path_position_files,
@@ -29,10 +29,14 @@ def Produce_Adjusted_Position_Files( _path_position_files,
     nb_imgs = len(_list_rgb_images)
     assert len(position_files) == nb_imgs
     
+    print(f"Rows real angle: {_rows_real_angle}")
+
     _theta = np.deg2rad(_rows_real_angle)
     R = np.array([[np.cos(_theta), np.sin(_theta)],
                          [-np.sin(_theta),  np.cos(_theta)]])
-    
+
+    print(f"Theta: {_theta}")
+    print(f"R: {R}")   
     
     for i in range (nb_imgs):
         _img = Image.open(_path_input_rgb_img+\
@@ -90,7 +94,7 @@ def Produce_Adjusted_Position_Files( _path_position_files,
         
 
 # Produce_Adjusted_Position_Files(
-#         ,
+#         "D:/Projet/Unity/HDRP_PGoCF/Datasets/Monitoring/Series_2/2021_1_19_11_40_0/Position_Files",
 #         "D:/Projet/Unity/HDRP_PGoCF/Datasets/Monitoring/Series_2/2021_1_19_11_40_0/Ouput_General"+"/Output/Session_{0}".format(1)+"/Adjusted_Position_Files",
 #         80,
 #         "D:/Projet/Unity/HDRP_PGoCF/Datasets/Monitoring/Series_2/2021_1_19_11_40_0/virtual_reality",
