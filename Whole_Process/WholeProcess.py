@@ -51,16 +51,18 @@ def CompleteProcess(_path_input_rgb_img, _path_output_root,
                          _session,
                          _bin_div_X, _bin_div_Y)
     
-    MIS.All_Simulations(_path_input_rgb_img,
-                    _path_output_root,
-                    _labelled_images,
-                    _session,
-                    _RAs_group_size, _RAs_group_steps, _Simulation_steps,
-                    _RALs_fuse_factor, _RALs_fill_factor)
+    # MIS.All_Simulations(_path_input_rgb_img,
+    #                 _path_output_root,
+    #                 _labelled_images,
+    #                 _session,
+    #                 _RAs_group_size, _RAs_group_steps, _Simulation_steps,
+    #                 _RALs_fuse_factor, _RALs_fill_factor)
 
 if (__name__=="__main__"):
-    CompleteProcess(_path_input_rgb_img="D:/Documents/IODAA/Fil Rouge/Resultats/2021_1_31_11_48_4/virtual_reality",
-                    _path_output_root="D:/Documents/IODAA/Fil Rouge/Resultats/2021_1_31_11_48_4_analysis",
+    # CompleteProcess(_path_input_rgb_img="D:/Documents/IODAA/Fil Rouge/Resultats/2021_1_31_11_48_4/virtual_reality",
+                    # _path_output_root="D:/Documents/IODAA/Fil Rouge/Resultats/2021_1_31_11_48_4_analysis",
+    CompleteProcess(_path_input_rgb_img="D:/Documents/IODAA/Fil Rouge/Resultats/dIP_vs_dIR_linear_fixed_density/densite=5/0.22_0.88/virtual_reality",
+                    _path_output_root="D:/Documents/IODAA/Fil Rouge/Resultats/dIP_vs_dIR_linear_fixed_density_analysis/densite=5/0.22_0.88/",
                     
     # Trois lignes sur ma branche (pas a jour) et pas presentes sur la ligne de Baptiste
                      _labelled_images = True,
