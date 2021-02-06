@@ -51,7 +51,8 @@ def All_Simulations(_path_input_rgb_img, _path_PreTreatment_and_FA,
                     _labelled_images = False,
                     _session_number=1,
                     _RAs_group_size=20, _RAs_group_steps=2, _Simulation_steps=50,
-                    _RALs_fuse_factor=0.5, _RALs_fill_factor=1.5):
+                    _RALs_fuse_factor=0.5, _RALs_fill_factor=1.5,
+                    densite=None, experiment=None):
 
     # =============================================================================
     # General Path Definition
@@ -113,7 +114,9 @@ def All_Simulations(_path_input_rgb_img, _path_PreTreatment_and_FA,
                                         _RALs_fuse_factor,
                                         _RALs_fill_factor,
                                         _simulation_step=_Simulation_steps,
-                                        _data_adjusted_position_files=data_adjusted_position_files)
+                                        _data_adjusted_position_files=data_adjusted_position_files,
+                                        densite=densite,
+                                        experiment=experiment)
     
     if (_labelled_images):
         

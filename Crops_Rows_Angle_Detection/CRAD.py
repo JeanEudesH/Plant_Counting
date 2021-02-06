@@ -13,8 +13,12 @@ import matplotlib.pyplot as plt
 from PIL import Image #, ImageDraw
 import sys 
 
+if not "D:/Documents/IODAA/Fil Rouge/Plant_Counting" in sys.path:
+    sys.path.append("D:/Documents/IODAA/Fil Rouge/Plant_Counting")
+
 # os.chdir("../Utility")
 # import general_IO as gIO
+
 import Utility.general_IO as gIO
 
 def Produce_Adjusted_Position_Files( _path_position_files,
@@ -47,15 +51,12 @@ def Produce_Adjusted_Position_Files( _path_position_files,
         b = np.array([0, 0])
         #offset to have only positives coordinates
         y_offset_p = (np.dot(R, a-_pivot))+_pivot
-        x_offset_p = (np.dot(R, -_pivot))+_pivot
-# =============================================================================
-#         
-#         plt.figure()
-#         plt.imshow(_img.rotate(_rows_real_angle, expand=True))
-#         plt.scatter(x_offset_p[0]-x_offset_p[0],x_offset_p[1]-y_offset_p[1])
-#         plt.scatter(y_offset_p[0]-x_offset_p[0],y_offset_p[1]-y_offset_p[1])
-#         print(x_offset_p, y_offset_p)
-# =============================================================================
+        x_offset_p = (np.dot(R, -_pivot))+_pivot#         
+        # plt.figure()
+        # plt.imshow(_img.rotate(_rows_real_angle, expand=True))
+        # plt.scatter(x_offset_p[0]-x_offset_p[0],x_offset_p[1]-y_offset_p[1])
+        # plt.scatter(y_offset_p[0]-x_offset_p[0],y_offset_p[1]-y_offset_p[1])
+        print(x_offset_p, y_offset_p)
         
         posFile_content = gIO.reader(_path_position_files, position_files[i])
         nb_lines = len(posFile_content)
@@ -72,7 +73,8 @@ def Produce_Adjusted_Position_Files( _path_position_files,
             _rot_coord = np.dot(R, np.array([_screen_prop[0] *_img.width,
                                              (1-_screen_prop[1])*_img.height])-_pivot)+\
                         _pivot + np.array([-x_offset, -y_offset])
-                        
+
+
                         
             _adjusted_pos  += [_line_split[0] + "," + \
                              _line_split[1] + "," + \
@@ -81,24 +83,25 @@ def Produce_Adjusted_Position_Files( _path_position_files,
             _x.append(_rot_coord[0])
             _y.append(_rot_coord[1])
         
-        #gIO.check_make_directory(_path_adjusted_position_files)
+        # gIO.check_make_directory(_path_adjusted_position_files)
         gIO.writer(_path_adjusted_position_files, 
                    "Adjusted_plant_positions_"+_list_rgb_images[i].split(".")[0]+".csv",
                    _adjusted_pos,
                    True, True)
 # # =============================================================================
-#         plt.figure()
-#         plt.imshow(_img.rotate(_rows_real_angle, expand=True))
-#         plt.scatter(_x, _y)
+        # plt.figure()
+        # plt.imshow(_img.rotate(_rows_real_angle, expand=True))
+        # plt.scatter(_x, _y)
+        # plt.show()
 # =============================================================================
         
 
 # Produce_Adjusted_Position_Files(
-#         "D:/Projet/Unity/HDRP_PGoCF/Datasets/Monitoring/Series_2/2021_1_19_11_40_0/Position_Files",
-#         "D:/Projet/Unity/HDRP_PGoCF/Datasets/Monitoring/Series_2/2021_1_19_11_40_0/Ouput_General"+"/Output/Session_{0}".format(1)+"/Adjusted_Position_Files",
-#         80,
-#         "D:/Projet/Unity/HDRP_PGoCF/Datasets/Monitoring/Series_2/2021_1_19_11_40_0/virtual_reality",
-#         os.listdir("D:/Projet/Unity/HDRP_PGoCF/Datasets/Monitoring/Series_2/2021_1_19_11_40_0/virtual_reality"))
+#         "D:/Documents/IODAA/Fil Rouge/Resultats/2021_2_2_17_28_22/Position_Files",
+#         "D:/Documents/IODAA\Fil Rouge/Resultats/2021_2_2_17_28_22_analysis/Adjusted_Position_Files",
+#         90,
+#         "D:/Documents/IODAA/Fil Rouge/Resultats/2021_2_2_17_28_22/virtual_reality",
+#         os.listdir("D:/Documents/IODAA/Fil Rouge/Resultats/2021_2_2_17_28_22/virtual_reality"))
 
 
 class CRAD_Voting:

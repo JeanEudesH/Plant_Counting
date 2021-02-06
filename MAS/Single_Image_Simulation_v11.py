@@ -44,23 +44,22 @@ def get_file_lines(path_csv_file):
 # =============================================================================
 #path of the images 
 ### TO BE CHANGED AS PER USER NEED
-session_number = 1
-unity_date = "2021_1_31_11_48_4"
-    
 path_input_root = "D:/Documents/IODAA/Fil Rouge/Resultats"
+unity_date = "dIP_vs_dIR"
+densite = 5
+dIP_dIR = "022_088"
+session_number = 1
 
 recon_policy = "global"
-densite = 5
-dIP_dIR = "0.22_0.88"
 
-# path_input_raw = f"{path_input_root}/{unity_date}_linear_fixed_density/densite={densite}/{dIP_dIR}/virtual_reality"
-# path_input_adjusted_position_files = f"{path_input_root}/{unity_date}_analysis/densite={densite}/{dIP_dIR}/Output/Session_1/Adjusted_Position_Files"
-# path_input_OTSU = f"{path_input_root}/{unity_date}_analysis/densite={densite}/{dIP_dIR}/Output/Session_1/Otsu_R"
-# path_input_PLANT_FT_PRED = f"{path_input_root}/{unity_date}_analysis/densite={densite}/{dIP_dIR}/Output_FA/Session_1/Plant_FT_Predictions"
-path_input_raw = f"{path_input_root}/{unity_date}/virtual_reality"
-path_input_adjusted_position_files = f"{path_input_root}/{unity_date}_analysis/Output/Session_1/Adjusted_Position_Files"
-path_input_OTSU = f"{path_input_root}/{unity_date}_analysis/Output/Session_1/Otsu_R"
-path_input_PLANT_FT_PRED = f"{path_input_root}/{unity_date}_analysis/Output_FA/Session_1/Plant_FT_Predictions"
+path_input_raw = f"{path_input_root}/{unity_date}_linear/densite={densite}/{dIP_dIR}/virtual_reality"
+path_input_adjusted_position_files = f"{path_input_root}/{unity_date}_linear/densite={densite}/{dIP_dIR}_analysis/Output/Session_1/Adjusted_Position_Files"
+path_input_OTSU = f"{path_input_root}/{unity_date}_linear/densite={densite}/{dIP_dIR}_analysis/Output/Session_1/Otsu_R"
+path_input_PLANT_FT_PRED = f"{path_input_root}/{unity_date}_linear/densite={densite}/{dIP_dIR}_analysis/Output_FA/Session_1/Plant_FT_Predictions"
+# path_input_raw = f"{path_input_root}/{unity_date}/virtual_reality"
+# path_input_adjusted_position_files = f"{path_input_root}/{unity_date}_analysis/Output/Session_1/Adjusted_Position_Files"
+# path_input_OTSU = f"{path_input_root}/{unity_date}_analysis/Output/Session_1/Otsu_R"
+# path_input_PLANT_FT_PRED = f"{path_input_root}/{unity_date}_analysis/Output_FA/Session_1/Plant_FT_Predictions"
 
 names_input_raw = os.listdir(path_input_raw)
 names_input_adjusted_position_files = os.listdir(path_input_adjusted_position_files)
@@ -92,9 +91,9 @@ print("Done")
 # =============================================================================
 # Simulation Parameters Definition
 # =============================================================================
-RAs_group_size = 10
+RAs_group_size = 30
 RAs_group_steps = 2
-Simulation_steps = 50
+Simulation_steps = 30
 
 RALs_fuse_factor = 0.5
 RALs_fill_factor = 1.5
@@ -149,7 +148,7 @@ print("FN =", MAS_Simulation.FN)
 print("FP =", MAS_Simulation.FP)
 # =============================================================================
 
-MAS_Simulation.Show_Adjusted_And_RALs_positions(_save=True, _save_path=f"{path_input_root}/{unity_date}_analysis/Images_MAS/{recon_policy}_repositioning")
+MAS_Simulation.Show_Adjusted_And_RALs_positions(_save=False, _save_path=f"{path_input_root}/{unity_date}_analysis/Images_MAS/{recon_policy}_repositioning")
 MAS_Simulation.Show_nb_RALs()
 MAS_Simulation.Show_RALs_Deicision_Scores()
 

@@ -333,23 +333,24 @@ class ReactiveAgent_Leader(object):
             
             image_row = self.y+explorers[0][1]#row coord in image array
             image_col = self.x+explorers[0][0]#col coord in image array
-            
-            if (self.img_array[image_row][image_col][0] > 220):#if the pixel is white
-                surface_print[print_row][print_col]=2
-                self.nb_contiguous_white_pixel +=1
-                
-                for _d in directions:
-                    if (0 <= print_row + _d[1] < square_width and
-                        0 <= print_col + _d[0]< square_width):#if in the bounds of the surface_print array size
-                        if (surface_print[print_row + _d[1]][print_col + _d[0]] == 0):#if the pixel has not an explorer already
-                            
-                            surface_print[print_row+_d[1]][print_col+_d[0]]=1#we indicate that we have added the coords to the explorers
-                            
-                            new_explorer_x = print_col-self.group_size + _d[0]
-                            new_explorer_y = print_row-self.group_size + _d[1]
-                            explorers += [(new_explorer_x, 
-                                           new_explorer_y)]
-                            nb_explorers += 1
+
+            if image_row < 1920 and image_col < 1080:           
+                if (self.img_array[image_row][image_col][0] > 220):#if the pixel is white
+                    surface_print[print_row][print_col]=2
+                    self.nb_contiguous_white_pixel +=1
+                    
+                    for _d in directions:
+                        if (0 <= print_row + _d[1] < square_width and
+                            0 <= print_col + _d[0]< square_width):#if in the bounds of the surface_print array size
+                            if (surface_print[print_row + _d[1]][print_col + _d[0]] == 0):#if the pixel has not an explorer already
+                                
+                                surface_print[print_row+_d[1]][print_col+_d[0]]=1#we indicate that we have added the coords to the explorers
+                                
+                                new_explorer_x = print_col-self.group_size + _d[0]
+                                new_explorer_y = print_row-self.group_size + _d[1]
+                                explorers += [(new_explorer_x, 
+                                            new_explorer_y)]
+                                nb_explorers += 1
             
             explorers = explorers[1:]
             nb_explorers -= 1
@@ -1591,6 +1592,7 @@ class Simulation_MAS(object):
                         associated_RAL += 1
         
         self.FN = len(self.ADJUSTED_img_plant_positions) - self.TP
+        print(self.RALs_recorded_count[-1], associated_RAL)
         self.FP = self.RALs_recorded_count[-1] - associated_RAL
     
     def Show_RALs_Position(self,
@@ -1775,7 +1777,9 @@ class MetaSimulation(object):
                  _RALs_fuse_factor, _RALs_fill_factor,
                  _simulation_step = 10,
                  _data_adjusted_position_files = None,
-                 _field_shape = (2,2)):
+                 _field_shape = (2,2),
+                 densite=None,
+                 experiment=None):
         
         self.simu_name = _simu_name
         
@@ -1807,6 +1811,10 @@ class MetaSimulation(object):
             self.Initialize_Whole_Field_Counted_Plants()
         
         self.field_shape = _field_shape
+
+        #### TMP : log ####
+        self.densite = densite
+        self.experiment = experiment
         
         self.check_data()
     
@@ -2057,6 +2065,30 @@ class MetaSimulation(object):
         print("TP =", _MAS_Simulation.TP)
         print("FN =", _MAS_Simulation.FN)
         print("FP =", _MAS_Simulation.FP)
+
+        #### TMP : log results ####
+        try:
+            with open("D:\Documents\IODAA\Fil Rouge\Resultats\dIP_vs_dIR_linear\results.log", "a") as log_file:
+                log_file.write(f"# {self.densite} - {self.experiment}")
+                log_file.write("\n")
+                log_file.write(_MAS_Simulation.simu_steps_times)
+                log_file.write("\n")
+                log_file.write("NB Rals =", _MAS_Simulation.RALs_recorded_count[-1])
+                log_file.write("\n")
+                log_file.write("Image Labelled = ", _MAS_Simulation.labelled)
+                log_file.write("\n")
+                log_file.write("NB_labelled_plants", _MAS_Simulation.nb_real_plants)
+                log_file.write("\n")
+                log_file.write("TP =", _MAS_Simulation.TP)
+                log_file.write("\n")
+                log_file.write("FN =", _MAS_Simulation.FN)
+                log_file.write("\n")
+                log_file.write("FP =", _MAS_Simulation.FP)
+        except:
+            with open("D:\Documents\IODAA\Fil Rouge\Resultats\dIP_vs_dIR_linear\results.log", "a") as log_file:
+                log_file.write(f"# {self.densite} - {self.experiment}")
+                log_file.write("\n")
+                log_file.write("AN ERROR OCCURED")
         
         return data
     
@@ -2065,8 +2097,6 @@ class MetaSimulation(object):
         Initialize the keys of the dictionnary self.whole_field_counted_plants
         """
         for i in range (self.nb_images):
-            print(self.data_adjusted_position_files)
-            print(len(self.data_adjusted_position_files))
             for adj_pos_string in self.data_adjusted_position_files[i]:
                 [_rx, _ry, x, y] = adj_pos_string.split(",")
                 self.whole_field_counted_plants[_rx + "_" + _ry]=0
