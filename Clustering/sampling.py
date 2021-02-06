@@ -16,15 +16,17 @@ img_name = "/home/fort/Documents/APT 3A/Cours/Ekinocs/Output_General/Output/Sess
 img = Image.open(img_name)
 img_array = np.array(img)
 img_array = img_array[:, :, 0]
-image_median = filters.median(img_array, np.ones((2, 2)))
+# image_median = filters.median(img_array, np.ones((3, 3)))
+image_median = filters.laplace(img_array)
 img_array = np.where(img_array < 255, 0, img_array)
 img_array = np.where(img_array == 255, 1, img_array)
-print(img_array)
-skeleton = skeletonize(img_array)
+# skeleton = skeletonize(img_array)
 
 plt.figure(figsize=(10, 8))
 plt.subplot(111)
-plt.imshow(img_array, cmap="gray", interpolation="nearest")
+plt.imshow(image_median, cmap="gray", interpolation="nearest")
+# plt.imshow(img, cmap="gray", interpolation="nearest")
+
 plt.show()
 
 
@@ -61,5 +63,5 @@ def plot_cluster(dataframe_coord):
     plt.show()
 
 
-dataframe_coord = DBSCAN_clustering(image_median, 20, 5)
-plot_cluster(dataframe_coord)
+# dataframe_coord = DBSCAN_clustering(image_median, 20, 5)
+# plot_cluster(dataframe_coord)
