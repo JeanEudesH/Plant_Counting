@@ -14,20 +14,79 @@ def Total_Plant_Position(path_image_input, epsilon, min_point):
         list_image.remove('.DS_Store')
     for image in list_image:
         print("start ", image)
-        img = Image.open(path_image_input + "/" + image)
+        imgColor = Image.open(path_image_input + "/" + image)
+        # Be sure to be in a greyscale images, with only one channel
+        img = imgColor.convert(mode='L')
+
+        # Temporaire
+        img_array = np.array(img)
+        # plt.plot(img_array, '+', c='k')
+        # print(img_array)
+        unique, counts = np.unique(img_array, return_counts=True)
+        odict = dict(zip(unique, counts))
+        # print(odict)
+        # plt.plot(odict.keys(), odict.values(), '+')
+        # print(np.unique(img_array, return_counts=True))
+
         print("DBSCAN")
         dataframe_coord = DBSCAN_clustering(img, epsilon, min_point)
         coordPixelsMedian = pixel_median(dataframe_coord, img)
-        fitting = fit_curve(coordPixelsMedian)
-        plot_cluster(coordPixelsMedian, dataframe_coord, image, fitting)
-        # break
+        # fitting = fit_curve(coordPixelsMedian)
+        plot_cluster(coordPixelsMedian, dataframe_coord, image, 1)
+
     return
 
 
 def pixel_median(dataframe_coord, img):
     # Get the image and transforms it into a np array
     img_array = np.array(img)
-    # mat_coord = np.argwhere(img_array[:, :, 0] == 255)
+
+    # For each cluster determined by DBSCAN
+    label_row = np.unique(dataframe_coord[["label"]].to_numpy())
+    coord_Pixels_img = []
+
+    print('nombre de rangs', len(label_row))
+    print('les rangs sont ', label_row)
+    for row in label_row:
+        coord_row = dataframe_coord[dataframe_coord["label"] == row][[
+            "X", "Y"]].to_numpy()
+        # Threshold to avoid smaller clusters creating noise
+        if coord_row.shape[0] > 1000:
+            print(coord_row.shape)
+            coord_Pixels_row = []
+            # List of median pixels (one per line of the image)
+
+            # Get the median pixel for a row of pixels in a labelled row
+            # img_height = img_array.shape[0]
+            img_height = img_array.shape[0]
+            img_width = img_array[1]
+
+            # Ici le pas est à 5 mais peut-être choisir un pas plus
+            # proportionnel à la taille de l'image (à faire empiriquement)
+
+            step = 5
+            for i in range(0,img_height,step):
+                interval_coord = np.where((coord_row > i) & (coord_row <= i+step))
+                if len(interval_coord) > 0:
+                    # if len(np.where(np.logical_and(coord_row > i,
+                    # coord_row < i+5))) > 0:
+                    pos = interval_coord[0]
+                    if len(coord_row[pos].T[0]) > 0:
+
+                        pixelMedian = statistics.median(coord_row[pos].T[0])
+                        #print(pixelMedian)
+                        coord_Pixels_row.append([int(pixelMedian),
+                                                 coord_row[pos].T[1][0]])
+            coord_Pixels_img.append(coord_Pixels_row)
+
+    return coord_Pixels_img
+
+
+def pixel_median(dataframe_coord, img):
+    # Get the image and transforms it into a np array
+    img_array = np.array(img)
+    img_height = img_array.shape[1]
+    img_width = img_array.shape[0]
 
     # For each cluster determined by DBSCAN
     label_row = np.unique(dataframe_coord[["label"]].to_numpy())
@@ -36,77 +95,42 @@ def pixel_median(dataframe_coord, img):
     for row in label_row:
         coord_row = dataframe_coord[dataframe_coord["label"] == row][[
             "X", "Y"]].to_numpy()
+        # Threshold to avoid smaller clusters creating noise
+        if coord_row.shape[0] > 10:
+            coord_Pixels_row = []
+            # List of median pixels (one per line of the image)
+            # Get the median pixel for a row of pixels in a labelled row
+            # Ici le pas est à 5 mais peut-être choisir un pas plus
+            # proportionnel à la taille de l'image (à faire empiriquement)
 
-        coord_Pixels_row = [] # List of median pixels (one per line of the image)
+            step = 3
+            for i in range(0,img_height,step):
+                # Get all pixels in the rows whom Y coordinates is within the
+                # designated range
+                coord_row_tr = coord_row.T
+                interval_coord, = np.where((coord_row_tr[1] > i)
+                                           & (coord_row_tr[1] <= i+step))
 
-        # Get the median pixel for a row of pixels in a labelled row
-        # img_height = img_array.shape[0]
-        img_height = max(img_array.shape)
+                if len(interval_coord) > 0:
+                    samplePixels = coord_row[interval_coord]
+                    # We want the median value on the Y coordinates and its
+                    # corresponding X value
+                    YMedian = statistics.median(samplePixels.T[1])
+                    XMedian = statistics.median(samplePixels.T[0])
 
-        # Ici le pas est à 5 mais peut-être choisir un pas plus proportionnel à
-        # la taille de l'image (à faire empiriquement)
-        for i in range(0,img_height, 5):
-            interval_coord = np.where((coord_row > i) & (coord_row <= i+5))
-            if len(interval_coord) > 0:
-                # if len(np.where(np.logical_and(coord_row > i,
-                # coord_row < i+5))) > 0:
-                pos = interval_coord[0]
-                if len(coord_row[pos].T[0]) > 0:
-
-                    pixelMedian = statistics.median(coord_row[pos].T[0])
+                    # Interpolation when number of data is even, so we need to get the closest value in our dataset
                     #print(pixelMedian)
-                    coord_Pixels_row.append([int(pixelMedian),
-                                             coord_row[pos].T[1][0]])
-        coord_Pixels_img.append(coord_Pixels_row)
+                    coord_Pixels_row.append([int(XMedian), int(YMedian)])
+            coord_Pixels_img.append(coord_Pixels_row)
 
     return coord_Pixels_img
-
-
-def pixel_minmax(dataframe_coord, img):
-    # Get the image and transforms it into a np array
-    img_array = np.array(img)
-    # mat_coord = np.argwhere(img_array[:, :, 0] == 255)
-
-    # For each cluster determined by DBSCAN
-    label_row = np.unique(dataframe_coord[["label"]].to_numpy())
-    coord_Pixels_imgMin = []
-    coord_Pixels_imgMax = []
-
-    for row in label_row:
-        coord_row = dataframe_coord[dataframe_coord["label"] == row][[
-            "X", "Y"]].to_numpy()
-
-        # List of min pixels (one per line of the image)
-        coord_Pixels_row_min = []
-        # List of max pixels
-        coord_Pixels_row_max = []
-
-        # Get the median pixel for a row of pixels in a labelled row
-        # img_height = img_array.shape[0]
-        img_height = max(img_array.shape)
-
-        for i in range(0,img_height, 5):
-            interval_coord = np.where((coord_row > i) & (coord_row <= i+5))
-                # if len(np.where(np.logical_and(coord_row > i,
-                # coord_row < i+5))) > 0:
-            pos = interval_coord[0]
-            if len(coord_row[pos].T[0]) > 0:
-
-                pixelMedian = statistics.median(coord_row[pos].T[0])
-                #print(pixelMedian)
-                coord_Pixels_row_min.append([int(pixelMedian),
-                                             coord_row[pos].T[1][0]])
-        coord_Pixels_imgMin.append(coord_Pixels_row_min)
-        coord_Pixels_imgMax.append(coord_Pixels_row_max)
-
-    return coord_Pixels_imgMin, coord_Pixels_imgMax
 
 
 def DBSCAN_clustering(img, epsilon, min_point):
 
     # extraction of white pixels coordinates
     img_array = np.array(img)
-    mat_coord = np.argwhere(img_array[:, :, 0] == 255)
+    mat_coord = np.argwhere(img_array == 255)
 
     # clustering using DBSCAN
     mat_clustered = DBSCAN(eps=epsilon, min_samples=min_point).fit(mat_coord)
@@ -159,17 +183,17 @@ def plot_cluster(coordPixels, dataframe_coord, image, fitting):
         s=0.5,
         cmap="Paired",
     )
-    for row in range(len(coordPixels)):
-        X = []
-        Y = []
-        for pixel in range(len(coordPixels[row])):
-            X.append(coordPixels[row][pixel][0])
-            Y.append(coordPixels[row][pixel][1])
+    # for row in range(len(coordPixels)):
+    #     X = []
+    #     Y = []
+    #     for pixel in range(len(coordPixels[row])):
+    #         X.append(coordPixels[row][pixel][0])
+    #         Y.append(coordPixels[row][pixel][1])
 
-    ax.plot( X, Y, '+',c='r')
-    fitting_int = [int(i) for i in fitting]
-    print(fitting_int)
-    ax.plot(X, func(np.array(X), *fitting_int), 'b-')
+    #     ax.plot( X, Y, '+',c='r')
+    # fitting_int = [int(i) for i in fitting]
+    # print(fitting_int)
+    # ax.plot(X, func(np.array(X), *fitting_int), 'b-')
 
 
         # ax.plot(
@@ -238,6 +262,6 @@ def plot_cluster(coordPixels, dataframe_coord, image, fitting):
 
 Total_Plant_Position(
     path_image_input="./../../images",
-    epsilon=7,
+    epsilon=10,
     min_point=10,
 )
