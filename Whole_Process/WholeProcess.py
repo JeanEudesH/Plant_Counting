@@ -110,14 +110,14 @@ if (__name__=="__main__"):
     #                 log_file.write("\n")
     #                 log_file.write("AN ERROR OCCURED")
 
-    CompleteProcess(_path_input_rgb_img="D:/Documents/IODAA/Fil Rouge/Resultats/dIP_vs_dIR_linear/densite=9/017_067/virtual_reality",
-                    _path_output_root="D:/Documents/IODAA/Fil Rouge/Resultats/dIP_vs_dIR_linear/densite=9/017_067_analysis",
+    CompleteProcess(_path_input_rgb_img="D:/Documents/IODAA/Fil Rouge/Resultats/dIP_vs_dIR_curved/densite=7/027_054/virtual_reality",
+                    _path_output_root="D:/Documents/IODAA/Fil Rouge/Resultats/dIP_vs_dIR_curved/densite=7/027_54_analysis/",
     # CompleteProcess(_path_input_rgb_img="D:/Documents/IODAA/Fil Rouge/Resultats/dIP_vs_dIR_linear_fixed_density/densite=5/0.22_0.88/virtual_reality",
     #                 _path_output_root="D:/Documents/IODAA/Fil Rouge/Resultats/dIP_vs_dIR_linear_fixed_density_analysis/densite=5/0.22_0.88/",
                     
     # Trois lignes sur ma branche (pas a jour) et pas presentes sur la ligne de Baptiste
                      _labelled_images = True,
-                     _path_position_files="D:/Documents/IODAA/Fil Rouge/Resultats/dIP_vs_dIR_linear/densite=9/017_067/Position_Files",
+                     _path_position_files="D:/Documents/IODAA/Fil Rouge/Resultats/dIP_vs_dIR_curved/densite=7/027_054/Position_Files",
                      _rows_real_angle=90,
 
                     _make_unique_folder_per_session=False, _session=1,
@@ -127,7 +127,7 @@ if (__name__=="__main__"):
                     
                     _bin_div_X=2, _bin_div_Y=4,
                     
-                    _RAs_group_size=15, _RAs_group_steps=2, _Simulation_steps=50,
+                    _RAs_group_size=20, _RAs_group_steps=2, _Simulation_steps=50,
                     # nombre de PXA sous les ordres d'agent plante
                     # RAs_group_size * 2 = cote du carre => 
                     # passer a 25 augmente la taille du PA.
