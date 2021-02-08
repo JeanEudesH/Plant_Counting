@@ -1,2 +1,5 @@
 *.pyc
 .vsc*
+*.onetoc
+*.onetoc2
+.ipynb_checkpoints/
