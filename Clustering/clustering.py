@@ -29,9 +29,8 @@ import pandas as pd
 import sys
 import os
 from os import listdir
-
 import matplotlib.pyplot as plt
-
+import matplotlib.patheffects as PathEffects
 
 # pip install -U scikit-fuzzy
 import skfuzzy as fuzz
@@ -46,10 +45,6 @@ if "/home/fort/Documents/APT 3A/Cours/Ekinocs/Plant_Counting" not in sys.path:
 
 os.chdir("/home/fort/Documents/APT 3A/Cours/Ekinocs/Plant_Counting/Utility")
 import Utility.general_IO as gIO
-
-# To get automatically the name and the path of this script.
-# Possible to automatically and apply the script to all pictures in the same
-# working directory than this script.
 
 
 def DBSCAN_clustering(img, epsilon, min_point):
@@ -109,7 +104,7 @@ def DBSCAN_clustering(img, epsilon, min_point):
     return dataframe_coord
 
 
-def Plants_Detection(dataframe_coord, e, max_iter, m_p, threshold):
+def Plants_Detection(dataframe_coord, e, max_iter, m_p, threshold, image):
     """
     The objective of this function is to differenciate the plants in each row
     of the binarized picture. It is based on predefined rows, the corresponding
@@ -169,14 +164,16 @@ def Plants_Detection(dataframe_coord, e, max_iter, m_p, threshold):
     # For each rows, do the plants detection.
     for row in label_row:
         # row_pixels is a matrix with pixels coordinates belonging to a row.
+        print(row)
         row_pixels = (
             dataframe_coord[dataframe_coord["label"] == row][["X", "Y"]].to_numpy().T
         )
 
         # If the row is really a row.
         if Threshold_Pixels_Row(row_pixels, threshold) is False:
-            # dataframe_coord = dataframe_coord[dataframe_coord["label"] == row]
-            pass
+            dataframe_coord.drop(
+                dataframe_coord[dataframe_coord["label"] == row].index, inplace=True
+            )
         else:
             # Determination of the initial estimating number of clusters,
             # and adding to historic_cluster
@@ -198,8 +195,8 @@ def Plants_Detection(dataframe_coord, e, max_iter, m_p, threshold):
             JSON_final.append(results_fuzzy_clustering)
 
     # Plot
-    print(historic_cluster)
-    Plot(dataframe_coord, XY)
+    # print(historic_cluster)
+    Plot(dataframe_coord, XY, image)
     return JSON_final
 
 
@@ -246,7 +243,7 @@ def Automatic_Cluster_Number(row_pixels):
         An estimation of the number of clusters (plants) in a row.
     """
 
-    estimated_nb_clusters = int(len(row_pixels[0]) / 1600)
+    estimated_nb_clusters = int(len(row_pixels[0]) / 1000)
 
     # If too few pixels, supplementary security
     if estimated_nb_clusters == 0:
@@ -291,9 +288,19 @@ def Fuzzy_Clustering(row_pixels, estimate_nb_clusters, e, m_p, max_i):
     return position_cluster_center, final_nb_clusters
 
 
-def Plot(mat_coord, centresCoordinates):
-    fig = plt.figure(figsize=(8, 10))
+def Plot(mat_coord, centresCoordinates, image):
+    fig = plt.figure(figsize=(8, 12))
     ax = fig.add_subplot(111)
+    label_cluster = np.unique(mat_coord[["label"]].to_numpy())
+    txts = []
+    for i in label_cluster:
+        xtext = np.median(mat_coord[mat_coord["label"] == i]["X"])
+        ytext = np.median(mat_coord[mat_coord["label"] == i]["Y"])
+        txt = ax.text(ytext, xtext, str(i))
+        txt.set_path_effects(
+            [PathEffects.Stroke(linewidth=5, foreground="w"), PathEffects.Normal()]
+        )
+        txts.append(txt)
     scatter_row = ax.scatter(
         mat_coord["Y"].tolist(),
         mat_coord["X"].tolist(),
@@ -305,7 +312,7 @@ def Plot(mat_coord, centresCoordinates):
         centresCoordinates[1], centresCoordinates[0], s=10, marker="+", color="k"
     )
     # plt.show()
-    # fig.savefig("/home/fort/Bureau/lineaire_cluster.png")
+    fig.savefig("/home/fort/Bureau/results/" + image.split(".")[0] + "cluster.png")
     return
 
 
@@ -323,40 +330,55 @@ def Total_Plant_Position(
         img = Image.open(path_image_input + "/" + image)
         print("DBSCAN")
         dataframe_coord = DBSCAN_clustering(img, epsilon, min_point)
-        fig = plt.figure(figsize=(8, 10))
-        ax = fig.add_subplot(111)
-        scatter_row = ax.scatter(
-            dataframe_coord["Y"].tolist(),
-            dataframe_coord["X"].tolist(),
-            c=dataframe_coord["label"].tolist(),
-            s=0.5,
-            cmap="Paired",
+        # On peut décommenter cette partie et commenter la partie sur le fuzzy
+        # clustering pour régler les paramètres de DBSCAN.
+        # fig = plt.figure(figsize=(5, 12))
+        # ax = fig.add_subplot(111)
+        # label_cluster = np.unique(dataframe_coord[["label"]].to_numpy())
+        # txts = []
+        #
+        # for i in label_cluster:
+        #     xtext = np.median(dataframe_coord[dataframe_coord["label"] == i]["X"])
+        #     ytext = np.median(dataframe_coord[dataframe_coord["label"] == i]["Y"])
+        #     txt = ax.text(ytext, xtext, str(i))
+        #     txt.set_path_effects(
+        #         [PathEffects.Stroke(linewidth=5, foreground="w"), PathEffects.Normal()]
+        #     )
+        #     txts.append(txt)
+        # scatter_row = ax.scatter(
+        #     dataframe_coord["Y"].tolist(),
+        #     dataframe_coord["X"].tolist(),
+        #     c=dataframe_coord["label"].tolist(),
+        #     s=0.5,
+        #     cmap="Paired",
+        # )
+
+        # fig.savefig("/home/fort/Bureau/results/" + image.split(".")[0] + ".png")
+        dataframe_coord.drop(
+            dataframe_coord[dataframe_coord["label"] == -1].index, inplace=True
         )
-        plt.show()
-        break
         print("Plant_detection")
-        """JSON_final = Plants_Detection(dataframe_coord, e, max_iter, m_p, threshold)
+        JSON_final = Plants_Detection(
+            dataframe_coord, e, max_iter, m_p, threshold, image
+        )
         print("write_json")
         gIO.WriteJson(
             path_JSON_output,
             "Predicting_initial_plant_" + image.split(".")[0],
             JSON_final,
-        )"""
+        )
 
     return
 
 
 if __name__ == "__main__":
-    ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
-    # myfile = os.path.basename(__file__)
-    # myfile_path = os.path.join(ROOT_PATH, myfile)
     Total_Plant_Position(
-        path_image_input="/home/fort/Documents/APT 3A/Cours/Ekinocs/Output_General/Output/Session_1/Otsu",
-        path_JSON_output=ROOT_PATH,
-        epsilon=7,
-        min_point=6,
-        e=0.005,
-        max_iter=2000,
+        path_image_input="/home/fort/Documents/APT 3A/Cours/Ekinocs/Output_General/Output/Session_8/Otsu_R",
+        path_JSON_output="/home/fort/Bureau/results",
+        epsilon=10,
+        min_point=20,
+        e=0.05,
+        max_iter=100,
         m_p=2,
-        threshold=1000,
+        threshold=2000,
     )
