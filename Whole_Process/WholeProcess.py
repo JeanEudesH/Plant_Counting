@@ -40,18 +40,18 @@ def CompleteProcess(_path_input_rgb_img, _path_output_root,
                     _RAs_group_size=20, _RAs_group_steps=2, _Simulation_steps=50,
                     _RALs_fuse_factor=0.5, _RALs_fill_factor=1.5, densite=None, experiment=None):
     
-    PiFT.All_Pre_Treatment(_path_input_rgb_img,
-                      _path_output_root,
-                      _path_position_files,
-                      _rows_real_angle,
-                      _make_unique_folder_per_session, _session,
-                      _do_Otsu, _do_AD,
-                      _save_AD_score_images, _save_BSAS_images,
-                      _bsas_threshold)
+    # PiFT.All_Pre_Treatment(_path_input_rgb_img,
+    #                   _path_output_root,
+    #                   _path_position_files,
+    #                   _rows_real_angle,
+    #                   _make_unique_folder_per_session, _session,
+    #                   _do_Otsu, _do_AD,
+    #                   _save_AD_score_images, _save_BSAS_images,
+    #                   _bsas_threshold)
     
-    FA.All_Fourier_Analysis(_path_output_root,
-                         _session,
-                         _bin_div_X, _bin_div_Y)
+    # FA.All_Fourier_Analysis(_path_output_root,
+    #                      _session,
+    #                      _bin_div_X, _bin_div_Y)
     
     MIS.All_Simulations(_path_input_rgb_img,
                     _path_output_root,
@@ -111,7 +111,7 @@ if (__name__=="__main__"):
     #                 log_file.write("AN ERROR OCCURED")
 
     CompleteProcess(_path_input_rgb_img="D:/Documents/IODAA/Fil Rouge/Resultats/dIP_vs_dIR_curved/densite=7/027_054/virtual_reality",
-                    _path_output_root="D:/Documents/IODAA/Fil Rouge/Resultats/dIP_vs_dIR_curved/densite=7/027_54_analysis/",
+                    _path_output_root="D:/Documents/IODAA/Fil Rouge/Resultats/dIP_vs_dIR_curved/densite=7/027_054_analysis/",
     # CompleteProcess(_path_input_rgb_img="D:/Documents/IODAA/Fil Rouge/Resultats/dIP_vs_dIR_linear_fixed_density/densite=5/0.22_0.88/virtual_reality",
     #                 _path_output_root="D:/Documents/IODAA/Fil Rouge/Resultats/dIP_vs_dIR_linear_fixed_density_analysis/densite=5/0.22_0.88/",
                     

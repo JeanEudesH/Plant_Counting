@@ -45,17 +45,17 @@ def get_file_lines(path_csv_file):
 #path of the images 
 ### TO BE CHANGED AS PER USER NEED
 path_input_root = "D:/Documents/IODAA/Fil Rouge/Resultats"
-unity_date = "dIP_vs_dIR"
-densite = 5
-dIP_dIR = "022_088"
+unity_date = "dIP_vs_dIR_curved"
+densite = 7
+dIP_dIR = "027_054"
 session_number = 1
 
-recon_policy = "global"
+recon_policy = "local_threshold"
 
-path_input_raw = f"{path_input_root}/{unity_date}_linear/densite={densite}/{dIP_dIR}/virtual_reality"
-path_input_adjusted_position_files = f"{path_input_root}/{unity_date}_linear/densite={densite}/{dIP_dIR}_analysis/Output/Session_1/Adjusted_Position_Files"
-path_input_OTSU = f"{path_input_root}/{unity_date}_linear/densite={densite}/{dIP_dIR}_analysis/Output/Session_1/Otsu_R"
-path_input_PLANT_FT_PRED = f"{path_input_root}/{unity_date}_linear/densite={densite}/{dIP_dIR}_analysis/Output_FA/Session_1/Plant_FT_Predictions"
+path_input_raw = f"{path_input_root}/{unity_date}/densite={densite}/{dIP_dIR}/virtual_reality"
+path_input_adjusted_position_files = f"{path_input_root}/{unity_date}/densite={densite}/{dIP_dIR}_analysis/Output/Session_1/Adjusted_Position_Files"
+path_input_OTSU = f"{path_input_root}/{unity_date}/densite={densite}/{dIP_dIR}_analysis/Output/Session_1/Otsu_R"
+path_input_PLANT_FT_PRED = f"{path_input_root}/{unity_date}/densite={densite}/{dIP_dIR}_analysis/Output_FA/Session_1/Plant_FT_Predictions"
 # path_input_raw = f"{path_input_root}/{unity_date}/virtual_reality"
 # path_input_adjusted_position_files = f"{path_input_root}/{unity_date}_analysis/Output/Session_1/Adjusted_Position_Files"
 # path_input_OTSU = f"{path_input_root}/{unity_date}_analysis/Output/Session_1/Otsu_R"
@@ -71,7 +71,7 @@ names_input_PLANT_FT_PRED = os.listdir(path_input_PLANT_FT_PRED)
 # =============================================================================
 print("Data Collection...", end = " ")
 
-subset_size = 1
+subset_size = -1
 
 data_input_raw = import_data(path_input_raw,
                              names_input_raw[:subset_size],
@@ -91,14 +91,14 @@ print("Done")
 # =============================================================================
 # Simulation Parameters Definition
 # =============================================================================
-RAs_group_size = 30
+RAs_group_size = 25
 RAs_group_steps = 2
 Simulation_steps = 30
 
 RALs_fuse_factor = 0.5
 RALs_fill_factor = 1.5
 
-_image_index = 0
+_image_index = 1
 
 print(names_input_OTSU[_image_index])
 print(names_input_adjusted_position_files[_image_index])

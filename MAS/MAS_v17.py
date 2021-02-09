@@ -280,7 +280,7 @@ class ReactiveAgent_Leader(object):
             else:
                 nb_outside_frame_RAs += 1
         
-        self.recorded_Decision_Score += [active_RA_counter/(self.nb_RAs-nb_outside_frame_RAs)]
+        self.recorded_Decision_Score += [active_RA_counter/np.max([.1, self.nb_RAs-nb_outside_frame_RAs])]
         
         if (active_RA_counter != 0):
             self.active_RA_Point[0] = mean_x/active_RA_counter
@@ -744,7 +744,7 @@ class Row_Agent(object):
             
             # get the local X mean
             for j in range(min_idx, max_idx):
-                s.append(self.RALs[j][0])
+                s.append(self.RALs[j].active_RA_Point[0])
             local_mean = np.mean(np.array(s))
             
             # if majority on left to local mean and RA to the right, reposition
@@ -799,15 +799,17 @@ class Row_Agent(object):
             neighborhood = self.RALs[min_idx:max_idx]
             neighborhood_absc = np.array([r.active_RA_Point[0] for r in neighborhood])
             weights = []  # extend to other weights functions (non linear functions)
-            for j in range(min_idx, max_idx):
+            for j in range(min_idx, max_idx):  # fonction rampe
                 if j < i:
                     weights.append(init_weight / max(0.1, i - min_idx) * (j - min_idx))
                 else:
                     weights.append(- init_weight / max(0.1, max_idx - i) * (j - max_idx))
-            weights = np.array(weights)
-            new_pos = np.mean(weights * neighborhood)
+            
+            if len(weights) != 0:
+                weights_ar = np.array(weights)
+                new_pos = np.mean(weights_ar * neighborhood_absc)
 
-            self.RALs[i][0] = new_pos
+                self.RALs[i].active_RA_Point[0] = new_pos
 
     def Neighbor_Threshold_Mean_X(self, to_reposition, n_neighbors):
         """
@@ -820,7 +822,8 @@ class Row_Agent(object):
         """
         for i in to_reposition:
             min_idx, max_idx = max(i - n_neighbors, 0), min(i + n_neighbors, len(self.RALs))
-            self.RALs[i][0] = np.mean(self.RALs[min_idx:max_idx])
+            RAL_absc = np.array([_r.active_RA_Point[0] for _r in self.RALs[min_idx:max_idx]])
+            self.RALs[i].active_RA_Point[0] = np.mean(RAL_absc)
 
     def Get_Mean_Majority_Y_movement(self, _direction):
         """
@@ -2067,28 +2070,28 @@ class MetaSimulation(object):
         print("FP =", _MAS_Simulation.FP)
 
         #### TMP : log results ####
-        try:
-            with open("D:\Documents\IODAA\Fil Rouge\Resultats\dIP_vs_dIR_linear\results.log", "a") as log_file:
-                log_file.write(f"# {self.densite} - {self.experiment}")
-                log_file.write("\n")
-                log_file.write(_MAS_Simulation.simu_steps_times)
-                log_file.write("\n")
-                log_file.write("NB Rals =", _MAS_Simulation.RALs_recorded_count[-1])
-                log_file.write("\n")
-                log_file.write("Image Labelled = ", _MAS_Simulation.labelled)
-                log_file.write("\n")
-                log_file.write("NB_labelled_plants", _MAS_Simulation.nb_real_plants)
-                log_file.write("\n")
-                log_file.write("TP =", _MAS_Simulation.TP)
-                log_file.write("\n")
-                log_file.write("FN =", _MAS_Simulation.FN)
-                log_file.write("\n")
-                log_file.write("FP =", _MAS_Simulation.FP)
-        except:
-            with open("D:\Documents\IODAA\Fil Rouge\Resultats\dIP_vs_dIR_linear\results.log", "a") as log_file:
-                log_file.write(f"# {self.densite} - {self.experiment}")
-                log_file.write("\n")
-                log_file.write("AN ERROR OCCURED")
+        # try:
+        #     with open("D:\Documents\IODAA\Fil Rouge\Resultats\dIP_vs_dIR_linear\results.log", "a") as log_file:
+        #         log_file.write(f"# {self.densite} - {self.experiment}")
+        #         log_file.write("\n")
+        #         log_file.write(_MAS_Simulation.simu_steps_times)
+        #         log_file.write("\n")
+        #         log_file.write("NB Rals =", _MAS_Simulation.RALs_recorded_count[-1])
+        #         log_file.write("\n")
+        #         log_file.write("Image Labelled = ", _MAS_Simulation.labelled)
+        #         log_file.write("\n")
+        #         log_file.write("NB_labelled_plants", _MAS_Simulation.nb_real_plants)
+        #         log_file.write("\n")
+        #         log_file.write("TP =", _MAS_Simulation.TP)
+        #         log_file.write("\n")
+        #         log_file.write("FN =", _MAS_Simulation.FN)
+        #         log_file.write("\n")
+        #         log_file.write("FP =", _MAS_Simulation.FP)
+        # except:
+        #     with open("D:/Documents/IODAA/Fil Rouge/Resultats/dIP_vs_dIR_linear/results.log", "a") as log_file:
+        #         log_file.write(f"# {self.densite} - {self.experiment}")
+        #         log_file.write("\n")
+        #         log_file.write("AN ERROR OCCURED")
         
         return data
     

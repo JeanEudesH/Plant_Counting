@@ -31,8 +31,9 @@ def import_data(_path, _file_names, _import_function):
     return data
 
 def get_json_file_content(_path_json_file):
-    f = open(_path_json_file)
-    return json.load(f)
+    if _path_json_file.endswith(".json"):
+        f = open(_path_json_file)
+        return json.load(f)
 
 def get_img_array(path_img):
     if path_img.endswith("onetoc2"):
@@ -42,10 +43,11 @@ def get_img_array(path_img):
         return np.array(img)
 
 def get_file_lines(path_csv_file):
-    file_object = open(path_csv_file, 'r')
-    file_content = file_object.readlines()
-    file_object.close()
-    return(file_content)
+    if path_csv_file.endswith(".csv"):
+        file_object = open(path_csv_file, 'r')
+        file_content = file_object.readlines()
+        file_object.close()
+        return(file_content)
 
 def All_Simulations(_path_input_rgb_img, _path_PreTreatment_and_FA,
                     _labelled_images = False,
