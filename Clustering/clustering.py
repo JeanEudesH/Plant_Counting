@@ -243,7 +243,7 @@ def Automatic_Cluster_Number(row_pixels):
         An estimation of the number of clusters (plants) in a row.
     """
 
-    estimated_nb_clusters = int(len(row_pixels[0]) / 1000)
+    estimated_nb_clusters = int(len(row_pixels[0]) / 700)
 
     # If too few pixels, supplementary security
     if estimated_nb_clusters == 0:
@@ -332,7 +332,7 @@ def Total_Plant_Position(
         dataframe_coord = DBSCAN_clustering(img, epsilon, min_point)
         # On peut décommenter cette partie et commenter la partie sur le fuzzy
         # clustering pour régler les paramètres de DBSCAN.
-        # fig = plt.figure(figsize=(5, 12))
+        # fig = plt.figure(figsize=(12, 12))
         # ax = fig.add_subplot(111)
         # label_cluster = np.unique(dataframe_coord[["label"]].to_numpy())
         # txts = []
@@ -352,7 +352,7 @@ def Total_Plant_Position(
         #     s=0.5,
         #     cmap="Paired",
         # )
-
+        # # plt.show()
         # fig.savefig("/home/fort/Bureau/results/" + image.split(".")[0] + ".png")
         dataframe_coord.drop(
             dataframe_coord[dataframe_coord["label"] == -1].index, inplace=True
@@ -373,10 +373,10 @@ def Total_Plant_Position(
 
 if __name__ == "__main__":
     Total_Plant_Position(
-        path_image_input="/home/fort/Documents/APT 3A/Cours/Ekinocs/Output_General/Output/Session_8/Otsu_R",
+        path_image_input="/home/fort/Documents/APT 3A/Cours/Ekinocs/Output_General/Output/Session_22/Otsu_R",
         path_JSON_output="/home/fort/Bureau/results",
         epsilon=10,
-        min_point=20,
+        min_point=30,
         e=0.05,
         max_iter=100,
         m_p=2,
