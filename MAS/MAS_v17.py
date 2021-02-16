@@ -1551,6 +1551,7 @@ class Simulation_MAS(object):
             self.RALs_nested_positions += [_row]
         print()
 
+    # A voir pour calculer
     def Compute_Scores(self):
         """
         Computes :
@@ -1576,10 +1577,10 @@ class Simulation_MAS(object):
                                 "detected_plant"
                             ] = self.real_plant_keys[i]
                             self.real_plant_detected_keys += [self.real_plant_keys[i]]
-                        associated_RAL += 1
+                        associated_RAL += 1 # agents plantes associes a une plante
 
         self.FN = len(self.ADJUSTED_img_plant_positions) - self.TP
-        self.FP = self.RALs_recorded_count[-1] - associated_RAL
+        self.FP = self.RALs_recorded_count[-1] - associated_RAL # RALs_recorded_count[-1] : #AP dans l
 
     def Show_RALs_Position(
         self, _ax=None, _recorded_position_indeces=[0, -1], _colors=["r", "g"]
