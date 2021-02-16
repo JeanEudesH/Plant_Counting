@@ -566,12 +566,14 @@ class Row_Agent(object):
         newYdist = []
         new_diffs = []
         if (_start - 1 >= 0):
-            new_diffs += [abs(fusion_RAL.y-self.RALs[_start-1].y)]
+            # new_diffs += [abs(fusion_RAL.y-self.RALs[_start-1].y)]
+            new_diffs += [self.euclidean_distance(fusion_RAL, self.RALs[_start-1])]
             newYdist = self.InterPlant_Diffs[:_start-1]
         
         tail_newRALs = []
         if (_stop+1<len(self.RALs)):
-            new_diffs += [abs(fusion_RAL.y-self.RALs[_stop+1].y)]
+            # new_diffs += [abs(fusion_RAL.y-self.RALs[_stop+1].y)]
+            new_diffs += [self.euclidean_distance(fusion_RAL, self.RALs[_stop+1])]
             tail_newRALs = self.RALs[_stop+1:]
         
         newYdist += new_diffs
@@ -631,7 +633,7 @@ class Row_Agent(object):
 # =============================================================================
             min_size = min([self.RALs[i].group_size, self.RALs[i+1].group_size])
             
-            if (self.InterPlant_Diffs[i] < _fuse_factor*_crit_value or
+            if (self.InterPlant_Diffs[i] < _fuse_factor *_crit_value or
                 (abs(self.RALs[i].x-self.RALs[i+1].x) < min_size and
                  abs(self.RALs[i].y-self.RALs[i+1].y) < min_size)):
                 self.Fuse_RALs(i, i+1)
@@ -674,7 +676,8 @@ class Row_Agent(object):
         nb_RALs = len(self.RALs)
         if (nb_RALs > 1):
             for i in range(nb_RALs-1):
-                self.InterPlant_Diffs += [abs(self.RALs[i].y - self.RALs[i+1].y)]
+                # self.InterPlant_Diffs += [abs(self.RALs[i].y - self.RALs[i+1].y)]
+                self.InterPlant_Diffs += [self.euclidean_distance(self.RALs[i], self.RALs[i+1])]
                 
     def Get_Most_Frequent_InterPlant_Y(self):
         self.Get_Inter_Plant_Diffs()
@@ -706,7 +709,7 @@ class Row_Agent(object):
         RAL1 (RAL)
         RAL2 (RAL)
         """
-        return np.sqrt((RAL1.active_RA_Point[0] - RAL2.active_RA_Point[0]) ** 2 + (RAL1.active_RA_Point[1] - RAL2.active_RA_Point[1]))
+        return np.sqrt((RAL1.active_RA_Point[0] - RAL2.active_RA_Point[0]) ** 2 + (RAL1.active_RA_Point[1] - RAL2.active_RA_Point[1]) ** 2)
 
     
     def ORDER_RALs_to_Correct_X(self):
@@ -767,8 +770,8 @@ class Row_Agent(object):
         """
         to_reposition_idx = []
         # the mean RALs distance will be used to detect which RALs are outliers
-        mean_inter_RAL_dist = np.mean([self.euclidean_distance(self.RALs[i], self.RALs[i+1]) for i in range(len(self.RALs - 1))])
-        std = np.std([self.euclidean_distance(self.RALs[i], self.RALs[i+1]) for i in range(len(self.RALs - 1))])
+        mean_inter_RAL_dist = np.mean([self.euclidean_distance(self.RALs[i], self.RALs[i+1]) for i in range(len(self.RALs) - 1)])
+        std = np.std([self.euclidean_distance(self.RALs[i], self.RALs[i+1]) for i in range(len(self.RALs) - 1)])
 
         for i in range(len(self.RALs)):
             # s = []
@@ -795,9 +798,9 @@ class Row_Agent(object):
             #         to_reposition_idx.append(i)
 
             # local_XY Repositionning criterion based on the evaluation 
-            min_idx, max_idx = max(0, i - 1), min(len(self.RALs), i + 1) # only count the two adjacents neighbours
+            min_idx, max_idx = max(0, i - 1), min(len(self.RALs) - 1, i + 1) # only count the two adjacents neighbours
             d1, d2 = self.euclidean_distance(self.RALs[i], self.RALs[min_idx]), self.euclidean_distance(self.RALs[i], self.RALs[max_idx])
-            if (d1 >= mean_inter_RAL_dist + std) and (d2 >= mean_inter_RAL_dist + std): # both distances are "too large" -> it is an outlier
+            if (d1 >= mean_inter_RAL_dist + 2 * std) and (d2 >= mean_inter_RAL_dist + 2 * std): # both distances are "too large" -> it is an outlier
                 to_reposition_idx.append(i)
 
         return to_reposition_idx
@@ -832,7 +835,7 @@ class Row_Agent(object):
         to_reposition (list) : list of indices of the RAL that need to be repositioned
         """
         for i in to_reposition:
-            min_idx, max_idx = max(0, i - 1), min(len(self.RALs), i + 1)        
+            min_idx, max_idx = max(0, i - 1), min(len(self.RALs) - 1, i + 1)        
             self.RALs[i].active_RA_Point[0] = (self.RALs[min_idx].active_RA_Point[0] + self.RALs[min_idx].active_RA_Point[0]) / 2
             self.RALs[i].active_RA_Point[1] = (self.RALs[min_idx].active_RA_Point[1] + self.RALs[min_idx].active_RA_Point[1]) / 2
               
