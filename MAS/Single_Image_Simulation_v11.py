@@ -50,7 +50,7 @@ densite = 7
 dIP_dIR = "027_054"
 session_number = 1
 
-recon_policy = "local_threshold"
+recon_policy = "local_XY"
 
 path_input_raw = f"{path_input_root}/{unity_date}/densite={densite}/{dIP_dIR}/virtual_reality"
 path_input_adjusted_position_files = f"{path_input_root}/{unity_date}/densite={densite}/{dIP_dIR}_analysis/Output/Session_1/Adjusted_Position_Files"
@@ -71,7 +71,7 @@ names_input_PLANT_FT_PRED = os.listdir(path_input_PLANT_FT_PRED)
 # =============================================================================
 print("Data Collection...", end = " ")
 
-subset_size = -1
+subset_size = 1
 
 data_input_raw = import_data(path_input_raw,
                              names_input_raw[:subset_size],
