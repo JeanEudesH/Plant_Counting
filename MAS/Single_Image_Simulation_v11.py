@@ -94,14 +94,14 @@ print("Done")
 # =============================================================================
 # Simulation Parameters Definition
 # =============================================================================
-RAs_group_size = 30
+RAs_group_size = 20
 RAs_group_steps = 2
-Simulation_steps = 30
+Simulation_steps = 0
 
 RALs_fuse_factor = 0.5
 RALs_fill_factor = 1.5
 
-_image_index = 4
+_image_index = 0
 
 print(names_input_OTSU[_image_index])
 print(names_input_adjusted_position_files[_image_index])
