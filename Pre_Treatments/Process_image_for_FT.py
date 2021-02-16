@@ -232,9 +232,10 @@ def All_Pre_Treatment(
 if __name__ == "__main__":
 
     All_Pre_Treatment(
-        _path_input_rgb_img="/home/fort/Documents/APT 3A/Cours/Ekinocs/dIP_vs_dIR_linear/densite=9/2021_2_2_19_26_27/virtual_reality",
+        _path_input_rgb_img="/home/fort/Documents/APT 3A/Cours/Ekinocs/dIP_vs_dIR_curved/densite=9/033_033/virtual_reality",
         _path_output_root="/home/fort/Documents/APT 3A/Cours/Ekinocs/Output_General",
-        _path_position_files="/home/fort/Documents/APT 3A/Cours/Ekinocs/dIP_vs_dIR_linear/densite=9/2021_2_2_19_26_27/Position_Files",
+        _path_position_files="/home/fort/Documents/APT 3A/Cours/Ekinocs/dIP_vs_dIR_curved/densite=9/033_033
+        /Position_Files",
         _rows_real_angle=80,
         _make_unique_folder_per_session=True,
         _session=1,
