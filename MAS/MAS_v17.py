@@ -280,7 +280,8 @@ class ReactiveAgent_Leader(object):
             else:
                 nb_outside_frame_RAs += 1
         
-        self.recorded_Decision_Score += [active_RA_counter/np.max([.1, self.nb_RAs-nb_outside_frame_RAs])]
+        # self.recorded_Decision_Score += [active_RA_counter/np.max([.1, self.nb_RAs-nb_outside_frame_RAs])]
+        self.recorded_Decision_Score += [active_RA_counter/self.nb_RAs-nb_outside_frame_RAs]
         
         if (active_RA_counter != 0):
             self.active_RA_Point[0] = mean_x/active_RA_counter
@@ -431,8 +432,9 @@ class Row_Agent(object):
 # =============================================================================
         
         for _plant_pred in self.plant_FT_pred_in_crop_row:
-            RAL = ReactiveAgent_Leader(_x = _plant_pred[0],
-                                       _y = self.OTSU_img_array.shape[0] - _plant_pred[1],
+            RAL = ReactiveAgent_Leader(_x = _plant_pred[1],
+                                    #    _y = self.OTSU_img_array.shape[0] - _plant_pred[1],
+                                       _y = _plant_pred[0],
                                        _img_array = self.OTSU_img_array,
                                        _group_size = self.group_size,
                                        _group_step = self.group_step,
@@ -677,6 +679,7 @@ class Row_Agent(object):
         if (nb_RALs > 1):
             for i in range(nb_RALs-1):
                 # self.InterPlant_Diffs += [abs(self.RALs[i].y - self.RALs[i+1].y)]
+                # Faux car les agents ne sont pas ordonnes...
                 self.InterPlant_Diffs += [self.euclidean_distance(self.RALs[i], self.RALs[i+1])]
                 
     def Get_Most_Frequent_InterPlant_Y(self):
@@ -933,6 +936,7 @@ class Row_Agent(object):
         _start and stop are the indeces of the RALs to destroy so that they 
         correspond to the bounderies [_start _stop[
         """
+        print("Destroy RALs")
         if (_stop < _nb_RALs):
             self.RALs = self.RALs[:_start]+self.RALs[_stop:]
         else:
@@ -943,9 +947,6 @@ class Row_Agent(object):
         nb_RALs = len(self.RALs)
         i = 0
         while i < nb_RALs:
-# =============================================================================
-#             print(self.RALs[i].x, self.RALs[i].y, self.RALs[i].recorded_Decision_Score[-1])
-# =============================================================================
             if (self.RALs[i].recorded_Decision_Score[-1] < 0.01):
                 self.Destroy_RALs(i, i+1, nb_RALs)
                 nb_RALs -= 1
@@ -1146,6 +1147,7 @@ class Agents_Director(object):
                     k+=2
                 
             print("Rows to_delete", to_delete)
+            print("\n")
             nb_to_delete = len(to_delete)
             for i in range(nb_to_delete):
                 self.RowAs = self.RowAs[:to_delete[i]-i] + self.RowAs[to_delete[i]-i+1:]
@@ -1219,7 +1221,7 @@ class Agents_Director(object):
         i=0
         while i < nb_Rows-1:
             if (abs(self.RowAs[i].Row_Mean_X-self.RowAs[i+1].Row_Mean_X) < self.group_size):
-                
+                print(f"removing row {i}, distance to row {i+1} is {abs(self.RowAs[i].Row_Mean_X-self.RowAs[i+1].Row_Mean_X)} greater lower than {self.group_size}")
                 new_plant_FT = self.RowAs[i].plant_FT_pred_in_crop_row + self.RowAs[i].plant_FT_pred_in_crop_row
                 new_plant_FT.sort()
             
@@ -1383,6 +1385,7 @@ class Simulation_MAS(object):
                 time_detailed += [0]
                 
             if (_coerced_Y):
+                print("Order RowAs to correct RALs")
                 t0 = time.time()
                 self.AD.ORDER_RowAs_to_Correct_RALs_Y()
                 time_detailed += [time.time()-t0]
@@ -1432,20 +1435,22 @@ class Simulation_MAS(object):
                                       _coerced_X = False,
                                       _coerced_Y = False,
                                       _analyse_and_remove_Rows = False,
-                                      _edge_exploration = True):
+                                      _edge_exploration = True,
+                                      _check_rows_proximity=False):
         
         print("Starting MAS simulation with new end Criterion:")
         self.steps = _steps
         self.max_steps_reached = False
         
         if (_analyse_and_remove_Rows):
+            print("analyze remove rows")
             self.AD.Analyse_RowAs_Kmeans()
         
         self.AD.ORDER_RowAs_to_Update_InterPlant_Y()
         self.AD.Summarize_RowAs_InterPlant_Y()
         
-        if (_edge_exploration):
-            self.AD.ORDER_RowAs_for_Edges_Exploration()
+        # if (_edge_exploration):
+        #     self.AD.ORDER_RowAs_for_Edges_Exploration()
         
         self.AD.ORDER_RowAs_to_Update_InterPlant_Y()
         
@@ -1494,9 +1499,13 @@ class Simulation_MAS(object):
             self.AD.ORDER_RowAs_to_Destroy_Low_Activity_RALs()
             time_detailed += [time.time()-t0]
             
+            # Removes some of the rows at first step... Issue when a
+            # row is fragmented, estimates that the two rows are too
+            # close 
             t0 = time.time()
-            self.AD.Check_RowAs_Proximity()
-            time_detailed += [time.time()-t0]
+            if _check_rows_proximity:
+                self.AD.Check_RowAs_Proximity()
+                time_detailed += [time.time()-t0]
             
             t0 = time.time()
             self.AD.ORDER_RowAs_to_Update_InterPlant_Y()
@@ -1564,8 +1573,10 @@ class Simulation_MAS(object):
             
             self.AD.ORDER_RowAs_for_RALs_mean_points()
             if (_coerced_X):
+                print("Coerced X")
                 self.AD.ORDER_RowAs_to_Correct_RALs_X()
             if (_coerced_Y):
+                print("Coerced Y")
                 self.AD.ORDER_RowAs_to_Correct_RALs_Y()
             self.AD.ORDER_RowAs_for_Moving_RALs_to_active_points()
             
@@ -1684,24 +1695,32 @@ class Simulation_MAS(object):
         """
         
         if (_ax == None):
-            fig, ax = plt.subplots(1)
+            fig, ax = plt.subplots(1, figsize=(10, 10))
             ax.imshow(self.OTSU_img_array)
         else:
             ax = _ax
         
         nb_indeces = len(_recorded_position_indeces)
+
+        _colors = ["r", "g", "b", "c", "m", "y", "darkorange", "lime", "royalblue",
+                   "mediumslateblue", "mediumpurple", "plum", "violet", "crimson",
+                   "dodgerblue", "chartreuse", "oliverdrab", "peru", "lighcoral"]
         
-        for _RowsA in self.AD.RowAs:
-            for _RAL in _RowsA.RALs:
-                
+        for i, _RowsA in enumerate(self.AD.RowAs):
+            for j, _RAL in enumerate(_RowsA.RALs):     
                 for k in range (nb_indeces):
                     rect = patches.Rectangle((_RAL.recorded_positions[_recorded_position_indeces[k]][0]-_RAL.group_size,
                                               _RAL.recorded_positions[_recorded_position_indeces[k]][1]-_RAL.group_size),
                                              2*_RAL.group_size,2*_RAL.group_size,
                                              linewidth=1,
-                                             edgecolor=_colors[k],
-                                             facecolor='none')
+                                            #  edgecolor=_colors[k],
+                                            edgecolor=_colors[i % len(_colors)],
+                                            facecolor='none')
                     ax.add_patch(rect)
+                    ax.text(_RAL.active_RA_Point[0]-_RAL.group_size, 
+                            _RAL.active_RA_Point[1]-_RAL.group_size, 
+                             str(j), 
+                             color="coral", size=5)
     
     def Show_Adjusted_Positions(self, _ax = None, _color = "b"):
         """

@@ -74,7 +74,7 @@ names_input_PLANT_FT_PRED = os.listdir(path_input_PLANT_FT_PRED)
 # =============================================================================
 print("Data Collection...", end = " ")
 
-subset_size = -1
+subset_size = 4
 
 data_input_raw = import_data(path_input_raw,
                              names_input_raw[:subset_size],
@@ -94,14 +94,18 @@ print("Done")
 # =============================================================================
 # Simulation Parameters Definition
 # =============================================================================
-RAs_group_size = 20
+RAs_group_size = 15
 RAs_group_steps = 2
-Simulation_steps = 0
+Simulation_steps = 1
 
-RALs_fuse_factor = 0.5
-RALs_fill_factor = 1.5
+## TODO1: Fuse and fill doesn't work in curved mode...
+## TODO2: The RAL are not sorted along the row... Sort them to make the repositionning work
+## TODO3: The sorting issue impacts the computation of the interplant distance...
+## TODO4 : some rows where destroyed at first step : OK added an extra parameter _check_rows_proximity
+RALs_fuse_factor = 0
+RALs_fill_factor = 100
 
-_image_index = 0
+_image_index = 3
 
 print(names_input_OTSU[_image_index])
 print(names_input_adjusted_position_files[_image_index])
@@ -121,10 +125,11 @@ MAS_Simulation = MAS.Simulation_MAS(data_input_raw[_image_index],
                                     recon_policy=recon_policy)
 MAS_Simulation.Initialize_AD()
 MAS_Simulation.Perform_Simulation_newEndCrit(Simulation_steps,
-                                             _coerced_X=True,
+                                             _coerced_X=False, # coerced X : artefact sur certains rangs courbes : aligne sur une abscisse
                                              _coerced_Y=False,
-                                             _analyse_and_remove_Rows=True,
-                                             _edge_exploration = True)
+                                             _analyse_and_remove_Rows=False,
+                                             _edge_exploration = False,
+                                             _check_rows_proximity=False)
                                              # _edge_exploration : dit d'aller explorer vers les bords de l'image
                                              # au cas ou l'analyse de Fourier manque l'intialisation sur les bords
 # =============================================================================
