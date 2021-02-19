@@ -185,6 +185,9 @@ class ReactiveAgent_Leader(object):
                                           self.y + int(self.field_offset[1])]]
         
         self.used_as_filling_bound = False
+
+        # curved
+        self.neighbours = []
         
 # =============================================================================
 #         print("Done")
@@ -533,6 +536,99 @@ class Row_Agent(object):
         a = np.array([RAL.y for RAL in self.RALs])
         b = np.argsort(a)
         self.RALs = list(np.array(self.RALs)[b])
+
+    # curved
+    def Compute_Distance_Matrix(self):
+        """
+        Compute the pairwise distance matrix between all RAL
+        """
+        # compute the distance matrix
+        distance_matrix = np.zeros((len(self.RALs), len(self.RALs)))
+        for i in range(len(self.RALs)):
+            for j in range(len(self.RALs)):
+                if distance_matrix[i, j] == 0:
+                    distance_matrix[i, j] = self.euclidean_distance(self.RALs[i], self.RALs[j])
+        return distance_matrix
+
+    # curved
+    def Set_RALs_Neighbours(self):
+        distance_matrix = self.Compute_Distance_Matrix()
+        for i, _RAL in enumerate(self.RALs):
+            self.RALs[i].neighbours = []  # reinitialize the list at each update to avoiding cumulating neighbours
+            already_seen = [i]  # to avoid visiting the same neighbour twice
+            for k in range(2): # get the two closest neighbours
+                mask = [True if n not in already_seen else False for n in range(distance_matrix.shape[0])]
+                min_dist = np.min(distance_matrix[i, mask]) # distance to closest unseen neighbour
+                closest_idx = np.argwhere(distance_matrix[i, :] == min_dist)[0, 0] # get the index of the closest neighbour
+                if _RAL.neighbours != []:
+                    for n in _RAL.neighbours: # if we already added one agent
+                        if self.euclidean_distance(self.RALs[closest_idx], n) > self.euclidean_distance(_RAL, self.RALs[closest_idx]): # the RAL is not at an extremity of the row
+                            _RAL.neighbours.append(self.RALs[closest_idx])
+                            already_seen.append(closest_idx)
+                else: # if it is the first naighbour that we see, we add it anyway
+                    _RAL.neighbours.append(self.RALs[closest_idx])
+                    already_seen.append(closest_idx)
+
+    # Curved rows
+    def Sort_RALs(self):
+        """
+        The sorting stepis used initially, to have the RALs sorted in the right
+        order. This step is required since after we make several computations
+        using RALs indices (distances between i and i+1)
+        """
+        distance_matrix = self.Compute_Distance_Matrix()
+        
+        # we sequentially visit the neighboors de proche en proche, on both sides of the origin agent and store the indices
+        origin = 0
+        closest_idx1 = np.argmin(distance_matrix[0, 1:]) + 1 # closest neighbour (without itself)
+        mask = [True if n > 0 and n != closest_idx1 else False for n in range(distance_matrix.shape[0])]
+        dist = np.min(distance_matrix[0, mask]) # second closest neighbour
+        closest_idx2 = np.argwhere(distance_matrix[0, :] == dist)[0, 0] # get the index of the second closest neighbour
+
+        # closest1 and closest2 are on each side of origin : we visit each side separatly and give negative indices to the left list (visited2) and positive to the 
+        # right list (visited1) 
+        if distance_matrix[closest_idx1, closest_idx2] > distance_matrix[origin, closest_idx1] and distance_matrix[closest_idx1, closest_idx2] > distance_matrix[origin, closest_idx2]:
+            visited1, visited2 = [origin], []  # origin is already visited, stored in the first list
+            ref1, ref2 = closest_idx1, closest_idx2 # we now examine the neighbours of closest_idx_1 and closest_idx_2
+            while len(visited1) + len(visited2) < len(self.RALs): # not visited all the RALs
+                for ref, visited in zip([ref1, ref2], [visited1, visited2]):
+                    closest_neighbour_dist = distance_matrix[origin, ref]
+                    memory = closest_neighbour_dist # memory helps to stop adding RALs to visited when we arrived at an extremity of the row
+                    non_visited_neighbours = [True if n not in visited1 and n not in visited2 else False for n in range(distance_matrix.shape[0])] # mask to get only non visited RALs
+                    while True in non_visited_neighbours:
+                        visited.append(ref)
+                        non_visited_neighbours = [True if n not in visited1 and n not in visited2 else False for n in range(distance_matrix.shape[0])] # mask to get only non visited RALs
+                        if not True in non_visited_neighbours: # when everythind is visited
+                            break
+                        closest_neighbour_dist = np.min(distance_matrix[ref, non_visited_neighbours]) # get closest neighbour among non visited RALs
+                        if closest_neighbour_dist > 2 * memory:  # TODO:improve this condition
+                            break
+                        closest_neighbour_idx = np.argwhere(distance_matrix[ref, :] == closest_neighbour_dist)[0, 0]  # get the closest neighbour idx in RALs
+                        ref = closest_neighbour_idx # pass to next RALs
+                        memory = closest_neighbour_dist
+            # build sorted list of RALs and assign it to self.RALs
+            sorted_RALs = [0 for i in range(len(self.RALs))] 
+            for i in range(len(self.RALs)):
+                if i < len(visited1):
+                    sorted_RALs[i] = self.RALs[visited1[i]]
+                else:
+                    sorted_RALs[i] = self.RALs[visited2[-(i - len(visited1) + 1)]] # count the elements in visited2 starting from the end (modular counting over the row)
+            self.RALs = sorted_RALs
+        else: # 0 is on the extremity of the row, so we do only one pass
+            visited = [origin, closest_idx1]
+            ref = closest_idx2
+            while len(visited) < len(self.RALs): # while not visited all the RALs
+                visited.append(ref)
+                non_visited_neighbours = [True if n not in visited else False for n in range(distance_matrix.shape[0])] # mask to get only non visited RALs
+                if not True in non_visited_neighbours:
+                    break
+                closest_neighbour_dist = np.min(distance_matrix[ref, non_visited_neighbours]) # get closest neighbour among non visited RALs
+                closest_neighbour_idx = np.argwhere(distance_matrix[ref, :] == closest_neighbour_dist)[0, 0]  # get the closest neighbour idx in RALs
+                ref = closest_neighbour_idx # pass to next RAL
+            sorted_RALs = [0 for i in range(len(self.RALs))] # visited is ordered so now the RALs are sorted in RALs.
+            for i in range(len(sorted_RALs)):
+                sorted_RALs[i] = self.RALs[visited[i]]
+            self.RALs = sorted_RALs
     
     def Fuse_RALs(self, _start, _stop):
         """
@@ -773,10 +869,18 @@ class Row_Agent(object):
         """
         to_reposition_idx = []
         # the mean RALs distance will be used to detect which RALs are outliers
-        mean_inter_RAL_dist = np.mean([self.euclidean_distance(self.RALs[i], self.RALs[i+1]) for i in range(len(self.RALs) - 1)])
-        std = np.std([self.euclidean_distance(self.RALs[i], self.RALs[i+1]) for i in range(len(self.RALs) - 1)])
+        # mean_inter_RAL_dist = np.mean([self.euclidean_distance(self.RALs[i], self.RALs[i+1]) for i in range(len(self.RALs) - 1)])
+        # std = np.std([self.euclidean_distance(self.RALs[i], self.RALs[i+1]) for i in range(len(self.RALs) - 1)])
+        # unsorted RALs
+        distances = []
+        for _RAL in self.RALs:
+            for n in _RAL.neighbours:
+                distances.append(self.euclidean_distance(_RAL, n))
+        mean_inter_RAL_dist = np.mean(distances)
+        std = np.std(distances)
 
-        for i in range(len(self.RALs)):
+        for i, _RAL in enumerate(self.RALs):
+        # for i in range(len(self.RALs)):
             # s = []
             # min_idx, max_idx = max(0, i - n_neighbors), min(len(self.RALs), i + n_neighbors)
             
@@ -801,9 +905,16 @@ class Row_Agent(object):
             #         to_reposition_idx.append(i)
 
             # local_XY Repositionning criterion based on the evaluation 
-            min_idx, max_idx = max(0, i - 1), min(len(self.RALs) - 1, i + 1) # only count the two adjacents neighbours
-            d1, d2 = self.euclidean_distance(self.RALs[i], self.RALs[min_idx]), self.euclidean_distance(self.RALs[i], self.RALs[max_idx])
-            if (d1 >= mean_inter_RAL_dist + 2 * std) and (d2 >= mean_inter_RAL_dist + 2 * std): # both distances are "too large" -> it is an outlier
+            # min_idx, max_idx = max(0, i - 1), min(len(self.RALs) - 1, i + 1) # only count the two adjacents neighbours
+            # d1, d2 = self.euclidean_distance(self.RALs[i], self.RALs[min_idx]), self.euclidean_distance(self.RALs[i], self.RALs[max_idx])
+            # if (d1 >= mean_inter_RAL_dist + 2 * std) and (d2 >= mean_inter_RAL_dist + 2 * std): # both distances are "too large" -> it is an outlier
+            #     to_reposition_idx.append(i)
+            ## When the RAL are not sorted in RALs, we use the recorder neighbours to compute distances to neighbours
+            count = 0
+            for n in _RAL.neighbours:
+                if self.euclidean_distance(_RAL, n) > mean_inter_RAL_dist + 2 * std:
+                    count += 1
+            if count == len(_RAL.neighbours):  # if the _RAL is too far from each of his neighbours...
                 to_reposition_idx.append(i)
 
         return to_reposition_idx
@@ -838,9 +949,17 @@ class Row_Agent(object):
         to_reposition (list) : list of indices of the RAL that need to be repositioned
         """
         for i in to_reposition:
-            min_idx, max_idx = max(0, i - 1), min(len(self.RALs) - 1, i + 1)        
-            self.RALs[i].active_RA_Point[0] = (self.RALs[min_idx].active_RA_Point[0] + self.RALs[min_idx].active_RA_Point[0]) / 2
-            self.RALs[i].active_RA_Point[1] = (self.RALs[min_idx].active_RA_Point[1] + self.RALs[min_idx].active_RA_Point[1]) / 2
+            # self.RALs[i].active_RA_Point[0] = (self.RALs[min_idx].active_RA_Point[0] + self.RALs[min_idx].active_RA_Point[0]) / 2
+            # self.RALs[i].active_RA_Point[1] = (self.RALs[min_idx].active_RA_Point[1] + self.RALs[min_idx].active_RA_Point[1]) / 2
+            # without the indices when RALs is not sorted
+            x, y = 0, 0
+            if self.RALs[i].neighbours != []:
+                for n in self.RALs[i].neighbours:
+                    x += n.active_RA_Point[0]
+                    y += n.active_RA_Point[1]
+                self.RALs[i].active_RA_Point[0] = x / len(self.RALs[i].neighbours) # barycenter of the two closest neighbours
+                self.RALs[i].active_RA_Point[1] = y / len(self.RALs[i].neighbours)
+            # update the neighbours ?? Will be done in PerformSimulationnewEndCrit()
               
     def Neighbor_Weighted_Mean_X(self, to_reposition, init_weight=10, n_neighbors=5):
         """
@@ -933,14 +1052,18 @@ class Row_Agent(object):
     
     def Destroy_RALs(self, _start, _stop, _nb_RALs):
         """
-        _start and stop are the indeces of the RALs to destroy so that they 
+        _start and stop are the indices of the RALs to destroy so that they 
         correspond to the bounderies [_start _stop[
         """
         print("Destroy RALs")
         if (_stop < _nb_RALs):
+            to_be_destroyed_RALs = self.RALs[_start:_stop]
+            for r in to_be_destroyed_RALs:
+                del r
             self.RALs = self.RALs[:_start]+self.RALs[_stop:]
         else:
             self.RALs = self.RALs[:_start]
+        # neighbours update is made in PeformSimulation_...
     
     def Destroy_Low_Activity_RALs(self):
         
@@ -1151,6 +1274,14 @@ class Agents_Director(object):
             nb_to_delete = len(to_delete)
             for i in range(nb_to_delete):
                 self.RowAs = self.RowAs[:to_delete[i]-i] + self.RowAs[to_delete[i]-i+1:]
+
+    def ORDER_RowAs_to_Set_RALs_Neighbours(self):
+        for _RowA in self.RowAs:
+            _RowA.Set_RALs_Neighbours()
+
+    def ORDER_RowAs_to_Sort_RALs(self):
+        for _RowA in self.RowAs:
+            _RowA.Sort_RALs()
             
     def ORDER_RowAs_for_RALs_mean_points(self):
         for _RowA in self.RowAs:#[10:11]:
@@ -1443,14 +1574,19 @@ class Simulation_MAS(object):
         self.max_steps_reached = False
         
         if (_analyse_and_remove_Rows):
-            print("analyze remove rows")
             self.AD.Analyse_RowAs_Kmeans()
+
+        # Curved: either sort the RALs in the rank (harder)
+        # or store the neighbours of a RAL as attributes to retrieve
+        # them when desired
+        # self.AD.ORDER_RowAs_to_Sort_RALs()
+        self.AD.ORDER_RowAs_to_Set_RALs_Neighbours()
         
         self.AD.ORDER_RowAs_to_Update_InterPlant_Y()
         self.AD.Summarize_RowAs_InterPlant_Y()
         
-        # if (_edge_exploration):
-        #     self.AD.ORDER_RowAs_for_Edges_Exploration()
+        if (_edge_exploration):
+            self.AD.ORDER_RowAs_for_Edges_Exploration()
         
         self.AD.ORDER_RowAs_to_Update_InterPlant_Y()
         
@@ -1497,6 +1633,13 @@ class Simulation_MAS(object):
             
             t0 = time.time()
             self.AD.ORDER_RowAs_to_Destroy_Low_Activity_RALs()
+            time_detailed += [time.time()-t0]
+
+            # update the neighbours : set the neigbours of the recently created RAL
+            # and update the neighbours of the neighbours of destroyed RALs
+            # Takes one second on one image approximately
+            t0 = time.time()
+            self.AD.ORDER_RowAs_to_Set_RALs_Neighbours()
             time_detailed += [time.time()-t0]
             
             # Removes some of the rows at first step... Issue when a
@@ -1742,8 +1885,8 @@ class Simulation_MAS(object):
             ax = _ax
         
         for [x,y] in self.corrected_adjusted_plant_positions:
-            circle = patches.Circle((x,y),
-                                    radius = 2,
+            circle = patches.Circle((x,self.OTSU_img_array.shape[0] - y),
+                                    radius = 3,
                                     linewidth = 2,
                                     edgecolor = None,
                                     facecolor = _color)

@@ -22,7 +22,6 @@ import MAS_v17 as MAS
 def import_data(_path, _file_names, _import_function):
     data = []
     for _n in _file_names:
-        print(_n + "\n")
         data += [_import_function(_path + "/" + _n)]
     return data
 
@@ -51,7 +50,7 @@ densite = 7
 dIP_dIR = "02_07"
 session_number = 1
 
-recon_policy = "local_XY"
+recon_policy = "global"
 
 path_input_raw = f"{path_input_root}/{unity_date}/densite={densite}/{dIP_dIR}/virtual_reality"
 path_input_adjusted_position_files = f"{path_input_root}/{unity_date}/densite={densite}/{dIP_dIR}_analysis/Output/Session_1/Adjusted_Position_Files"
@@ -94,18 +93,20 @@ print("Done")
 # =============================================================================
 # Simulation Parameters Definition
 # =============================================================================
-RAs_group_size = 15
+RAs_group_size = 25
 RAs_group_steps = 2
-Simulation_steps = 1
+Simulation_steps = 4
 
 ## TODO1: Fuse and fill doesn't work in curved mode...
-## TODO2: The RAL are not sorted along the row... Sort them to make the repositionning work
-## TODO3: The sorting issue impacts the computation of the interplant distance...
+## TODO2: The RAL are not sorted along the row... Sort them to make the repositionning work : Done but maybe not the cleanest solution
+# -> Don't work on indices but let each RAL to keep track of its neighbours ?
+## TODO3: The sorting issue impacts the computation of the interplant distance... : OK now either you can sort the agents (not recommanded)
+# or you can maintain their neighbours as attributes
 ## TODO4 : some rows where destroyed at first step : OK added an extra parameter _check_rows_proximity
-RALs_fuse_factor = 0
+RALs_fuse_factor = 0.5
 RALs_fill_factor = 100
 
-_image_index = 3
+_image_index = 1
 
 print(names_input_OTSU[_image_index])
 print(names_input_adjusted_position_files[_image_index])
@@ -125,20 +126,13 @@ MAS_Simulation = MAS.Simulation_MAS(data_input_raw[_image_index],
                                     recon_policy=recon_policy)
 MAS_Simulation.Initialize_AD()
 MAS_Simulation.Perform_Simulation_newEndCrit(Simulation_steps,
-                                             _coerced_X=False, # coerced X : artefact sur certains rangs courbes : aligne sur une abscisse
+                                             _coerced_X=True, # coerced X : permet le repositionnement
                                              _coerced_Y=False,
                                              _analyse_and_remove_Rows=False,
                                              _edge_exploration = False,
                                              _check_rows_proximity=False)
                                              # _edge_exploration : dit d'aller explorer vers les bords de l'image
                                              # au cas ou l'analyse de Fourier manque l'intialisation sur les bords
-# =============================================================================
-# MAS_Simulation.Perform_Simulation(Simulation_steps,
-#                                              _coerced_X=True,
-#                                              _coerced_Y=False,
-#                                              _analyse_and_remove_Rows=True,
-#                                              _edge_exploration = True)
-# =============================================================================
 
 # =============================================================================
 # Simulation Analysis
