@@ -414,6 +414,13 @@ class Row_Agent(object):
         self.extensive_init = False
 
         self.recon_policy = recon_policy
+
+        # curved rows
+        # we use those list to store which RAL has to be destroyed, fused etc.
+        # to modify them only in the end of each round
+        self.to_be_fused = []
+        self.to_initialize_between = []
+        self.to_be_destroyed = []
         
 # =============================================================================
 #         print("Done")
@@ -559,15 +566,17 @@ class Row_Agent(object):
             for k in range(2): # get the two closest neighbours
                 mask = [True if n not in already_seen else False for n in range(distance_matrix.shape[0])]
                 min_dist = np.min(distance_matrix[i, mask]) # distance to closest unseen neighbour
-                closest_idx = np.argwhere(distance_matrix[i, :] == min_dist)[0, 0] # get the index of the closest neighbour
-                if _RAL.neighbours != []:
-                    for n in _RAL.neighbours: # if we already added one agent
-                        if self.euclidean_distance(self.RALs[closest_idx], n) > self.euclidean_distance(_RAL, self.RALs[closest_idx]): # the RAL is not at an extremity of the row
-                            _RAL.neighbours.append(self.RALs[closest_idx])
-                            already_seen.append(closest_idx)
-                else: # if it is the first naighbour that we see, we add it anyway
-                    _RAL.neighbours.append(self.RALs[closest_idx])
-                    already_seen.append(closest_idx)
+                closest_idx = np.nonzero(distance_matrix[i, :] == min_dist)[0] # get the index(s) of the closest neighbour
+                for close_idx in closest_idx:
+                    if close_idx != i: # do not append itself in its neighbours
+                        if _RAL.neighbours != []:
+                            for n in _RAL.neighbours: # if we already added one agent
+                                if self.euclidean_distance(self.RALs[close_idx], n) > self.euclidean_distance(_RAL, self.RALs[close_idx]): # the RAL is not at an extremity of the row
+                                    _RAL.neighbours.append(self.RALs[close_idx])
+                                    already_seen.append(close_idx)
+                        else: # if it is the first neighbour that we see, we add it anyway
+                            _RAL.neighbours.append(self.RALs[close_idx])
+                            already_seen.append(close_idx)
 
     # Curved rows
     def Sort_RALs(self):
@@ -630,124 +639,230 @@ class Row_Agent(object):
                 sorted_RALs[i] = self.RALs[visited[i]]
             self.RALs = sorted_RALs
     
-    def Fuse_RALs(self, _start, _stop):
-        """
-        _start and _stop are the indeces of the RALs to fuse so that they 
-        correspond to the boundaries [_start _stop[
-        """
+    # def Fuse_RALs(self, _start, _stop):
+    #     """
+    #     _start and _stop are the indeces of the RALs to fuse so that they 
+    #     correspond to the boundaries [_start _stop[
+    #     """        
+    #     fusion_RAL_x = 0
+    #     fusion_RAL_y = 0
         
-# =============================================================================
-#         print("Fusing procedure...")
-# =============================================================================
-        
-        fusion_RAL_x = 0
-        fusion_RAL_y = 0
-        
-        for _RAL in self.RALs[_start:_stop+1]:
-            fusion_RAL_x += _RAL.x
-            fusion_RAL_y += _RAL.y
+    #     for _RAL in self.RALs[_start:_stop+1]:
+    #         fusion_RAL_x += _RAL.x
+    #         fusion_RAL_y += _RAL.y
             
-        fusion_RAL = ReactiveAgent_Leader(_x = int(fusion_RAL_x/(_stop+1-_start)),
-                                           _y = int(fusion_RAL_y/(_stop+1-_start)),
+    #     fusion_RAL = ReactiveAgent_Leader(_x = int(fusion_RAL_x/(_stop+1-_start)),
+    #                                        _y = int(fusion_RAL_y/(_stop+1-_start)),
+    #                                        _img_array = self.OTSU_img_array,
+    #                                        _group_size = self.group_size,
+    #                                        _group_step = self.group_step)
+        
+    #     if (self.RALs[_start].used_as_filling_bound and
+    #         self.RALs[_stop].used_as_filling_bound):
+    #             fusion_RAL.used_as_filling_bound = True
+        
+    #     newYdist = []
+    #     new_diffs = []
+    #     if (_start - 1 >= 0):
+    #         # new_diffs += [abs(fusion_RAL.y-self.RALs[_start-1].y)]
+    #         new_diffs += [self.euclidean_distance(fusion_RAL, self.RALs[_start-1])]
+    #         newYdist = self.InterPlant_Diffs[:_start-1]
+        
+    #     tail_newRALs = []
+    #     if (_stop+1<len(self.RALs)):
+    #         # new_diffs += [abs(fusion_RAL.y-self.RALs[_stop+1].y)]
+    #         new_diffs += [self.euclidean_distance(fusion_RAL, self.RALs[_stop+1])]
+    #         tail_newRALs = self.RALs[_stop+1:]
+        
+    #     newYdist += new_diffs
+        
+        
+    #     if (_stop+1<len(self.InterPlant_Diffs)):
+    #         newYdist += self.InterPlant_Diffs[_stop+1:]
+        
+    #     self.InterPlant_Diffs = newYdist
+        
+    #     self.RALs = self.RALs[:_start]+[fusion_RAL]+tail_newRALs
+
+    def Fuse_RALs(self, RAL1, RAL2):
+        """
+        Fuse two RALs, by initializing a new RAL at the barycenter of them. We cannot
+        use indices to fuse RALs in curved mode since adjacent RALs have not necessarily
+        contiguous neighbours
+        """
+        if RAL2 not in RAL1.neighbours or RAL1 not in RAL2.neighbours:
+            return
+        fusion_RAL_x = (RAL1.active_RA_Point[0] + RAL2.active_RA_Point[0]) / 2
+        fusion_RAL_y = (RAL1.active_RA_Point[1] + RAL2.active_RA_Point[1]) / 2
+            
+        fusion_RAL = ReactiveAgent_Leader(_x = int(fusion_RAL_x),
+                                           _y = int(fusion_RAL_y),
                                            _img_array = self.OTSU_img_array,
                                            _group_size = self.group_size,
                                            _group_step = self.group_step)
-        
-        if (self.RALs[_start].used_as_filling_bound and
-            self.RALs[_stop].used_as_filling_bound):
-                fusion_RAL.used_as_filling_bound = True
-        
-# =============================================================================
-#         print("Fused", self.RALs[_start].y,
-#               "and", self.RALs[_stop].y)
-# =============================================================================
-        newYdist = []
-        new_diffs = []
-        if (_start - 1 >= 0):
-            # new_diffs += [abs(fusion_RAL.y-self.RALs[_start-1].y)]
-            new_diffs += [self.euclidean_distance(fusion_RAL, self.RALs[_start-1])]
-            newYdist = self.InterPlant_Diffs[:_start-1]
-        
-        tail_newRALs = []
-        if (_stop+1<len(self.RALs)):
-            # new_diffs += [abs(fusion_RAL.y-self.RALs[_stop+1].y)]
-            new_diffs += [self.euclidean_distance(fusion_RAL, self.RALs[_stop+1])]
-            tail_newRALs = self.RALs[_stop+1:]
-        
-        newYdist += new_diffs
-        
-        
-        if (_stop+1<len(self.InterPlant_Diffs)):
-            newYdist += self.InterPlant_Diffs[_stop+1:]
-        
-        self.InterPlant_Diffs = newYdist
-        
-        self.RALs = self.RALs[:_start]+[fusion_RAL]+tail_newRALs        
+
+        # update new RAL neighbours : its neighbours are the ones of the previous two RAL
+        for n in RAL1.neighbours:
+            if n != RAL2:
+                fusion_RAL.neighbours.append(n)
+                for i, nprime in enumerate(n.neighbours): # also update the neighbour's neighbour
+                    if nprime == RAL1:
+                        n.neighbours[i] = fusion_RAL
+        for n in RAL2.neighbours:
+            if n != RAL1:
+                fusion_RAL.neighbours.append(n)
+                for i, nprime in enumerate(n.neighbours): # also update the neighbour's neighbour
+                    if nprime == RAL2:
+                        n.neighbours[i] = fusion_RAL
+
+        if fusion_RAL in fusion_RAL.neighbours:
+                print("PROBLEM AT FUSION !!!")
+
+        self.RALs.append(fusion_RAL)
+        self.RALs.remove(RAL1)
+        # if RAL2 in self.RALs:
+        self.RALs.remove(RAL2)
+        # else:
+        #     print(RAL1, RAL2)
+
+        # mettre a jour newYdist ??
+            
     
-    def Fill_RALs(self, _RAL_1_index, _RAL_2_index, _filling_step):
+    # def Fill_RALs(self, _RAL_1_index, _RAL_2_index, _filling_step):
         
-        if (not self.RALs[_RAL_1_index].used_as_filling_bound or
-            not self.RALs[_RAL_2_index].used_as_filling_bound):
-# =============================================================================
-#             print("Filling procedure...")
-# =============================================================================
-            y_init = self.RALs[_RAL_1_index].y
-            new_RALs = []
-            nb_new_RALs = 0
-            new_diffs = []
-            while y_init + _filling_step < self.RALs[_RAL_2_index].y:
-                new_RAL = ReactiveAgent_Leader(_x = self.Row_Mean_X,
-                                               _y = int(y_init + _filling_step),
-                                               _img_array = self.OTSU_img_array,
-                                               _group_size = self.group_size,
-                                               _group_step = self.group_step)
-                new_RAL.used_as_filling_bound = True
+    #     if (not self.RALs[_RAL_1_index].used_as_filling_bound or
+    #         not self.RALs[_RAL_2_index].used_as_filling_bound):
+    #         y_init = self.RALs[_RAL_1_index].y
+    #         new_RALs = []
+    #         nb_new_RALs = 0
+    #         new_diffs = []
+    #         while y_init + _filling_step < self.RALs[_RAL_2_index].y:
+    #             new_RAL = ReactiveAgent_Leader(_x = self.Row_Mean_X,
+    #                                            _y = int(y_init + _filling_step),
+    #                                            _img_array = self.OTSU_img_array,
+    #                                            _group_size = self.group_size,
+    #                                            _group_step = self.group_step)
+    #             new_RAL.used_as_filling_bound = True
                 
-                new_RALs += [new_RAL]
-                new_diffs += [_filling_step]
+    #             new_RALs += [new_RAL]
+    #             new_diffs += [_filling_step]
                 
-                y_init += _filling_step
+    #             y_init += _filling_step
                 
-                nb_new_RALs += 1
+    #             nb_new_RALs += 1
             
-            self.RALs[_RAL_1_index].used_as_filling_bound = True
-            self.RALs[_RAL_2_index].used_as_filling_bound = True
+    #         self.RALs[_RAL_1_index].used_as_filling_bound = True
+    #         self.RALs[_RAL_2_index].used_as_filling_bound = True
             
-            if (nb_new_RALs > 0):
-                new_diffs += [abs(new_RALs[-1].y-self.RALs[_RAL_2_index].y)]
-                self.RALs = self.RALs[:_RAL_1_index+1]+new_RALs+self.RALs[_RAL_2_index:]
+    #         if (nb_new_RALs > 0):
+    #             new_diffs += [abs(new_RALs[-1].y-self.RALs[_RAL_2_index].y)]
+    #             self.RALs = self.RALs[:_RAL_1_index+1]+new_RALs+self.RALs[_RAL_2_index:]
                 
-                self.InterPlant_Diffs = self.InterPlant_Diffs[:_RAL_1_index]+ \
-                                    new_diffs+ \
-                                    self.InterPlant_Diffs[_RAL_2_index:]
+    #             self.InterPlant_Diffs = self.InterPlant_Diffs[:_RAL_1_index]+ \
+    #                                 new_diffs+ \
+    #                                 self.InterPlant_Diffs[_RAL_2_index:]
+
+    def Fill_RALs(self, RAL1, RAL2, _filling_step):
+        """
+        The new RALs are initialized on a straight line between RAL1 and RAL2, and evenly spaced
+        """
+        x_init = RAL1.x
+        y_init = RAL1.y
+        new_RALs = []
+        nb_new_RALs = 0
+        # new_diffs = []
+
+        # to update neighbours of new RAL
+        previous_RAL = RAL1
+        if RAL2 in RAL1.neighbours:
+            RAL1.neighbours.remove(RAL2)
+
+        while abs(RAL2.y - y_init) >= _filling_step and abs(RAL2.x - x_init) >= _filling_step: # there is space for a new RAL
+            new_RAL = ReactiveAgent_Leader(_x = int(x_init + _filling_step),
+                                            _y = int(y_init + _filling_step),
+                                            _img_array = self.OTSU_img_array,
+                                            _group_size = self.group_size,
+                                            _group_step = self.group_step)
+            
+            new_RALs.append(new_RAL)
+            # new_diffs += [_filling_step]
+
+            # update the neighbours
+            previous_RAL.neighbours.append(new_RAL)
+            new_RAL.neighbours.append(previous_RAL)
+            previous_RAL = new_RAL
+            
+            if np.abs(RAL2.x - x_init) >= _filling_step:
+                if RAL2.x - x_init >= 0:
+                    direction = 1
+                else:
+                    direction = -1
+                x_init += direction * _filling_step
+            else: 
+                x_init = RAL2.x
+            if np.abs(RAL2.y - y_init) >= _filling_step:
+                if RAL2.y - y_init >= 0:
+                    direction = 1
+                else:
+                    direction = -1
+                y_init += direction * _filling_step
+            else:
+                y_init = RAL2.y
+            nb_new_RALs += 1
+
+        print(f"Initialized {len(new_RALs)} new RALs.")
+
+        for i, n in enumerate(RAL2.neighbours):
+            if n == RAL1:
+                RAL2.neighbours[i] = new_RALs[-1]
+        
+        if (nb_new_RALs > 0):
+            # new_diffs += [self.euclidean_distance(new_RALs[-1], RAL2)]
+            self.RALs.extend(new_RALs) # append the initialized agents
+            
+            # self.InterPlant_Diffs = self.InterPlant_Diffs[:RAL1]+ \
+            #                     new_diffs+ \
+            #                     self.InterPlant_Diffs[_RAL_2_index:]
             
     def Fill_or_Fuse_RALs(self, _crit_value, _fuse_factor = 0.5, _fill_factor = 1.5):
         nb_RALs = len(self.RALs)
         i = 0
         while i < nb_RALs-1:
+            # linear rows with indexed agents
+            # min_size = min([self.RALs[i].group_size, self.RALs[i+1].group_size])
+            # if (self.InterPlant_Diffs[i] < _fuse_factor *_crit_value or
+            #     (abs(self.RALs[i].x-self.RALs[i+1].x) < min_size and
+            #      abs(self.RALs[i].y-self.RALs[i+1].y) < min_size)):
+            #     self.Fuse_RALs(i, i+1)
             
-# =============================================================================
-#             print(self.InterPlant_Diffs[i], _fuse_factor*_crit_value)
-# =============================================================================
-            min_size = min([self.RALs[i].group_size, self.RALs[i+1].group_size])
+            # if (not self.extensive_init):
+            #     if (i<len(self.InterPlant_Diffs)):#in case we fused the last 2 RAL of the crop row
+            #         if self.InterPlant_Diffs[i] > _fill_factor*_crit_value:
+            #             self.Fill_RALs(i, i+1, int(1.1*_fuse_factor*_crit_value)) ## fuse_factor ???
+            has_been_fused = False
+
+            for n in self.RALs[i].neighbours:
+                if self.euclidean_distance(self.RALs[i], n) < _fuse_factor * _crit_value:
+                    self.Fuse_RALs(self.RALs[i], n)
+                    has_been_fused = True
+                    break
             
-            if (self.InterPlant_Diffs[i] < _fuse_factor *_crit_value or
-                (abs(self.RALs[i].x-self.RALs[i+1].x) < min_size and
-                 abs(self.RALs[i].y-self.RALs[i+1].y) < min_size)):
-                self.Fuse_RALs(i, i+1)
-            
-            if (not self.extensive_init):
-                if (i<len(self.InterPlant_Diffs)):#in case we fused the last 2 RAL of the crop row
-                    if self.InterPlant_Diffs[i] > _fill_factor*_crit_value:
-                        self.Fill_RALs(i, i+1, int(1.1*_fuse_factor*_crit_value))
+            if has_been_fused:  # if the RAL has been fused to another, do not use it to detect filling
+                i += 1
+                nb_RALs = len(self.RALs)
+                continue
+
+            for n in self.RALs[i].neighbours:
+                if abs(self.RALs[i].x  - n.x) >= _fill_factor * _crit_value and abs(self.RALs[i].y  - n.y) > _fill_factor * _crit_value:
+                    self.Fill_RALs(self.RALs[i], n, int(_fill_factor * _crit_value))
             
             i += 1
             nb_RALs = len(self.RALs)
         
 # =============================================================================
-#         print("After fill and fuse procedure over all the crop row, the new RAls list is :", end = ", ")
-#         for _RAL in self.RALs:
-#             print([_RAL.x, _RAL.y], end=", ")
+        # print("After fill and fuse procedure over all the crop row, the new RAls list is :", end = ", ")
+        # for _RAL in self.RALs:
+        #     print([_RAL.x, _RAL.y], end=", ")
 # =============================================================================
     
     def Get_RALs_mean_points(self):
@@ -773,10 +888,15 @@ class Row_Agent(object):
         self.InterPlant_Diffs = []
         nb_RALs = len(self.RALs)
         if (nb_RALs > 1):
-            for i in range(nb_RALs-1):
+            #for i in range(nb_RALs-1):
                 # self.InterPlant_Diffs += [abs(self.RALs[i].y - self.RALs[i+1].y)]
                 # Faux car les agents ne sont pas ordonnes...
-                self.InterPlant_Diffs += [self.euclidean_distance(self.RALs[i], self.RALs[i+1])]
+                # self.InterPlant_Diffs += [self.euclidean_distance(self.RALs[i], self.RALs[i+1])]
+            # curved, without indices
+            for _RAL in self.RALs:
+                for n in _RAL.neighbours:
+                    self.InterPlant_Diffs.append(self.euclidean_distance(_RAL, n))
+                    # self.InterPlant_Diffs.append(0) # TEST
                 
     def Get_Most_Frequent_InterPlant_Y(self):
         self.Get_Inter_Plant_Diffs()
@@ -1050,28 +1170,46 @@ class Row_Agent(object):
             _RAL.Move_Based_on_AD_Order(_RAL.active_RA_Point[0],
                                         _RAL.active_RA_Point[1])
     
-    def Destroy_RALs(self, _start, _stop, _nb_RALs):
+    # def Destroy_RALs(self, _start, _stop, _nb_RALs):
+    #     """
+    #     _start and stop are the indices of the RALs to destroy so that they 
+    #     correspond to the bounderies [_start _stop[
+    #     """
+    #     print("Destroy RALs")
+    #     if (_stop < _nb_RALs):
+    #         to_be_destroyed_RALs = self.RALs[_start:_stop]
+    #         for r in to_be_destroyed_RALs:
+    #             del r
+    #         self.RALs = self.RALs[:_start]+self.RALs[_stop:]
+    #     else:
+    #         self.RALs = self.RALs[:_start]
+    #     # neighbours update is made in PeformSimulation_...
+
+    # curved
+    def Destroy_RALs(self, RAL_idx):
         """
-        _start and stop are the indices of the RALs to destroy so that they 
-        correspond to the bounderies [_start _stop[
+        Destroy the given RAL and update its neighbours
         """
-        print("Destroy RALs")
-        if (_stop < _nb_RALs):
-            to_be_destroyed_RALs = self.RALs[_start:_stop]
-            for r in to_be_destroyed_RALs:
-                del r
-            self.RALs = self.RALs[:_start]+self.RALs[_stop:]
-        else:
-            self.RALs = self.RALs[:_start]
-        # neighbours update is made in PeformSimulation_...
+        to_be_destroyed = self.RALs[RAL_idx]
+        # update neighbours of the neighbours
+        for n in to_be_destroyed.neighbours:
+            # remove RAL from its neighbours' neighbours' list
+            if to_be_destroyed in n.neighbours:
+                n.neighbours.remove(to_be_destroyed)
+                # doesn't append n himself in his neighbours
+                for k in to_be_destroyed.neighbours: # link the neighbours together
+                    if k != n:
+                        n.neighbours.append(k)
+        # destroy the RAL
+        self.RALs.pop(RAL_idx)
+        del to_be_destroyed        
     
     def Destroy_Low_Activity_RALs(self):
-        
         nb_RALs = len(self.RALs)
         i = 0
         while i < nb_RALs:
             if (self.RALs[i].recorded_Decision_Score[-1] < 0.01):
-                self.Destroy_RALs(i, i+1, nb_RALs)
+                self.Destroy_RALs(i)
                 nb_RALs -= 1
             else:
                 i += 1
@@ -1275,10 +1413,12 @@ class Agents_Director(object):
             for i in range(nb_to_delete):
                 self.RowAs = self.RowAs[:to_delete[i]-i] + self.RowAs[to_delete[i]-i+1:]
 
+    # curved : used
     def ORDER_RowAs_to_Set_RALs_Neighbours(self):
         for _RowA in self.RowAs:
             _RowA.Set_RALs_Neighbours()
 
+    # curved : not used in practice
     def ORDER_RowAs_to_Sort_RALs(self):
         for _RowA in self.RowAs:
             _RowA.Sort_RALs()
@@ -1561,6 +1701,10 @@ class Simulation_MAS(object):
             print("MAS simulation Finished with max steps reached.")
         else:
             print("MAS simulation Finished")
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # 
+# PERFORM SIMULATION NEW END CRIT                   # 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # 
     
     def Perform_Simulation_newEndCrit(self, _steps = 10,
                                       _coerced_X = False,
@@ -1630,6 +1774,14 @@ class Simulation_MAS(object):
             t0 = time.time()
             self.AD.ORDER_RowAs_Fill_or_Fuse_RALs()
             time_detailed += [time.time()-t0]
+
+            t0 = time.time()
+            self.AD.ORDER_RowAs_to_Set_RALs_Neighbours()
+            time_detailed += [time.time()-t0]
+
+            t0 = time.time()
+            self.AD.ORDER_RowAs_to_Update_InterPlant_Y()
+            time_detailed += [time.time()-t0]
             
             t0 = time.time()
             self.AD.ORDER_RowAs_to_Destroy_Low_Activity_RALs()
@@ -1640,6 +1792,10 @@ class Simulation_MAS(object):
             # Takes one second on one image approximately
             t0 = time.time()
             self.AD.ORDER_RowAs_to_Set_RALs_Neighbours()
+            time_detailed += [time.time()-t0]
+
+            t0 = time.time()
+            self.AD.ORDER_RowAs_to_Update_InterPlant_Y()
             time_detailed += [time.time()-t0]
             
             # Removes some of the rows at first step... Issue when a

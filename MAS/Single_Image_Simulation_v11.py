@@ -50,7 +50,7 @@ densite = 7
 dIP_dIR = "02_07"
 session_number = 1
 
-recon_policy = "global"
+recon_policy = "local_XY"
 
 path_input_raw = f"{path_input_root}/{unity_date}/densite={densite}/{dIP_dIR}/virtual_reality"
 path_input_adjusted_position_files = f"{path_input_root}/{unity_date}/densite={densite}/{dIP_dIR}_analysis/Output/Session_1/Adjusted_Position_Files"
@@ -93,20 +93,22 @@ print("Done")
 # =============================================================================
 # Simulation Parameters Definition
 # =============================================================================
-RAs_group_size = 25
+RAs_group_size = 30
 RAs_group_steps = 2
-Simulation_steps = 4
+Simulation_steps = 100
 
 ## TODO1: Fuse and fill doesn't work in curved mode...
 ## TODO2: The RAL are not sorted along the row... Sort them to make the repositionning work : Done but maybe not the cleanest solution
-# -> Don't work on indices but let each RAL to keep track of its neighbours ?
+# -> Don't work on indices but let eacsh RAL to keep track of its neighbours ?
 ## TODO3: The sorting issue impacts the computation of the interplant distance... : OK now either you can sort the agents (not recommanded)
 # or you can maintain their neighbours as attributes
 ## TODO4 : some rows where destroyed at first step : OK added an extra parameter _check_rows_proximity
+## TODO5: Recoding Fill and fuse functions with our new setting : to be tested
+## TODO6: What to do with the argument InterPlant_Diffs ? It seems like I can remove it completely
 RALs_fuse_factor = 0.5
-RALs_fill_factor = 100
+RALs_fill_factor = 1.05
 
-_image_index = 1
+_image_index = 0
 
 print(names_input_OTSU[_image_index])
 print(names_input_adjusted_position_files[_image_index])
