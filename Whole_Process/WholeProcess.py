@@ -74,14 +74,13 @@ def CompleteProcess(
     FA.All_Fourier_Analysis(_path_output_root, _session, _bin_div_X, _bin_div_Y)
 
     CLS.Total_Plant_Position(
-        path_image_input,
-        path_JSON_output,
-        epsilon,
-        min_point,
-        e,
-        max_iter,
-        m_p,
-        threshold,
+        _path_output_root,
+        _epsilon,
+        _min_point,
+        _e,
+        _max_iter,
+        _m_p,
+        _threshold,
     )
 
     MIS.All_Simulations(

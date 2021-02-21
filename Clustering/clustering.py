@@ -4,21 +4,6 @@ Created on Tue Jan 19 22:30:47 2021
 
 @author: Le groupe tournesol (the best)
 
-A FAIRE :
-
-    - Finir les fonctions (duh)
-    - Se mettre d'accord sur un seuil minimal de plantes dans un rang
-    (==> nombre minimal de pixels à trouver.)
-    - Voir la robustesse des fonctions AutomaticNbClusters et
-    Threshold_PixelsRang dans types d'images
-    (dépend de la taille de l'image, du nombre total de rangs et le nombre
-    total de pixels "plantes" )
-    - Déterminer quelles variables nous allons utiliser pour vérifier la
-    qualité du dénombrement des plantes de l'image.
-
-    - Attention à définir qqpart les abréviations
-    - Relire tous les commentaires une fois le script fini
-    - Enlever la partie dataframe et la transformer en np.array ?
 """
 
 # Import of librairies
@@ -195,7 +180,6 @@ def Plants_Detection(dataframe_coord, e, max_iter, m_p, threshold, image):
             JSON_final.append(results_fuzzy_clustering)
 
     # Plot
-    # print(historic_cluster)
     Plot(dataframe_coord, XY, image)
     return JSON_final
 
@@ -227,10 +211,11 @@ def Threshold_Pixels_Row(row_pixels, threshold):
         return False
 
 
-def Automatic_Cluster_Number(row_pixels):
+def Automatic_Cluster_Number(row_pixels, _RAs_group_size):
     """
     Objective : to estimate the number of clusters to initialize the fuzzy
-    clustering function.
+    clustering function. To do so we divide the number of pixels in a row by
+    an estimation of the surface of one plant : 40% of a lenght of a plant agent squared.
 
     Parameters
     ----------
@@ -243,7 +228,9 @@ def Automatic_Cluster_Number(row_pixels):
         An estimation of the number of clusters (plants) in a row.
     """
 
-    estimated_nb_clusters = int(len(row_pixels[0]) / 700)
+    estimated_nb_clusters = int(
+        len(row_pixels[0]) / (_RAs_group_size * _RAs_group_size * 0.4)
+    )
 
     # If too few pixels, supplementary security
     if estimated_nb_clusters == 0:
@@ -316,18 +303,25 @@ def Plot(mat_coord, centresCoordinates, image):
     return
 
 
-# os.walk()
 def Total_Plant_Position(
-    path_image_input, path_JSON_output, epsilon, min_point, e, max_iter, m_p, threshold
+    _path_output_root,
+    session,
+    epsilon,
+    min_point,
+    e,
+    max_iter,
+    m_p,
+    threshold,
+    _RAs_group_size,
 ):
     # Open the binarized image
-    # path of the OTSU image
-
-    list_image = listdir(path_image_input)
+    list_image = listdir(
+        _path_output_root + "/Output/session_" + str(session) + "/Otsu_R"
+    )
     print(list_image)
     for image in list_image:
         print("start ", image)
-        img = Image.open(path_image_input + "/" + image)
+        img = Image.open(_path_output_root + "/" + image)
         print("DBSCAN")
         dataframe_coord = DBSCAN_clustering(img, epsilon, min_point)
         # On peut décommenter cette partie et commenter la partie sur le fuzzy
@@ -362,6 +356,13 @@ def Total_Plant_Position(
             dataframe_coord, e, max_iter, m_p, threshold, image
         )
         print("write_json")
+        path_JSON_output = (
+            _path_output_root
+            + "/outputCL/session"
+            + str(session)
+            + "/Plant_CL_Predictions"
+        )
+        gIO.check_make_directory(path_JSON_output)
         gIO.WriteJson(
             path_JSON_output,
             "Predicting_initial_plant_" + image.split(".")[0],
@@ -373,12 +374,13 @@ def Total_Plant_Position(
 
 if __name__ == "__main__":
     Total_Plant_Position(
-        path_image_input="/home/fort/Documents/APT 3A/Cours/Ekinocs/Output_General/Output/Session_22/Otsu_R",
-        path_JSON_output="/home/fort/Bureau/results",
+        _path_output_root="/home/fort/Documents/APT 3A/Cours/Ekinocs/Output_General",
+        session=1,
         epsilon=10,
         min_point=30,
         e=0.05,
         max_iter=100,
         m_p=2,
         threshold=2000,
+        _RAs_group_size=20,
     )
