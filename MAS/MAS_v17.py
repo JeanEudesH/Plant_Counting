@@ -1966,9 +1966,11 @@ class Simulation_MAS(object):
                             self.real_plant_detected_keys += [self.real_plant_keys[i]]
                         associated_RAL += 1
         
-        self.FN = len(self.ADJUSTED_img_plant_positions) - self.TP
+        # self.FN = len(self.ADJUSTED_img_plant_positions) - self.TP
+        self.FN = self.nb_real_plants - self.TP
         print(self.RALs_recorded_count[-1], associated_RAL)
-        self.FP = self.RALs_recorded_count[-1] - associated_RAL
+        # self.FP = self.RALs_recorded_count[-1] - associated_RAL
+        self.FP = self.RALs_recorded_count[-1] - self.TP
     
     def Show_RALs_Position(self,
                            _ax = None,
