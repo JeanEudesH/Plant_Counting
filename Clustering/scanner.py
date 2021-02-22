@@ -319,6 +319,63 @@ def direction_med(directions_all_pixels):
     return [Y_med, X_med]
 
 
+def translate_row(coord_row, direction):
+    # Move the bigger row with a certain step to determine
+    # Direction chosen and move with translate row
+    # Step is a poroportion of the vector direction
+
+    # BOundaries si les coord sont hors image, lui dire tout va bien et arrêt
+    # si plus aucun pixel dans l'image (fonction supplémentaire ? )
+    new_coord_row = 1
+    return new_coord_row
+
+
+def sum_plant_pixels(coord_row, otsu_img):
+    # Obtention data pour fourier
+    # Number of pixels equal to 255 at the coordinates checked by
+    # the translated row
+    Y = 1 # Sum des pixels = 255
+    X = 1 # Pas de déplacement
+    # fois 2 à concaténer
+
+    return Y, X
+
+
+def calculate_dist_interRow(X, Y):
+    # Fourier calculation
+    # X: all steps of the scan (its position?)
+    # Y: Number of white pixels
+    # Use the "line" from median pixel
+
+    # Use sum_plant_pixels et translate_row
+    # +/- 1 pour le sens
+    result_fft = 1
+    return result_fft
+
+
+def plot_fft():
+    # plot la distance inter rang
+    pass
+
+
+def row_fusion():
+    # if the scan recover 2 clusters, we can estimate they belong to the same row
+    pass
+
+def iteration_row_fusion():
+    # For each iteration take the longer row
+    # loop row_fusion
+    pass
+
+
+def calculate_dist_interPlant():
+    # Get an area of constant size, thickness constant and a row going from
+    # side to side of the image
+    # X:
+    # Y:
+    pass
+
+
 def plot_cluster(coordPixels, dataframe_coord, size_img,
                  direction_med, direction_mean):
 
