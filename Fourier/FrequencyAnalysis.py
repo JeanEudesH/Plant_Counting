@@ -13,15 +13,15 @@ Method
     - It is used twice. The first time to appproximate the position of the crops
     rows. The second time to approximate the positions of the plants in all the
     crops rows detected the first time.
-    
+
 variables the user can change:
     - path_root (string): root directory of the input (rotated Otsu Images) and
     the output (so that results are all available together with the input)
-    
+
     - bins_div_X (int, min = 1): size of the bins used for the density distribution
     of the white pixels on the X Axis to smooth the signal before giving it to
     the Fourier Analysis.
-    
+
     - bins_div_Y (int, min = 1): same as "bins_div_X" but on the Y axis
 """
 import os
@@ -64,7 +64,10 @@ def separate_X_Y_from_bsas_files(_data):
         Y += [float(y)]
     return np.array(X), np.array(Y)
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 5f00ba9b0bf1a1b72da33191bbda1c56bba57ec3
 def Compute_Power_and_Freq(_signal):
     fourier = np.fft.fft(_signal)
     power = np.absolute(fourier / _signal.size) ** 2
@@ -75,6 +78,7 @@ def Compute_Power_and_Freq(_signal):
 
 def Get_Signal_Freq(_power, _all_freq):
     nb_points = _all_freq.size
+<<<<<<< HEAD
     i = 0
     _max = 0
     _freq_index = 0
@@ -90,6 +94,23 @@ def Get_Signal_Freq(_power, _all_freq):
 
     elif _all_freq[_freq_index] < 0:
         _freq_index = 1
+=======
+    i=0
+    _max=0
+    _freq_index=0
+    while _all_freq[i] >= 0 and i < nb_points-1:
+
+        if (_power[i+1] > _power[i]):
+            if (_power[i+1] > _max):
+                _max = _power[i+1]
+                _freq_index = i+1
+        i+=1
+    if (_freq_index == 0):
+        _freq_index += 1
+
+    elif(_all_freq[_freq_index] < 0):
+        _freq_index=1
+>>>>>>> 5f00ba9b0bf1a1b72da33191bbda1c56bba57ec3
 
     return _all_freq[_freq_index]
 
@@ -117,11 +138,19 @@ def Search_Periodic_Peaks(_histogram, _period, _bin_div):
 
     signal_max_index = np.argsort(_histogram)[-1]
 
+<<<<<<< HEAD
     search_window_half_width = int(0.1 * _period)
     if search_window_half_width == 0:
         search_window_half_width += 1
 
     first_part_rows = []
+=======
+    search_window_half_width = int(0.1*_period)
+    if (search_window_half_width==0):
+        search_window_half_width+=1
+
+    first_part_rows=[]
+>>>>>>> 5f00ba9b0bf1a1b72da33191bbda1c56bba57ec3
     peak_index = signal_max_index
     while peak_index > 0:
         correction_to_global_max_index = Get_Corrected_Peak_Index(
@@ -129,12 +158,22 @@ def Search_Periodic_Peaks(_histogram, _period, _bin_div):
         )
         corrected_peak_index = peak_index + correction_to_global_max_index
 
+<<<<<<< HEAD
         if _histogram[corrected_peak_index] > 0:
             first_part_rows += [corrected_peak_index * _bin_div]
 
         peak_index = corrected_peak_index - _period
 
     second_part_rows = []
+=======
+        if (_histogram[corrected_peak_index] > 0):
+            first_part_rows += [corrected_peak_index*_bin_div]
+
+        peak_index = corrected_peak_index - _period
+
+
+    second_part_rows=[]
+>>>>>>> 5f00ba9b0bf1a1b72da33191bbda1c56bba57ec3
     peak_index = signal_max_index
     while peak_index < _histogram.size:
         correction_to_global_max_index = Get_Corrected_Peak_Index(
@@ -142,6 +181,7 @@ def Search_Periodic_Peaks(_histogram, _period, _bin_div):
         )
         corrected_peak_index = peak_index + correction_to_global_max_index
 
+<<<<<<< HEAD
         if _histogram[corrected_peak_index] > 0:
             second_part_rows += [corrected_peak_index * _bin_div]
 
@@ -155,6 +195,21 @@ def Extract_Y_Coord_of_Crop_Rows(
 ):
 
     window_half_width = int(0.05 * _x_period)
+=======
+        if (_histogram[corrected_peak_index] > 0):
+            second_part_rows += [corrected_peak_index*_bin_div]
+
+        peak_index = corrected_peak_index + _period
+
+
+    return first_part_rows[::-1]+second_part_rows[1:]
+
+def Extract_Y_Coord_of_Crop_Rows(_crop_rows,
+                                 _x_data_size, _x_period,
+                                 _x_coord, _y_coord):
+
+    window_half_width = int(0.05*_x_period)
+>>>>>>> 5f00ba9b0bf1a1b72da33191bbda1c56bba57ec3
     _x_coord_sort_indeces = np.argsort(_x_coord)
     _x_coord_sorted = _x_coord[_x_coord_sort_indeces]
     _y_coord_sorted_on_x = _y_coord[_x_coord_sort_indeces]
@@ -235,10 +290,13 @@ def All_Fourier_Analysis(
     path_input_bsas_dir0 = path_input_bsas + "/direction_0"
     path_input_bsas_dir1 = path_input_bsas + "/direction_1"
 
+
     names_input_bsas_dir0 = os.listdir(path_input_bsas_dir0)
     names_input_bsas_dir1 = os.listdir(path_input_bsas_dir1)
 
+
     path_output_FT_predictions = path_output_root + "/Plant_FT_Predictions"
+
     gIO.check_make_directory(path_output_FT_predictions)
 
     subset_size = 6
@@ -261,10 +319,12 @@ def All_Fourier_Analysis(
         X, Y = separate_X_Y_from_bsas_files(data_bsas_dir0[i])
 
         ################## Analyse signal on X axis
+
         histogram, signal_period = Get_Signal_Period(X, columns, _bin_div_X)
         crops_rows = Search_Periodic_Peaks(histogram[0], signal_period, _bin_div_X)
         nb_rows = len(crops_rows)
         print("nb_rows:", nb_rows)
+
 
         ################## Analyse signal on Y axis
         X2, Y2 = separate_X_Y_from_bsas_files(data_bsas_dir1[i])
@@ -277,6 +337,7 @@ def All_Fourier_Analysis(
         # the crops rows by taking the median. This is necessary because the
         # signal of the Y axis is usually less clear than the signal on the X
         # axis.
+
         all_histograms_per_CR = []
         all_period_per_CR = []
         for _cr_content in crops_rows_content:
@@ -300,7 +361,9 @@ def All_Fourier_Analysis(
             )
             predicted_plants_Y_per_crop_rows += [predicted_plants]
 
+
         ################## Reorganise plant coordinates
+
         predicted_FT = []
         nb_predictions = 0
         for j in range(nb_rows):
@@ -311,6 +374,7 @@ def All_Fourier_Analysis(
                 nb_predictions += 1
             predicted_FT.append(crops_coord_in_CR)
 
+
         ################## Save the predictions in json file
         _file_name = "PredictedRows_Img_" + str(i) + "_" + str(nb_predictions)
         gIO.WriteJson(path_output_FT_predictions, _file_name, predicted_FT)
@@ -320,6 +384,7 @@ def All_Fourier_Analysis(
 # General Fourier Procedure
 # =============================================================================
 
+
 if __name__ == "__main__":
 
     All_Fourier_Analysis(
@@ -328,3 +393,4 @@ if __name__ == "__main__":
         _bin_div_X=2,
         _bin_div_Y=4,
     )
+
