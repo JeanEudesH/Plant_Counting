@@ -93,12 +93,12 @@ print("Done")
 # =============================================================================
 # Simulation Parameters Definition
 # =============================================================================
-RAs_group_size = 30
+RAs_group_size = 25
 RAs_group_steps = 2
-Simulation_steps = 100
+Simulation_steps = 30
 
 ## TODO1: Fuse and fill doesn't work in curved mode...
-## TODO2: The RAL are not sorted along the row... Sort them to make the repositionning work : Done but maybe not the cleanest solution
+## TODO2AL are not sorted along the row... Sort them to make the repositionning work : Done but maybe not the cleanest solution
 # -> Don't work on indices but let eacsh RAL to keep track of its neighbours ?
 ## TODO3: The sorting issue impacts the computation of the interplant distance... : OK now either you can sort the agents (not recommanded)
 # or you can maintain their neighbours as attributes
@@ -106,7 +106,7 @@ Simulation_steps = 100
 ## TODO5: Recoding Fill and fuse functions with our new setting : to be tested
 ## TODO6: What to do with the argument InterPlant_Diffs ? It seems like I can remove it completely
 RALs_fuse_factor = 0.5
-RALs_fill_factor = 1.05
+RALs_fill_factor = 1.2
 
 _image_index = 0
 

@@ -24,7 +24,11 @@ v17 :
     -Implement a way to measure the surface of the white surfaces inside the 
     plant agent's scanning zone.
 """
+import sys
+if not "D:/Documents/IODAA/Fil Rouge/Plant_Counting" in sys.path:
+    sys.path.append("D:/Documents/IODAA/Fil Rouge/Plant_Counting")
 
+# from MAS.Single_Image_Simulation_v11 import RAs_group_size, RAs_group_steps
 import os
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
@@ -570,7 +574,7 @@ class Row_Agent(object):
                 for close_idx in closest_idx:
                     if close_idx != i: # do not append itself in its neighbours
                         if _RAL.neighbours != []:
-                            for n in _RAL.neighbours: # if we already added one agent
+                            for n in _RAL.neighbours: # if we already added one neighbour, check if the Agent is on the extremity of the row
                                 if self.euclidean_distance(self.RALs[close_idx], n) > self.euclidean_distance(_RAL, self.RALs[close_idx]): # the RAL is not at an extremity of the row
                                     _RAL.neighbours.append(self.RALs[close_idx])
                                     already_seen.append(close_idx)
@@ -715,17 +719,12 @@ class Row_Agent(object):
                     if nprime == RAL2:
                         n.neighbours[i] = fusion_RAL
 
-        if fusion_RAL in fusion_RAL.neighbours:
-                print("PROBLEM AT FUSION !!!")
-
         self.RALs.append(fusion_RAL)
         self.RALs.remove(RAL1)
+        # self.to_be_deleted.append(RAL1) 
+        # self.to_be_deleted.append(RAL2)
         # if RAL2 in self.RALs:
         self.RALs.remove(RAL2)
-        # else:
-        #     print(RAL1, RAL2)
-
-        # mettre a jour newYdist ??
             
     
     # def Fill_RALs(self, _RAL_1_index, _RAL_2_index, _filling_step):
@@ -762,73 +761,142 @@ class Row_Agent(object):
     #                                 new_diffs+ \
     #                                 self.InterPlant_Diffs[_RAL_2_index:]
 
+
     def Fill_RALs(self, RAL1, RAL2, _filling_step):
         """
         The new RALs are initialized on a straight line between RAL1 and RAL2, and evenly spaced
         """
-        x_init = RAL1.x
-        y_init = RAL1.y
+        x_0, x_f = RAL1.x, RAL2.x
+        y_0, y_f = RAL1.y, RAL2.y
         new_RALs = []
         nb_new_RALs = 0
-        # new_diffs = []
 
-        # to update neighbours of new RAL
+        # to update neighbours of RAL1
         previous_RAL = RAL1
         if RAL2 in RAL1.neighbours:
             RAL1.neighbours.remove(RAL2)
 
-        while abs(RAL2.y - y_init) >= _filling_step and abs(RAL2.x - x_init) >= _filling_step: # there is space for a new RAL
-            new_RAL = ReactiveAgent_Leader(_x = int(x_init + _filling_step),
-                                            _y = int(y_init + _filling_step),
-                                            _img_array = self.OTSU_img_array,
-                                            _group_size = self.group_size,
-                                            _group_step = self.group_step)
+        def get_direction(x_init, x_final):
+            if x_final - x_init >= 0:
+                return 1
+            else:
+                return -1
+
+        step_x = np.abs(RAL2.x - RAL1.x) / self.euclidean_distance(RAL1, RAL2) * (_filling_step / 2)
+        step_y = np.abs(RAL2.y - RAL1.y) / self.euclidean_distance(RAL1, RAL2) * (_filling_step / 2)
+        k_x, k_y = 1, 1
+        delta_x, delta_y = get_direction(x_0, x_f) * step_x, get_direction(y_0, y_f) * step_y
+
+        # print(x_0, y_0)
+        # print(x_f, y_f)
+
+        # while np.sqrt((x_f - (x_0 + k_x * delta_x)) ** 2 + (y_f - (x_0 + k_y * delta_y)) ** 2) >= _filling_step: # still space available
+        while (np.sqrt((x_f - (x_0 + k_x * delta_x)) ** 2 + (y_f - (x_0 + k_y * delta_y)) ** 2) >= _filling_step) and ((x_0 <= x_0 + k_x * delta_x <= x_f) or (x_f <= x_0 + k_x * delta_x <= x_0)) and ((y_0 <= y_0 + k_y * delta_y <= y_f) or (y_f <= y_0 + k_y * delta_y <= y_0)):
+            new_RAL = ReactiveAgent_Leader(_x = int(x_0 + k_x * delta_x),
+                                _y = int(y_0 + k_y * delta_y),
+                                _img_array = self.OTSU_img_array,
+                                _group_size = self.group_size,
+                                _group_step = self.group_step)
             
             new_RALs.append(new_RAL)
-            # new_diffs += [_filling_step]
 
             # update the neighbours
             previous_RAL.neighbours.append(new_RAL)
             new_RAL.neighbours.append(previous_RAL)
             previous_RAL = new_RAL
-            
-            if np.abs(RAL2.x - x_init) >= _filling_step:
-                if RAL2.x - x_init >= 0:
-                    direction = 1
-                else:
-                    direction = -1
-                x_init += direction * _filling_step
-            else: 
-                x_init = RAL2.x
-            if np.abs(RAL2.y - y_init) >= _filling_step:
-                if RAL2.y - y_init >= 0:
-                    direction = 1
-                else:
-                    direction = -1
-                y_init += direction * _filling_step
-            else:
-                y_init = RAL2.y
+
+            k_x += 1
+            k_y += 1
+            # update the deltas
+            delta_x, delta_y = get_direction(x_0 + k_x * step_x, x_f) * step_x, get_direction(y_0 + k_y * step_y, y_f) * step_y
+            # print(f"new_x : {x_0 + k_x * delta_x}, new_y : {y_0 + k_y * delta_y}")
+            # print(f"New distance : {np.sqrt((x_f - (x_0 + k_x * delta_x)) ** 2 + (y_f - (x_0 + k_y * delta_y)) ** 2)}")
             nb_new_RALs += 1
 
-        print(f"Initialized {len(new_RALs)} new RALs.")
-
-        for i, n in enumerate(RAL2.neighbours):
-            if n == RAL1:
-                RAL2.neighbours[i] = new_RALs[-1]
-        
+        # close neighbours updates
         if (nb_new_RALs > 0):
-            # new_diffs += [self.euclidean_distance(new_RALs[-1], RAL2)]
-            self.RALs.extend(new_RALs) # append the initialized agents
+            for i, n in enumerate(RAL2.neighbours):
+                if n == RAL1:
+                    RAL2.neighbours[i] = new_RALs[-1]
+            new_RALs[-1].neighbours.append(RAL2)
             
-            # self.InterPlant_Diffs = self.InterPlant_Diffs[:RAL1]+ \
-            #                     new_diffs+ \
-            #                     self.InterPlant_Diffs[_RAL_2_index:]
+
+            # print(f"Initialized {len(new_RALs)} new RALs, indices : {len(self.RALs)}  to {len(self.RALs) + len(new_RALs) - 1}.")
+            # self.to_be_initialized.extend(new_RALs) # append the initialized agents
+            self.RALs.extend(new_RALs)
+            # print("\n")
+        
+        # if len(new_RALs) != 0:
+        #     self.Show_RALs_Position()
+        #     plt.show()
+
+    def Show_RALs_Position(self,
+                           _ax = None,
+                           _recorded_position_indeces = [0, -1],
+                           _colors = ['r', 'g'] ):
+        """
+        Display the Otsu image with overlaying rectangles centered on RALs. The
+        size of the rectangle corespond to the area covered by the RAs under the 
+        RALs supervision.
+        
+        _ax (matplotlib.pyplot.axes, optional):
+            The axes of an image on which we wish to draw the adjusted 
+            position of the plants
+        
+        _recorded_position_indeces (optional,list of int):
+            indeces of the recored positions of the RALs we wish to see. By defaullt,
+            the first and last one
+        
+        _colors (optional,list of color references):
+            Colors of the rectangles ordered indentically to the recorded positons
+            of interest. By default red for the first and green for the last 
+            recorded position.
+        """
+        
+        if (_ax == None):
+            fig, ax = plt.subplots(1, figsize=(10, 10))
+            ax.imshow(self.OTSU_img_array)
+        else:
+            ax = _ax
+        
+        # nb_indeces = len(_recorded_position_indeces)
+
+        _colors = ["r", "g", "b", "c", "m", "y", "darkorange", "lime", "royalblue",
+                   "mediumslateblue", "mediumpurple", "plum", "violet", "crimson",
+                   "dodgerblue", "chartreuse", "peru", "lightcoral"]
+        already_seen = []
+        for j, _RAL in enumerate(self.RALs):    
+            # for k in range (nb_indeces):
+            rect = patches.Rectangle((_RAL.recorded_positions[_recorded_position_indeces[-1]][0]-_RAL.group_size,
+                                        _RAL.recorded_positions[_recorded_position_indeces[-1]][1]-_RAL.group_size),
+                                        2*_RAL.group_size,2*_RAL.group_size,
+                                        linewidth=2,
+                                    #  edgecolor=_colors[k],
+                                    edgecolor=_colors[j % len(_colors)],
+                                    facecolor='none')
+            ax.add_patch(rect)
+            ax.text(_RAL.active_RA_Point[0]-_RAL.group_size, 
+                    _RAL.active_RA_Point[1]-_RAL.group_size, 
+                        str(j), 
+                        color=_colors[j % len(_colors)], size=12)
+            for n in _RAL.neighbours:
+                idx = np.nonzero([self.RALs[k] == n for k in range(len(self.RALs))])[0][0]
+                # print(f"Agent {j}, neighbour : {idx}")
+                if not idx in already_seen:
+                    idx = np.nonzero([self.RALs[k] == n for k in range(len(self.RALs))])[0][0]
+                    ax.plot([_RAL.x + np.random.random() * 10, n.x + np.random.random() * 10], [_RAL.y+ np.random.random() * 10, n.y+ np.random.random() * 10], c=_colors[j % len(_colors)])
+            already_seen.append(j) 
+        plt.xlim(500, 1500)
+        plt.ylim(0, 1350)
+
             
     def Fill_or_Fuse_RALs(self, _crit_value, _fuse_factor = 0.5, _fill_factor = 1.5):
         nb_RALs = len(self.RALs)
         i = 0
+        already_seen = []
+        # self.to_be_initialized, self.to_be_deleted = [], []
         while i < nb_RALs-1:
-            # linear rows with indexed agents
+            ### linear rows with indexed agents
             # min_size = min([self.RALs[i].group_size, self.RALs[i+1].group_size])
             # if (self.InterPlant_Diffs[i] < _fuse_factor *_crit_value or
             #     (abs(self.RALs[i].x-self.RALs[i+1].x) < min_size and
@@ -839,25 +907,53 @@ class Row_Agent(object):
             #     if (i<len(self.InterPlant_Diffs)):#in case we fused the last 2 RAL of the crop row
             #         if self.InterPlant_Diffs[i] > _fill_factor*_crit_value:
             #             self.Fill_RALs(i, i+1, int(1.1*_fuse_factor*_crit_value)) ## fuse_factor ???
+            
+            ### curved
             has_been_fused = False
 
             for n in self.RALs[i].neighbours:
+                # if (self.RALs[i], n) not in already_seen or (self.RALs[i], n) not in already_seen:
+                neighbour_idx = np.nonzero([self.RALs[k] == n for k in range(len(self.RALs))])[0][0]
+                # print(f"Analyzing agent {neighbour_idx}, neighbour of {i} for FUSING.")
+                # print(f"estimated distance is {np.sqrt((self.RALs[i].x  - n.x) ** 2 + (self.RALs[i].y - n.y) ** 2)}.Y compared with {_fuse_factor * _crit_value}")
+                # print("\n")
                 if self.euclidean_distance(self.RALs[i], n) < _fuse_factor * _crit_value:
+                    # print(f"Fusing agents : {i} and {neighbour_idx}")
+                    # print("\n")
                     self.Fuse_RALs(self.RALs[i], n)
                     has_been_fused = True
+                    # already_seen.append((self.RALs[i], n))
                     break
+                # already_seen.append((self.RALs[i], n))
             
             if has_been_fused:  # if the RAL has been fused to another, do not use it to detect filling
+                # print(f"just fused: {i}")
                 i += 1
                 nb_RALs = len(self.RALs)
                 continue
-
+            
             for n in self.RALs[i].neighbours:
-                if abs(self.RALs[i].x  - n.x) >= _fill_factor * _crit_value and abs(self.RALs[i].y  - n.y) > _fill_factor * _crit_value:
-                    self.Fill_RALs(self.RALs[i], n, int(_fill_factor * _crit_value))
+                # if (self.RALs[i], n) not in already_seen or (self.RALs[i], n) not in already_seen:
+                neighbour_idx = np.nonzero([self.RALs[k] == n for k in range(len(self.RALs))])[0][0]
+                # print(f"Analyzing agent {neighbour_idx}, neighbour of {i} for FILLING")
+                # print(f"estimated distance is {np.sqrt((self.RALs[i].x  - n.x) ** 2 + (self.RALs[i].y - n.y) ** 2)}.Y compared with {1.1 * _fill_factor * _crit_value}")
+                # print("\n")
+                if np.sqrt((self.RALs[i].x  - n.x) ** 2 + (self.RALs[i].y - n.y) ** 2) >= int(1.1 * _fill_factor * _crit_value):
+                    # print(f"Initializing an RAL between agent {neighbour_idx} and agent {i}")
+                    self.Fill_RALs(self.RALs[i], n, int(1.1 * _fill_factor * _crit_value))
+
+            # _crit_value = np.mean([self.euclidean_distance(RAL, n) for RAL in self.RALs for n in RAL.neighbours])
+            # print(f"New inter-RAL distance : {_crit_value}")
+            # print("\n")
             
             i += 1
-            nb_RALs = len(self.RALs)
+            # nb_RALs = len(self.RALs)
+
+        # in the end 
+        # for _RAL in self.to_be_initialized:
+        #     self.RALs.append(_RAL)
+        # for _RAL in self.to_be_deleted:
+        #     self.RALs.remove(_RAL)
         
 # =============================================================================
         # print("After fill and fuse procedure over all the crop row, the new RAls list is :", end = ", ")
@@ -1779,9 +1875,9 @@ class Simulation_MAS(object):
             self.AD.ORDER_RowAs_to_Set_RALs_Neighbours()
             time_detailed += [time.time()-t0]
 
-            t0 = time.time()
-            self.AD.ORDER_RowAs_to_Update_InterPlant_Y()
-            time_detailed += [time.time()-t0]
+            # t0 = time.time()
+            # self.AD.ORDER_RowAs_to_Update_InterPlant_Y()
+            # time_detailed += [time.time()-t0]
             
             t0 = time.time()
             self.AD.ORDER_RowAs_to_Destroy_Low_Activity_RALs()
@@ -1794,9 +1890,9 @@ class Simulation_MAS(object):
             self.AD.ORDER_RowAs_to_Set_RALs_Neighbours()
             time_detailed += [time.time()-t0]
 
-            t0 = time.time()
-            self.AD.ORDER_RowAs_to_Update_InterPlant_Y()
-            time_detailed += [time.time()-t0]
+            # t0 = time.time()
+            # self.AD.ORDER_RowAs_to_Update_InterPlant_Y()
+            # time_detailed += [time.time()-t0]
             
             # Removes some of the rows at first step... Issue when a
             # row is fragmented, estimates that the two rows are too
@@ -1806,9 +1902,9 @@ class Simulation_MAS(object):
                 self.AD.Check_RowAs_Proximity()
                 time_detailed += [time.time()-t0]
             
-            t0 = time.time()
-            self.AD.ORDER_RowAs_to_Update_InterPlant_Y()
-            time_detailed += [time.time()-t0]
+            # t0 = time.time()
+            # self.AD.Summarize_RowAs_InterPlant_Y()
+            # time_detailed += [time.time()-t0]
             
             self.simu_steps_time_detailed += [time_detailed]
             self.simu_steps_times += [np.sum(time_detailed)]
@@ -2005,7 +2101,7 @@ class Simulation_MAS(object):
 
         _colors = ["r", "g", "b", "c", "m", "y", "darkorange", "lime", "royalblue",
                    "mediumslateblue", "mediumpurple", "plum", "violet", "crimson",
-                   "dodgerblue", "chartreuse", "oliverdrab", "peru", "lighcoral"]
+                   "dodgerblue", "chartreuse", "peru", "lightcoral"]
         
         for i, _RowsA in enumerate(self.AD.RowAs):
             for j, _RAL in enumerate(_RowsA.RALs):     
@@ -2021,8 +2117,13 @@ class Simulation_MAS(object):
                     ax.text(_RAL.active_RA_Point[0]-_RAL.group_size, 
                             _RAL.active_RA_Point[1]-_RAL.group_size, 
                              str(j), 
-                             color="coral", size=5)
-    
+                             color=_colors[i % len(_colors)], size=7)
+                # for n in _RAL.neighbours:
+                #     idx = np.nonzero([_RowsA.RALs[k] == n for k in range(len(_RowsA.RALs))])[0][0]
+                #     print(f"Agent {j}, neighbour : {idx}")
+                #     ax.plot([_RAL.x + np.random.random() * 10, n.x + np.random.random() * 10], [_RAL.y+ np.random.random() * 10, n.y+ np.random.random() * 10], c=_colors[j % len(_colors)], linestyle=":")
+
+
     def Show_Adjusted_Positions(self, _ax = None, _color = "b"):
         """
         Display the adjusted positions of the plants.

@@ -121,7 +121,7 @@ if (__name__=="__main__"):
                      _rows_real_angle=0,
 
                     _make_unique_folder_per_session=False, _session=1,
-                    _do_Otsu=True, _do_AD=True,
+                    _do_Otsu=True, _do_AD=True, # ici pour desactiver la rotation
                     _save_AD_score_images=False, _save_BSAS_images=False,
                     _bsas_threshold=1,
                     
