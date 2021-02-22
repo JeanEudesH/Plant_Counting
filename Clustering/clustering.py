@@ -111,7 +111,7 @@ def Plants_Detection(dataframe_coord, e, max_iter, m_p, threshold, image):
         set at 0.005
 
     max_iter : INTEGER
-        maximum iteration number, set at 2000
+        maximum iteration number, set at 100
 
     m_i : INTEGER
         Fuzzy parameters, power apply to U (d'appartenance) matrix. It is
