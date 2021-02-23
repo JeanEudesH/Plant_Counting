@@ -134,14 +134,15 @@ def pixel_median(dataframe_coord, img):
     for row in label_row:
         # np.array of n lines and 2 columns:
         # n being the number of pixels in this row
-        coord_row = dataframe_coord[dataframe_coord["label"] == row][[
-            "Y", "X"]].to_numpy()
+        coord_row = dataframe_coord[dataframe_coord["label"] == row][
+            ["Y", "X"]
+        ].to_numpy()
         # np.array of 2 lines and n columns
         coord_row_tr = coord_row.T
 
         # Threshold to avoid smaller clusters not significant (noise)
         # Threshold at 0.1% of the size of the picture
-        if coord_row.shape[0] > 0.0001*(img_height*img_width):
+        if coord_row.shape[0] > 0.0001 * (img_height * img_width):
 
             coord_Pixels_row = []
             # List of median pixels (one per line of the image)
@@ -151,8 +152,9 @@ def pixel_median(dataframe_coord, img):
             for i in range(0, img_height, step):
                 # Get all pixels in the rows whom Y coordinates is within the
                 # designated range
-                interval_coord, = np.where((coord_row_tr[0] > i)
-                                           & (coord_row_tr[0] <= i+step))
+                (interval_coord,) = np.where(
+                    (coord_row_tr[0] > i) & (coord_row_tr[0] <= i + step)
+                )
 
                 if len(interval_coord) > 0:
                     # Check if pixels are in the studied area
@@ -202,10 +204,10 @@ def distance_min_1pixel(pixel_coord, row_compared):
     direction = [0, 0]
     for pixel in row_compared:
         Y2, X2 = pixel[0], pixel[1]
-        distance = sqrt((X2-X1)**2 + (Y2-Y1)**2)
+        distance = sqrt((X2 - X1) ** 2 + (Y2 - Y1) ** 2)
         if distance < distance_min:
             distance_min = distance
-            direction = [Y2-Y1, X2-X1]
+            direction = [Y2 - Y1, X2 - X1]
 
     return distance_min, direction
 
@@ -233,8 +235,7 @@ def order_size_rows(coordPixelsRow):
     rows_len = [len(coordPixelsRow[row]) for row in range(len(coordPixelsRow))]
     index_rows = [i for i in range(len(coordPixelsRow))]
 
-    size_rows_sorted = [i for _, i in sorted(zip(rows_len, index_rows),
-                                             reverse=True)]
+    size_rows_sorted = [i for _, i in sorted(zip(rows_len, index_rows), reverse=True)]
 
     return size_rows_sorted
 
@@ -303,7 +304,7 @@ def direction_mean(directions_all_pixels):
         Y_mean += pixel[0]
         X_mean += pixel[1]
 
-    Y_mean, X_mean = Y_mean/nb_pixels, X_mean/nb_pixels
+    Y_mean, X_mean = Y_mean / nb_pixels, X_mean / nb_pixels
 
     mean_dir = [Y_mean, X_mean]
 
@@ -319,29 +320,46 @@ def direction_med(directions_all_pixels):
     return [Y_med, X_med]
 
 
-def translate_row(coord_row, direction):
+def translate_row(longest_row, direction, img_array):
     # Move the bigger row with a certain step to determine
     # Direction chosen and move with translate row
     # Step is a poroportion of the vector direction
 
     # BOundaries si les coord sont hors image, lui dire tout va bien et arrêt
     # si plus aucun pixel dans l'image (fonction supplémentaire ? )
-    new_coord_row = 1
-    return new_coord_row
+    # Move forward
+    step = 0.01
+    forward = 0
+    new_longest_row = []
+    size_Y, size_X = get_image_size(
+        img_array
+    )  # attention a voir si les Y et les X sont inversé
+
+    for coord in longest_row:
+        coord_Y = coord[0] - direction[0] * step
+        coord_X = coord[1] - direction[1] * step
+        forward = forward - sqrt(direction[0] ** 2 + direction[1] ** 2) * (step ** 2)
+
+        if (coord_Y > 0 and coord_Y < size_Y) and (coord_X > 0 and coord_X < size_X):
+            new_longest_row.append([int(coord_Y), int(coord_X)])
+    return new_longest_row, forward
 
 
-def sum_plant_pixels(coord_row, otsu_img):
-    # Obtention data pour fourier
-    # Number of pixels equal to 255 at the coordinates checked by
-    # the translated row
-    Y = 1 # Sum des pixels = 255
-    X = 1 # Pas de déplacement
-    # fois 2 à concaténer
+def get_image_size(img_array):
+    Y, X = img_array.shape
 
     return Y, X
 
 
-def calculate_dist_interRow(X, Y):
+def sum_plant_pixels(coord_row, img_matrix):
+    count = 0
+    for coord_pixel in coord_row:
+        if img_matrix[coord_pixel[0]][coord_pixel[1]] > 0:
+            count += 1
+    return count
+
+
+def Fourier_inter_row(X, Y):
     # Fourier calculation
     # X: all steps of the scan (its position?)
     # Y: Number of white pixels
@@ -353,6 +371,35 @@ def calculate_dist_interRow(X, Y):
     return result_fft
 
 
+def calculate_dist_interRow(coordPixelsMedian, direction, img_array):
+    # on a l'index pour ordonner les rangs du plus grand au plus petit
+    size_rows_sorted = order_size_rows(coordPixelsMedian)
+    # On prend le rang le plus grand
+    longest_row_for = coordPixelsMedian[size_rows_sorted[0]]
+    move_step_for = []
+    sum_pixel_for = []
+    while (
+        len(longest_row_for) > 0
+    ):  # Tant qu'il ya des points dans l'image on avant le rang
+        longest_row_for, forward = translate_row(
+            longest_row_for, direction, img_array
+        )  # On obtient le nouveau nuage de points
+        # On fait la fonction sumavec le nouveau nuage de point et on ajoute forward à la liste des déplacements
+        move_step_for.append(forward)
+
+        sum_pixel = sum_plant_pixels(longest_row_for, img_array)
+        sum_pixel_for.append(sum_pixel)
+
+    # longest_row_back = coordPixelsMedian[size_rows_sorted[0]]
+    # while len(
+    #    longest_row_back > 0
+    # ):  # Tant qu'il y a des points dans l'image on recule le rang
+    #    direction_back = [direction[0] * (-1), direction[1] * (-1)]
+    # longest_row_back, backward = translate_row(longest_row, direction_back, img_array)
+
+    return sum_pixel_for, move_step_for
+
+
 def plot_fft():
     # plot la distance inter rang
     pass
@@ -361,6 +408,7 @@ def plot_fft():
 def row_fusion():
     # if the scan recover 2 clusters, we can estimate they belong to the same row
     pass
+
 
 def iteration_row_fusion():
     # For each iteration take the longer row
@@ -376,8 +424,7 @@ def calculate_dist_interPlant():
     pass
 
 
-def plot_cluster(coordPixels, dataframe_coord, size_img,
-                 direction_med, direction_mean):
+def plot_cluster(coordPixels, dataframe_coord, size_img, direction_med, direction_mean):
 
     fig = plt.figure(figsize=(8, 10))
     ax = fig.add_subplot(111)
@@ -395,19 +442,31 @@ def plot_cluster(coordPixels, dataframe_coord, size_img,
             Y.append(coordPixels[row][pixel][0])
             X.append(coordPixels[row][pixel][1])
 
-        ax.plot(X, Y, '+', c='r')
+        ax.plot(X, Y, "+", c="r")
 
-    Y_vec_dir_mean = [size_img[0]//2, size_img[0]//2 + direction_mean[0],
-                      size_img[0]//2 - direction_mean[0]]
-    X_vec_dir_mean = [size_img[1]//2, size_img[1]//2 + direction_mean[1],
-                      size_img[1]//2 - direction_mean[1]]
-    plt.plot(X_vec_dir_mean, Y_vec_dir_mean, c='b')
+    Y_vec_dir_mean = [
+        size_img[0] // 2,
+        size_img[0] // 2 + direction_mean[0],
+        size_img[0] // 2 - direction_mean[0],
+    ]
+    X_vec_dir_mean = [
+        size_img[1] // 2,
+        size_img[1] // 2 + direction_mean[1],
+        size_img[1] // 2 - direction_mean[1],
+    ]
+    plt.plot(X_vec_dir_mean, Y_vec_dir_mean, c="b")
 
-    Y_vec_dir_med = [size_img[0]//2, size_img[0]//2 + direction_med[0],
-                     size_img[0]//2 - direction_med[0]]
-    X_vec_dir_med = [size_img[1]//2, size_img[1]//2 + direction_med[1],
-                     size_img[1]//2 - direction_med[1]]
-    plt.plot(X_vec_dir_med, Y_vec_dir_med, c='g')
+    Y_vec_dir_med = [
+        size_img[0] // 2,
+        size_img[0] // 2 + direction_med[0],
+        size_img[0] // 2 - direction_med[0],
+    ]
+    X_vec_dir_med = [
+        size_img[1] // 2,
+        size_img[1] // 2 + direction_med[1],
+        size_img[1] // 2 - direction_med[1],
+    ]
+    plt.plot(X_vec_dir_med, Y_vec_dir_med, c="g")
 
     plt.show()
     # fig.savefig("/home/fort/Bureau/results/" + image.split(".")[0] + ".png")
@@ -419,14 +478,14 @@ def Total_Plant_Position(path_image_input, epsilon, min_point):
     start_time = time.time()
 
     list_image = listdir(path_image_input)
-    if '.DS_Store' in list_image:
-        list_image.remove('.DS_Store')
+    if ".DS_Store" in list_image:
+        list_image.remove(".DS_Store")
     for image in list_image:
         start_time_img = time.time()
         print("--------------------------- \n start ", image)
         imgColor = Image.open(path_image_input + "/" + image)
         # Be sure to be in a greyscale images, with only one channel
-        img = imgColor.convert(mode='L')
+        img = imgColor.convert(mode="L")
 
         # Temporaire
         img_array = np.array(img)
@@ -444,24 +503,26 @@ def Total_Plant_Position(path_image_input, epsilon, min_point):
         directions = dist_direction_row(coordPixelsMedian)
         dir_mean = direction_mean(directions)
         dir_med = direction_med(directions)
-
         print("dirMean", dir_mean, "dir_med", dir_med)
         # pixel_median return a list of lists of size 2.
         # List of the coordonnates of the pixels
-        plot_cluster(coordPixelsMedian,
-                     dataframe_coord,
-                     img_array.shape,
-                     dir_med,
-                     dir_mean)
-
+        plot_cluster(
+            coordPixelsMedian, dataframe_coord, img_array.shape, dir_med, dir_mean
+        )
+        # calcul of the inter-row distance
+        sum_pixel_for, move_step_for = calculate_dist_interRow(
+            coordPixelsMedian, dir_med, img_array
+        )
+        plt.plot(move_step_for, sum_pixel_for)
+        plt.show()
         print("--- %s seconds ---" % (time.time() - start_time_img))
-
+        break
     print("--- %s seconds ---" % (time.time() - start_time))
     return
 
 
 Total_Plant_Position(
-    path_image_input="./../../images",
-    epsilon=10,
-    min_point=10,
+    path_image_input="/home/fort/Bureau/test_image",
+    epsilon=20,
+    min_point=20,
 )
