@@ -342,7 +342,8 @@ class ReactiveAgent_Leader(object):
             image_row = self.y+explorers[0][1]#row coord in image array
             image_col = self.x+explorers[0][0]#col coord in image array
 
-            if image_row < 1920 and image_col < 1080:           
+            # if image_row < 1920 and image_col < 1080: 
+            if image_row < 1080 and image_col < 1920:          
                 if (self.img_array[image_row][image_col][0] > 220):#if the pixel is white
                     surface_print[print_row][print_col]=2
                     self.nb_contiguous_white_pixel +=1
@@ -1426,6 +1427,8 @@ class Agents_Director(object):
         self.RowAs = []
 
         self.recon_policy = recon_policy
+
+        print(self.OTSU_img_array.shape)
         
 # =============================================================================
 #         print("Done")
@@ -2187,7 +2190,7 @@ class Simulation_MAS(object):
             ax = _ax
         
         for [x,y] in self.corrected_adjusted_plant_positions:
-            circle = patches.Circle((x,self.OTSU_img_array.shape[0] - y),
+            circle = patches.Circle((x,y),  # MODIFIED CURVED
                                     radius = 3,
                                     linewidth = 2,
                                     edgecolor = None,
