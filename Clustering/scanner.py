@@ -283,8 +283,7 @@ def order_size_rows(coordPixelsRow):
     rows_len = [len(coordPixelsRow[row]) for row in range(len(coordPixelsRow))]
 
     index_rows = [i for i in range(len(coordPixelsRow))]
-    size_rows_sorted = [i for _, i in sorted(zip(rows_len, index_rows),
-                                             reverse=True)]
+    size_rows_sorted = [i for _, i in sorted(zip(rows_len, index_rows), reverse=True)]
 
     return size_rows_sorted
 
@@ -326,8 +325,10 @@ def dist_direction_row(coord_pixels):
         dist_min, direction = distance_min_1pixel(pixel, final_row)
         directions.append(direction)
         distances.append(dist_min)
-    print("--- %s seconds --- Start calculate vector direction" % (time.time() - start_time))
-
+    print(
+        "--- %s seconds --- Start calculate vector direction"
+        % (time.time() - start_time)
+    )
 
     return directions
 
@@ -381,7 +382,7 @@ def translate_row(longest_row, direction, img_array):
     # BOundaries si les coord sont hors image, lui dire tout va bien et arrêt
     # si plus aucun pixel dans l'image (fonction supplémentaire ? )
     # Move forward
-    step = 0.1
+    step = 0.05
     forward = 0
     new_longest_row = []
     size_Y, size_X = get_image_size(
@@ -395,6 +396,7 @@ def translate_row(longest_row, direction, img_array):
 
         if (coord_Y > 0 and coord_Y < size_Y) and (coord_X > 0 and coord_X < size_X):
             new_longest_row.append([int(coord_Y), int(coord_X)])
+
     return new_longest_row, forward
 
 
@@ -431,18 +433,25 @@ def calculate_dist_interRow(coordPixelsMedian, direction, img_array):
     longest_row_for = coordPixelsMedian[size_rows_sorted[0]]
     move_step_for = []
     sum_pixel_for = []
+    counter = 0
+    list_coord_plot = []
     while (
         len(longest_row_for) > 0
     ):  # Tant qu'il ya des points dans l'image on avant le rang
         longest_row_for, forward = translate_row(
             longest_row_for, direction, img_array
         )  # On obtient le nouveau nuage de points
+
         # On fait la fonction sumavec le nouveau nuage de point et on ajoute forward à la liste des déplacements
         move_step_for.append(forward)
 
         sum_pixel = sum_plant_pixels(longest_row_for, img_array)
         sum_pixel_for.append(sum_pixel)
 
+        if counter in [0, 20, 50, 140]:
+
+            list_coord_plot.append(longest_row_for)
+        counter += 1
     # longest_row_back = coordPixelsMedian[size_rows_sorted[0]]
     # while len(
     #    longest_row_back > 0
@@ -450,7 +459,7 @@ def calculate_dist_interRow(coordPixelsMedian, direction, img_array):
     #    direction_back = [direction[0] * (-1), direction[1] * (-1)]
     # longest_row_back, backward = translate_row(longest_row, direction_back, img_array)
 
-    return sum_pixel_for, move_step_for
+    return sum_pixel_for, move_step_for, list_coord_plot
 
 
 def plot_fft():
@@ -477,7 +486,14 @@ def calculate_dist_interPlant():
     pass
 
 
-def plot_cluster(coordPixels, dataframe_coord, size_img, direction_med, direction_mean):
+def plot_cluster(
+    coordPixels,
+    dataframe_coord,
+    size_img,
+    direction_med,
+    direction_mean,
+    list_coord_plot,
+):
 
     fig = plt.figure(figsize=(8, 10))
     ax = fig.add_subplot()
@@ -514,7 +530,6 @@ def plot_cluster(coordPixels, dataframe_coord, size_img, direction_med, directio
 
         ax.plot(X, Y, "+", c="r")
 
-
     index = order_size_rows(coordPixels)
     start_row = coordPixels[index[0]]
 
@@ -533,6 +548,27 @@ def plot_cluster(coordPixels, dataframe_coord, size_img, direction_med, directio
         s=0.5,
         c="darkorange",
         label="Second biggest row",
+    )
+    scatter_row_3 = ax.scatter(
+        np.array(list_coord_plot[0]).T[0],
+        np.array(list_coord_plot[0]).T[1],
+        s=0.5,
+        c="darkblue",
+        label="Last place of the scanner",
+    )
+    scatter_row_4 = ax.scatter(
+        np.array(list_coord_plot[1]).T[0],
+        np.array(list_coord_plot[1]).T[1],
+        s=0.5,
+        c="darkblue",
+        label="Last place of the scanner",
+    )
+    scatter_row_5 = ax.scatter(
+        np.array(list_coord_plot[2]).T[0],
+        np.array(list_coord_plot[2]).T[1],
+        s=0.5,
+        c="darkblue",
+        label="Last place of the scanner",
     )
 
     # Direction vector
@@ -599,9 +635,12 @@ def Total_Plant_Position(path_image_input, epsilon, min_point):
 
         print("DBSCAN")
         dataframe_coord = DBSCAN_clustering(img, epsilon, min_point)
-        # coordPixelsMedian = pixel_median(dataframe_coord, img)
-        coordPixelsMedian = list_coord(dataframe_coord, img)
-        print("--- %s seconds --- Start calculate vector direction" % (time.time() - start_time_img))
+        coordPixelsMedian = pixel_median(dataframe_coord, img)
+        coordPixelsTotal = list_coord(dataframe_coord, img)
+        print(
+            "--- %s seconds --- Start calculate vector direction"
+            % (time.time() - start_time_img)
+        )
         directions = dist_direction_row(coordPixelsMedian)
         print(directions)
         dir_mean = direction_mean(directions)
@@ -609,15 +648,22 @@ def Total_Plant_Position(path_image_input, epsilon, min_point):
         print("dirMean", dir_mean, "dir_med", dir_med)
         # pixel_median return a list of lists of size 2.
         # List of the coordonnates of the pixels
-        plot_cluster(
-            coordPixelsMedian, dataframe_coord, img_array.shape,
-            dir_med, dir_mean
-        )
+
         # calcul of the inter-row distance
-        sum_pixel_for, move_step_for = calculate_dist_interRow(
-            coordPixelsMedian, dir_med, img_array
+        sum_pixel_for, move_step_for, list_coord_plot = calculate_dist_interRow(
+            coordPixelsTotal, dir_med, img_array
         )
-        plt.plot(move_step_for, sum_pixel_for)
+        print(list_coord_plot)
+        plot_cluster(
+            coordPixelsMedian,
+            dataframe_coord,
+            img_array.shape,
+            dir_med,
+            dir_mean,
+            list_coord_plot,
+        )
+
+        plt.plot(move_step_for, [sum_li / sum_pixel_for[0] for sum_li in sum_pixel_for])
         plt.show()
         print("--- %s seconds ---" % (time.time() - start_time_img))
         break
@@ -625,11 +671,12 @@ def Total_Plant_Position(path_image_input, epsilon, min_point):
 
     return
 
+
 # "/home/fort/Bureau/test_image"
 
 
 Total_Plant_Position(
-    path_image_input="./../../Images/",
+    path_image_input="/home/fort/Bureau/test_image",
     epsilon=20,
     min_point=30,
 )
