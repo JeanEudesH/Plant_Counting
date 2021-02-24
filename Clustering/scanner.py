@@ -436,9 +436,8 @@ def plot_cluster(coordPixels, dataframe_coord, size_img, direction_med, directio
         xtext = np.median(dataframe_coord[dataframe_coord["label"] == i]["X"])
         ytext = np.median(dataframe_coord[dataframe_coord["label"] == i]["Y"])
         txt = ax.text(ytext, xtext, str(i))
-        txt.set_path_effects([PathEffects.Stroke(linewidth=5,
-                                                  foreground="w"),
-                              PathEffects.Normal()]
+        txt.set_path_effects(
+            [PathEffects.Stroke(linewidth=5, foreground="w"), PathEffects.Normal()]
         )
         txts.append(txt)
 
@@ -448,9 +447,8 @@ def plot_cluster(coordPixels, dataframe_coord, size_img, direction_med, directio
         # c=dataframe_coord["label"].tolist(),
         s=0.5,
         # cmap="Paired",
-        c="grey"
+        c="grey",
     )
-<<<<<<< HEAD
     for row in range(len(coordPixels)):
         X = []
         Y = []
@@ -483,7 +481,6 @@ def plot_cluster(coordPixels, dataframe_coord, size_img, direction_med, directio
         size_img[1] // 2 - direction_med[1],
     ]
     plt.plot(X_vec_dir_med, Y_vec_dir_med, c="g")
-=======
 
     index = order_size_rows(coordPixels)
     start_row = coordPixels[index[0]]
@@ -501,33 +498,49 @@ def plot_cluster(coordPixels, dataframe_coord, size_img, direction_med, directio
         np.array(start_row).T[0],
         np.array(start_row).T[1],
         s=0.5,
-        c= "darkgreen",
-        label='Biggest row'
+        c="darkgreen",
+        label="Biggest row",
     )
 
     scatter_row_2 = ax.scatter(
         np.array(coordPixels[index[1]]).T[0],
         np.array(coordPixels[index[1]]).T[1],
         s=0.5,
-        c= "darkorange",
-        label='Second biggest row'
+        c="darkorange",
+        label="Second biggest row",
     )
 
     X_vec = statistics.median(np.array(start_row).T[0])
-    Y_vec =statistics.median(np.array(start_row).T[1])
+    Y_vec = statistics.median(np.array(start_row).T[1])
 
-
-    arrow_mean = ax.arrow(X_vec, Y_vec, direction_mean[1], direction_mean[0],
-              label='Mean direction vector', head_width=50, head_length=50,
-              fc='violet', ec='violet', shape='full', length_includes_head=True)
-    arrow_med = ax.arrow(X_vec, Y_vec, direction_med[1], direction_med[0],
-              label='Median direction vector', head_width=50, head_length=50,
-              fc='red', ec='red')
+    arrow_mean = ax.arrow(
+        X_vec,
+        Y_vec,
+        direction_mean[1],
+        direction_mean[0],
+        label="Mean direction vector",
+        head_width=50,
+        head_length=50,
+        fc="violet",
+        ec="violet",
+        shape="full",
+        length_includes_head=True,
+    )
+    arrow_med = ax.arrow(
+        X_vec,
+        Y_vec,
+        direction_med[1],
+        direction_med[0],
+        label="Median direction vector",
+        head_width=50,
+        head_length=50,
+        fc="red",
+        ec="red",
+    )
 
     ax.legend()
 
     # fig.tight_layout()
->>>>>>> a598e70bb037bda0dbc4382fe007c5ee08ec28bc
 
     plt.show()
     # fig.savefig("/home/fort/Bureau/results/" + image.split(".")[0] + ".png")
