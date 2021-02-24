@@ -49,9 +49,9 @@ def CompleteProcess(_path_input_rgb_img, _path_output_root,
                       _save_AD_score_images, _save_BSAS_images,
                       _bsas_threshold)
     
-    FA.All_Fourier_Analysis(_path_output_root,
-                         _session,
-                         _bin_div_X, _bin_div_Y)
+    # FA.All_Fourier_Analysis(_path_output_root,
+                        #  _session,
+                        #  _bin_div_X, _bin_div_Y)
     
     # MIS.All_Simulations(_path_input_rgb_img,
     #                 _path_output_root,
@@ -121,7 +121,7 @@ if (__name__=="__main__"):
                      _rows_real_angle=0,
 
                     _make_unique_folder_per_session=False, _session=1,
-                    _do_Otsu=True, _do_AD=True, # ici pour desactiver la rotation
+                    _do_Otsu=True, _do_AD=False, # ici pour desactiver la rotation
                     _save_AD_score_images=False, _save_BSAS_images=False,
                     _bsas_threshold=1,
                     

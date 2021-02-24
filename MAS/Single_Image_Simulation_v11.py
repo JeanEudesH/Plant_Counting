@@ -53,7 +53,7 @@ session_number = 1
 recon_policy = "local_XY"
 
 path_input_raw = f"{path_input_root}/{unity_date}/densite={densite}/{dIP_dIR}/virtual_reality"
-path_input_adjusted_position_files = f"{path_input_root}/{unity_date}/densite={densite}/{dIP_dIR}_analysis/Output/Session_1/Adjusted_Position_Files"
+path_input_adjusted_position_files = f"{path_input_root}/{unity_date}/densite={densite}/{dIP_dIR}_analysis/Output/Session_1/Adjusted_Position_Files_0"
 path_input_OTSU = f"{path_input_root}/{unity_date}/densite={densite}/{dIP_dIR}_analysis/Output/Session_1/Otsu_R"
 # path_input_PLANT_FT_PRED = f"{path_input_root}/{unity_date}/densite={densite}/{dIP_dIR}_analysis/Output_FA/Session_1/Plant_FT_Predictions"
 path_input_PLANT_FT_PRED = f"{path_input_root}/{unity_date}/densite={densite}/{dIP_dIR}_analysis/Resultats_Clustering/Position_Files"
@@ -95,7 +95,7 @@ print("Done")
 # =============================================================================
 RAs_group_size = 25
 RAs_group_steps = 2
-Simulation_steps = 30
+Simulation_steps = 0
 
 ## TODO1: Fuse and fill doesn't work in curved mode...
 ## TODO2AL are not sorted along the row... Sort them to make the repositionning work : Done but maybe not the cleanest solution
@@ -106,9 +106,9 @@ Simulation_steps = 30
 ## TODO5: Recoding Fill and fuse functions with our new setting : to be tested
 ## TODO6: What to do with the argument InterPlant_Diffs ? It seems like I can remove it completely
 RALs_fuse_factor = 0.5
-RALs_fill_factor = 1.2
+RALs_fill_factor = 1.5
 
-_image_index = 0
+_image_index = 1
 
 print(names_input_OTSU[_image_index])
 print(names_input_adjusted_position_files[_image_index])

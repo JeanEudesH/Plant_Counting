@@ -11,7 +11,9 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image #, ImageDraw
-import sys 
+import sys
+
+from numpy.core.einsumfunc import _einsum_path_dispatcher 
 
 if not "D:/Documents/IODAA/Fil Rouge/Plant_Counting" in sys.path:
     sys.path.append("D:/Documents/IODAA/Fil Rouge/Plant_Counting")
@@ -288,4 +290,12 @@ class CRAD:
                         str(nb_bins_divider)+_save_preffix+self.img_id+".jpg")
         plt.close()
         
+if __name__ == "__main__":
+    path_position_files="D:/Documents/IODAA/Fil Rouge/Resultats/dIP_vs_dIR_curved_more_ratio/densite=7/02_07/Position_Files"
+    path_adjusted_position_files="D:/Documents/IODAA/Fil Rouge/Resultats/dIP_vs_dIR_curved_more_ratio/densite=7/02_07_analysis/Output/Session_1/Adjusted_Position_Files_0"
+    rows_real_angle=0
+    path_input_rgb_img="D:/Documents/IODAA/Fil Rouge/Resultats/dIP_vs_dIR_curved_more_ratio/densite=7/02_07/virtual_reality"
+    list_rgb_images=os.listdir(path_input_rgb_img)
+    pivot = np.array([960,540])
 
+    Produce_Adjusted_Position_Files(path_position_files, path_adjusted_position_files, rows_real_angle, path_input_rgb_img, list_rgb_images, pivot)
