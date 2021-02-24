@@ -320,42 +320,18 @@ def Total_Plant_Position(
     )
     print(list_image)
     for image in list_image:
-        print("start ", image)
+        print("--- start --- ", image)
         img = Image.open(_path_output_root + "/" + image)
-        print("DBSCAN")
+        print("--- DBSCAN ---")
         dataframe_coord = DBSCAN_clustering(img, epsilon, min_point)
-        # On peut décommenter cette partie et commenter la partie sur le fuzzy
-        # clustering pour régler les paramètres de DBSCAN.
-        # fig = plt.figure(figsize=(12, 12))
-        # ax = fig.add_subplot(111)
-        # label_cluster = np.unique(dataframe_coord[["label"]].to_numpy())
-        # txts = []
-        #
-        # for i in label_cluster:
-        #     xtext = np.median(dataframe_coord[dataframe_coord["label"] == i]["X"])
-        #     ytext = np.median(dataframe_coord[dataframe_coord["label"] == i]["Y"])
-        #     txt = ax.text(ytext, xtext, str(i))
-        #     txt.set_path_effects(
-        #         [PathEffects.Stroke(linewidth=5, foreground="w"), PathEffects.Normal()]
-        #     )
-        #     txts.append(txt)
-        # scatter_row = ax.scatter(
-        #     dataframe_coord["Y"].tolist(),
-        #     dataframe_coord["X"].tolist(),
-        #     c=dataframe_coord["label"].tolist(),
-        #     s=0.5,
-        #     cmap="Paired",
-        # )
-        # # plt.show()
-        # fig.savefig("/home/fort/Bureau/results/" + image.split(".")[0] + ".png")
         dataframe_coord.drop(
             dataframe_coord[dataframe_coord["label"] == -1].index, inplace=True
         )
-        print("Plant_detection")
+        print("--- Plant_detection ---")
         JSON_final = Plants_Detection(
             dataframe_coord, e, max_iter, m_p, threshold, image
         )
-        print("write_json")
+        print("--- write_json ---")
         path_JSON_output = (
             _path_output_root
             + "/outputCL/session"
