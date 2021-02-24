@@ -56,7 +56,7 @@ path_input_raw = f"{path_input_root}/{unity_date}/densite={densite}/{dIP_dIR}/vi
 path_input_adjusted_position_files = f"{path_input_root}/{unity_date}/densite={densite}/{dIP_dIR}_analysis/Output/Session_1/Adjusted_Position_Files_0"
 path_input_OTSU = f"{path_input_root}/{unity_date}/densite={densite}/{dIP_dIR}_analysis/Output/Session_1/Otsu"
 # path_input_PLANT_FT_PRED = f"{path_input_root}/{unity_date}/densite={densite}/{dIP_dIR}_analysis/Output_FA/Session_1/Plant_FT_Predictions"
-path_input_PLANT_FT_PRED = f"{path_input_root}/{unity_date}/densite={densite}/{dIP_dIR}_analysis/Resultats_Clustering/Position_Files"
+path_input_PLANT_FT_PRED = f"{path_input_root}/{unity_date}/densite={densite}/{dIP_dIR}_analysis/Resultats_Clustering/Position_Files_0"
 
 # path_input_raw = f"{path_input_root}/{unity_date}/virtual_reality"
 # path_input_adjusted_position_files = f"{path_input_root}/{unity_date}_analysis/Output/Session_1/Adjusted_Position_Files"
@@ -152,7 +152,7 @@ print("FN =", MAS_Simulation.FN)
 print("FP =", MAS_Simulation.FP)
 # =============================================================================
 
-# MAS_Simulation.Show_Adjusted_And_RALs_positions(_save=False, _save_path=f"{path_input_root}/{unity_date}_analysis/Images_MAS/{recon_policy}_repositioning")
+MAS_Simulation.Show_Adjusted_And_RALs_positions(_save=False, _save_path=f"{path_input_root}/{unity_date}_analysis/Images_MAS/{recon_policy}_repositioning")
 # MAS_Simulation.Show_nb_RALs()
 # MAS_Simulation.Show_RALs_Deicision_Scores()
 MAS_Simulation.Show_Adjusted_Positions()

@@ -1441,7 +1441,7 @@ class Agents_Director(object):
         """
         self.RowAs_start_x = []
         self.RowAs_start_nbRALs = []
-        for _crop_row in self.plant_FT_pred_par_crop_rows[2:3]:
+        for _crop_row in self.plant_FT_pred_par_crop_rows:
             nb_RALs=len(_crop_row)
             if (nb_RALs > 0):
                 self.RowAs_start_x += [_crop_row[0][0]]
