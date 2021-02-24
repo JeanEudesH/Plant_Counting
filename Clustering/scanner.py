@@ -336,9 +336,9 @@ def translate_row(longest_row, direction, img_array):
     )  # attention a voir si les Y et les X sont inversé
 
     for coord in longest_row:
-        coord_Y = coord[0] - direction[0] * step
-        coord_X = coord[1] - direction[1] * step
-        forward = forward - sqrt(direction[0] ** 2 + direction[1] ** 2) * (step ** 2)
+        coord_Y = coord[0] + direction[0] * step
+        coord_X = coord[1] + direction[1] * step
+        forward = forward + sqrt(direction[0] ** 2 + direction[1] ** 2) * (step ** 2)
 
         if (coord_Y > 0 and coord_Y < size_Y) and (coord_X > 0 and coord_X < size_X):
             new_longest_row.append([int(coord_Y), int(coord_X)])
