@@ -90,7 +90,6 @@ def DBSCAN_clustering(img, epsilon, min_point):
 
     # Dataframe gathering each plants pixel its label
     dataframe_coord = pd.concat([dataframe_coord, label], axis=1)
-
     return dataframe_coord
 
 
@@ -171,7 +170,6 @@ def pixel_median(dataframe_coord, img):
 
                     coord_Pixels_row.append([int(YMedian), int(XMedian)])
             coord_Pixels_img.append(coord_Pixels_row)
-
     return coord_Pixels_img
 
 
@@ -234,9 +232,10 @@ def order_size_rows(coordPixelsRow):
     """
 
     rows_len = [len(coordPixelsRow[row]) for row in range(len(coordPixelsRow))]
-    index_rows = [i for i in range(len(coordPixelsRow))]
 
-    size_rows_sorted = [i for _, i in sorted(zip(rows_len, index_rows), reverse=True)]
+    index_rows = [i for i in range(len(coordPixelsRow))]
+    size_rows_sorted = [i for _, i in sorted(zip(rows_len, index_rows),
+                                             reverse=True)]
 
     return size_rows_sorted
 
@@ -264,6 +263,7 @@ def dist_direction_row(coord_pixels):
     # List of the index of the rows, sorted by size,
     # the first index belongs to the biggest row
     index_rows = order_size_rows(coord_pixels)
+
     start_row_pos = coord_pixels[index_rows[0]]
     final_row = coord_pixels[index_rows[1]]
 
@@ -430,6 +430,7 @@ def plot_cluster(coordPixels, dataframe_coord, size_img, direction_med, directio
     fig = plt.figure(figsize=(8, 10))
     ax = fig.add_subplot()
 
+    # Cluster labels
     label_cluster = np.unique(dataframe_coord[["label"]].to_numpy())
     txts = []
     for i in label_cluster:
@@ -441,6 +442,7 @@ def plot_cluster(coordPixels, dataframe_coord, size_img, direction_med, directio
         )
         txts.append(txt)
 
+    # DBSCAN plot
     scatter_row = ax.scatter(
         dataframe_coord["Y"].tolist(),
         dataframe_coord["X"].tolist(),
@@ -449,51 +451,22 @@ def plot_cluster(coordPixels, dataframe_coord, size_img, direction_med, directio
         # cmap="Paired",
         c="grey",
     )
+
+    # Pixels median
     for row in range(len(coordPixels)):
         X = []
         Y = []
         for pixel in range(len(coordPixels[row])):
-            Y.append(coordPixels[row][pixel][0])
-            X.append(coordPixels[row][pixel][1])
+            Y.append(coordPixels[row][pixel][1])
+            X.append(coordPixels[row][pixel][0])
 
         ax.plot(X, Y, "+", c="r")
 
-    Y_vec_dir_mean = [
-        size_img[0] // 2,
-        size_img[0] // 2 + direction_mean[0],
-        size_img[0] // 2 - direction_mean[0],
-    ]
-    X_vec_dir_mean = [
-        size_img[1] // 2,
-        size_img[1] // 2 + direction_mean[1],
-        size_img[1] // 2 - direction_mean[1],
-    ]
-    plt.plot(X_vec_dir_mean, Y_vec_dir_mean, c="b")
-
-    Y_vec_dir_med = [
-        size_img[0] // 2,
-        size_img[0] // 2 + direction_med[0],
-        size_img[0] // 2 - direction_med[0],
-    ]
-    X_vec_dir_med = [
-        size_img[1] // 2,
-        size_img[1] // 2 + direction_med[1],
-        size_img[1] // 2 - direction_med[1],
-    ]
-    plt.plot(X_vec_dir_med, Y_vec_dir_med, c="g")
 
     index = order_size_rows(coordPixels)
     start_row = coordPixels[index[0]]
 
-    # for row in range(len(coordPixels)):
-    #     X = []
-    #     Y = []
-    #     for pixel in range(len(coordPixels[row])):
-    #         Y.append(coordPixels[row][pixel][0])
-    #         X.append(coordPixels[row][pixel][1])
-
-    #     ax.plot(X, Y, '+', c='r')
-
+    # Plot start and end row of the vector direction
     scatter_row_1 = ax.scatter(
         np.array(start_row).T[0],
         np.array(start_row).T[1],
@@ -510,6 +483,7 @@ def plot_cluster(coordPixels, dataframe_coord, size_img, direction_med, directio
         label="Second biggest row",
     )
 
+    # Direction vector
     X_vec = statistics.median(np.array(start_row).T[0])
     Y_vec = statistics.median(np.array(start_row).T[1])
 
@@ -575,13 +549,15 @@ def Total_Plant_Position(path_image_input, epsilon, min_point):
         dataframe_coord = DBSCAN_clustering(img, epsilon, min_point)
         coordPixelsMedian = pixel_median(dataframe_coord, img)
         directions = dist_direction_row(coordPixelsMedian)
+        print(directions)
         dir_mean = direction_mean(directions)
         dir_med = direction_med(directions)
         print("dirMean", dir_mean, "dir_med", dir_med)
         # pixel_median return a list of lists of size 2.
         # List of the coordonnates of the pixels
         plot_cluster(
-            coordPixelsMedian, dataframe_coord, img_array.shape, dir_med, dir_mean
+            coordPixelsMedian, dataframe_coord, img_array.shape,
+            dir_med, dir_mean
         )
         # calcul of the inter-row distance
         sum_pixel_for, move_step_for = calculate_dist_interRow(
@@ -595,9 +571,11 @@ def Total_Plant_Position(path_image_input, epsilon, min_point):
 
     return
 
+# "/home/fort/Bureau/test_image"
+
 
 Total_Plant_Position(
-    path_image_input="/home/fort/Bureau/test_image",
+    path_image_input="./../../Images/",
     epsilon=20,
-    min_point=20,
+    min_point=30,
 )
