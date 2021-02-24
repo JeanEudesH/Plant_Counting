@@ -93,7 +93,7 @@ print("Done")
 # =============================================================================
 # Simulation Parameters Definition
 # =============================================================================
-RAs_group_size = 25
+RAs_group_size = 15
 RAs_group_steps = 2
 Simulation_steps = 0
 
