@@ -390,8 +390,8 @@ def translate_row(longest_row, direction, img_array):
     )  # attention a voir si les Y et les X sont inversé
 
     for coord in longest_row:
-        coord_Y = coord[0] + direction[0] * step
-        coord_X = coord[1] + direction[1] * step
+        coord_Y = coord[0] + direction[1] * step
+        coord_X = coord[1] + direction[0] * step
         forward = forward + sqrt(direction[0] ** 2 + direction[1] ** 2) * (step ** 2)
 
         if (coord_Y > 0 and coord_Y < size_Y) and (coord_X > 0 and coord_X < size_X):
@@ -651,7 +651,7 @@ def Total_Plant_Position(path_image_input, epsilon, min_point):
 
         # calcul of the inter-row distance
         sum_pixel_for, move_step_for, list_coord_plot = calculate_dist_interRow(
-            coordPixelsTotal, dir_med, img_array
+            coordPixelsTotal, dir_mean, img_array
         )
         print(list_coord_plot)
         plot_cluster(
@@ -664,6 +664,7 @@ def Total_Plant_Position(path_image_input, epsilon, min_point):
         )
 
         plt.plot(move_step_for, [sum_li / sum_pixel_for[0] for sum_li in sum_pixel_for])
+
         plt.show()
         print("--- %s seconds ---" % (time.time() - start_time_img))
         break
