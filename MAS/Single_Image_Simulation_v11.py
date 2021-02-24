@@ -47,7 +47,7 @@ def get_file_lines(path_csv_file):
 path_input_root = "D:/Documents/IODAA/Fil Rouge/Resultats"
 unity_date = "dIP_vs_dIR_curved_more_ratio"
 densite = 7
-dIP_dIR = "02_07"
+dIP_dIR = "02_07_disjoint"
 session_number = 1
 
 recon_policy = "local_XY"
@@ -108,7 +108,7 @@ Simulation_steps = 0
 RALs_fuse_factor = 0.5
 RALs_fill_factor = 1.5
 
-_image_index = 1
+_image_index = 0
 
 print(names_input_OTSU[_image_index])
 print(names_input_adjusted_position_files[_image_index])
