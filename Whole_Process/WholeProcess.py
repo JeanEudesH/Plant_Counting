@@ -40,14 +40,14 @@ def CompleteProcess(_path_input_rgb_img, _path_output_root,
                     _RAs_group_size=20, _RAs_group_steps=2, _Simulation_steps=50,
                     _RALs_fuse_factor=0.5, _RALs_fill_factor=1.5, densite=None, experiment=None):
     
-    # PiFT.All_Pre_Treatment(_path_input_rgb_img,
-    #                   _path_output_root,
-    #                   _path_position_files,
-    #                   _rows_real_angle,
-    #                   _make_unique_folder_per_session, _session,
-    #                   _do_Otsu, _do_AD,
-    #                   _save_AD_score_images, _save_BSAS_images,
-    #                   _bsas_threshold)
+    PiFT.All_Pre_Treatment(_path_input_rgb_img,
+                      _path_output_root,
+                      _path_position_files,
+                      _rows_real_angle,
+                      _make_unique_folder_per_session, _session,
+                      _do_Otsu, _do_AD,
+                      _save_AD_score_images, _save_BSAS_images,
+                      _bsas_threshold)
     
     FA.All_Fourier_Analysis(_path_output_root,
                          _session,

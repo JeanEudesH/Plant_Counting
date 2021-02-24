@@ -569,34 +569,80 @@ class Row_Agent(object):
         """
         distance_matrix = self.Compute_Distance_Matrix()
 
+        def get_direction_of_others_RAL(RAL, list_of_RALs):
+            """
+            Return the direction of each RAL compared with one RAL
+            """
+            directions = []
+            for other in range(len(list_of_RALs)):
+                direction = ""
+                if list_of_RALs[other].x < RAL.x:
+                    direction += "W"
+                else:
+                    direction += "E"
+                if list_of_RALs[other].y < RAL.y:
+                    direction += "S"
+                else:
+                    direction  += "N"
+                directions.append(direction)
+            return directions            
+
         for _RAL in self.RALs: # reinitialize the neighbours at each turn to avoid cumulatign
             _RAL.neighbours = []
 
         for i, _RAL in enumerate(self.RALs):
             already_seen = [i]  # to avoid visiting the same neighbour twice
             for n in _RAL.neighbours: # we already saw the neighbours that saw the RAL before
-                idx = np.nonzero([self.RALs[k] == n for k in range(len(self.RALs))])
-                already_seen.append(idx)
+                idx = np.nonzero([self.RALs[k] == n for k in range(len(self.RALs))])[0]
+                already_seen.extend([i for i in idx])
 
+            direction_of_neighbours = get_direction_of_others_RAL(_RAL, self.RALs)  # record the direction (N, W, E, S) from RAL to neighbour 
             for k in range(2 - len(_RAL.neighbours)): # get the remaining closest neighbours
                 mask = [True if n not in already_seen else False for n in range(distance_matrix.shape[0])]
                 min_dist = np.min(distance_matrix[i, mask]) # distance to closest unseen neighbour
                 closest_idx = np.nonzero(distance_matrix[i, :] == min_dist)[0] # get the index(s) of the closest neighbour
                 close_idx = closest_idx[0]
 
-                if close_idx != i: # do not append itself in its neighbours
-                    if _RAL.neighbours != []:
-                        for n in _RAL.neighbours: # if we already added one neighbour, check if the Agent is on the extremity of the row
-                            if self.euclidean_distance(self.RALs[close_idx], n) > self.euclidean_distance(_RAL, self.RALs[close_idx]): # the RAL is not at an extremity of the row
-                                _RAL.neighbours.append(self.RALs[close_idx])
-                                self.RALs[close_idx].neighbours.append(_RAL)
-                                already_seen.append(close_idx)
-                            # else: # can be troubles with extremities...
-                    else: # if it is the first neighbour that we see, we add it anyway
+                # if close_idx != i: # do not append itself in its neighbours
+                if _RAL.neighbours == []: # first neighbour found
+                    if self.RALs[close_idx] not in _RAL.neighbours:
                         _RAL.neighbours.append(self.RALs[close_idx])
+                    if _RAL not in self.RALs[close_idx].neighbours:
                         self.RALs[close_idx].neighbours.append(_RAL) # also add _RAL to its neighbour's list
+                    already_seen.append(close_idx)
+                else: # second neighbour
+                    first_neighbour_direction = direction_of_neighbours[already_seen[-1]]
+                    candidates = [True if n not in already_seen else False for n in range(distance_matrix.shape[0])]
+                    
+                    while True in candidates:
+                        min_dist = np.min(distance_matrix[i, candidates]) # distance to closest unseen neighbour
+                        closest_idx = np.nonzero(distance_matrix[i, :] == min_dist)[0] # get the index(s) of the closest neighbour
+                        if closest_idx[0] not in already_seen:
+                            close_idx = closest_idx[0]
+                        else:
+                            close_idx = closest_idx[-1]
+                        if direction_of_neighbours[close_idx] != first_neighbour_direction:
+                            if self.RALs[close_idx] not in _RAL.neighbours:
+                                _RAL.neighbours.append(self.RALs[close_idx])
+                            if _RAL not in self.RALs[close_idx].neighbours:
+                                self.RALs[close_idx].neighbours.append(_RAL)
+                            break
                         already_seen.append(close_idx)
-            assert(len(_RAL.neighbours) <= 2)        
+                        candidates = [True if n not in already_seen else False for n in range(distance_matrix.shape[0])]
+
+                    # if _RAL.neighbours != []:
+                    #     for n in _RAL.neighbours: # if we already added one neighbour, check if the Agent is on the extremity of the row
+                            # if self.euclidean_distance(self.RALs[close_idx], n) > self.euclidean_distance(_RAL, self.RALs[close_idx]): # the RAL is not at an extremity of the row
+                            #     _RAL.neighbours.append(self.RALs[close_idx])
+                            #     self.RALs[close_idx].neighbours.append(_RAL)
+                            #     already_seen.append(close_idx)
+                            # else: # can be troubles with extremities...
+                    # else: # if it is the first neighbour that we see, we add it anyway
+                    #     _RAL.neighbours.append(self.RALs[close_idx])
+                    #     self.RALs[close_idx].neighbours.append(_RAL) # also add _RAL to its neighbour's list
+                    #     already_seen.append(close_idx)
+            assert(len(_RAL.neighbours) <= 2)
+
         # self.Show_RALs_Position()
         # plt.show()
 
@@ -817,10 +863,10 @@ class Row_Agent(object):
         # print(x_f, y_f)
 
         # while np.sqrt((x_f - (x_0 + k_x * delta_x)) ** 2 + (y_f - (x_0 + k_y * delta_y)) ** 2) >= _filling_step: # still space available
-        # while (np.sqrt((x_f - (x_0 + (k_x) * delta_x)) ** 2 + (y_f - (x_0 + (k_y) * delta_y)) ** 2) >= self.group_size + _filling_step) and ((x_0 <= x_0 + k_x * delta_x <= x_f) or (x_f <= x_0 + k_x * delta_x <= x_0)) and ((y_0 <= y_0 + k_y * delta_y <= y_f) or (y_f <= y_0 + k_y * delta_y <= y_0)):
-        while max(abs(RAL1.x  - RAL2.x), abs(RAL1.y - RAL2.y)) >= _filling_step \
-        and ((x_0 <= x_0 + k_x * delta_x <= x_f) or (x_f <= x_0 + k_x * delta_x <= x_0)) \
-        and ((y_0 <= y_0 + k_y * delta_y <= y_f) or (y_f <= y_0 + k_y * delta_y <= y_0)):
+        while (np.sqrt((x_f - (x_0 + (k_x) * delta_x)) ** 2 + (y_f - (x_0 + (k_y) * delta_y)) ** 2) >= self.group_size) and ((x_0 <= x_0 + k_x * delta_x <= x_f) or (x_f <= x_0 + k_x * delta_x <= x_0)) and ((y_0 <= y_0 + k_y * delta_y <= y_f) or (y_f <= y_0 + k_y * delta_y <= y_0)):
+        # while max(abs(RAL1.x  - RAL2.x), abs(RAL1.y - RAL2.y)) >= _filling_step \
+        # and ((x_0 <= x_0 + k_x * delta_x <= x_f) or (x_f <= x_0 + k_x * delta_x <= x_0)) \
+        # and ((y_0 <= y_0 + k_y * delta_y <= y_f) or (y_f <= y_0 + k_y * delta_y <= y_0)):
             new_RAL = ReactiveAgent_Leader(_x = int(x_0 + (k_x) * delta_x),
                                 _y = int(y_0 + (k_y) * delta_y),
                                 _img_array = self.OTSU_img_array,
@@ -925,12 +971,20 @@ class Row_Agent(object):
                 #if not idx in already_seen:
                     # idx = np.nonzero([self.RALs[k] == n for k in range(len(self.RALs))])[0][0]
             already_seen.append(j) 
-        plt.xlim(800, 1300)
-        plt.ylim(200, 1650)
+        plt.xlim(300, 1250)
+        plt.ylim(0, 1150)
 
             
     def Fill_or_Fuse_RALs(self, _crit_value, _fuse_factor = 0.5, _fill_factor = 1.5):
+        # print("Entering Set_RAL")
+        d = []
+        for _RAL in self.RALs:
+            for n in _RAL.neighbours:
+                d.append(self.euclidean_distance(_RAL, n))
+        _crit_value = np.median(d)
+
         nb_RALs = len(self.RALs)
+
         i = 0
         already_seen = []
         # self.to_be_initialized, self.to_be_deleted = [], []
@@ -953,9 +1007,9 @@ class Row_Agent(object):
             for n in self.RALs[i].neighbours:
                 # if (self.RALs[i], n) not in already_seen or (self.RALs[i], n) not in already_seen:
                 neighbour_idx = np.nonzero([self.RALs[k] == n for k in range(len(self.RALs))])[0][0]
-                print(f"Analyzing agent {neighbour_idx}, neighbour of {i} for FUSING.")
-                print(f"estimated distance is {np.sqrt((self.RALs[i].x  - n.x) ** 2 + (self.RALs[i].y - n.y) ** 2)}.Y compared with {_fuse_factor * _crit_value}")
-                print("\n")
+                # print(f"Analyzing agent {neighbour_idx}, neighbour of {i} for FUSING.")
+                # print(f"estimated distance is {np.sqrt((self.RALs[i].x  - n.x) ** 2 + (self.RALs[i].y - n.y) ** 2)}.Y compared with {_fuse_factor * _crit_value}")
+                # print("\n")
                 if self.euclidean_distance(self.RALs[i], n) < _fuse_factor * _crit_value:
                     print(f"Fusing agents : {i} and {neighbour_idx} into {len(self.RALs) - 2}")
                     self.Fuse_RALs(self.RALs[i], n)
@@ -972,8 +1026,8 @@ class Row_Agent(object):
             
             for n in self.RALs[i].neighbours:
                 neighbour_idx = np.nonzero([self.RALs[k] == n for k in range(len(self.RALs))])[0][0]
-                print(f"Analyzing agent {neighbour_idx}, neighbour of {i} for FILLING")
-                print(f"estimated distance is {np.sqrt((self.RALs[i].x  - n.x) ** 2 + (self.RALs[i].y - n.y) ** 2)}.Y compared with {_fill_factor * _crit_value}")
+                # print(f"Analyzing agent {neighbour_idx}, neighbour of {i} for FILLING")
+                # print(f"estimated distance is {np.sqrt((self.RALs[i].x  - n.x) ** 2 + (self.RALs[i].y - n.y) ** 2)}.Y compared with {_fill_factor * _crit_value}")
                 # print("\n")
                 # if np.sqrt((self.RALs[i].x  - n.x) ** 2 + (self.RALs[i].y - n.y) ** 2) >= int(_fill_factor * _crit_value):
                 if max(abs(self.RALs[i].x  - n.x), abs(self.RALs[i].y - n.y)) >= int(_fill_factor * _crit_value):

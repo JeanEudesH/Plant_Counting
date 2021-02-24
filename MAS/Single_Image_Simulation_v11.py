@@ -93,9 +93,9 @@ print("Done")
 # =============================================================================
 # Simulation Parameters Definition
 # =============================================================================
-RAs_group_size = 15
+RAs_group_size = 12
 RAs_group_steps = 2
-Simulation_steps = 0
+Simulation_steps = 30
 
 ## TODO1: Fuse and fill doesn't work in curved mode...
 ## TODO2AL are not sorted along the row... Sort them to make the repositionning work : Done but maybe not the cleanest solution
@@ -106,7 +106,7 @@ Simulation_steps = 0
 ## TODO5: Recoding Fill and fuse functions with our new setting : to be tested
 ## TODO6: What to do with the argument InterPlant_Diffs ? It seems like I can remove it completely
 RALs_fuse_factor = 0.5
-RALs_fill_factor = 1.5
+RALs_fill_factor = 1.1
 
 _image_index = 0
 
@@ -155,7 +155,7 @@ print("FP =", MAS_Simulation.FP)
 MAS_Simulation.Show_Adjusted_And_RALs_positions(_save=False, _save_path=f"{path_input_root}/{unity_date}_analysis/Images_MAS/{recon_policy}_repositioning")
 # MAS_Simulation.Show_nb_RALs()
 # MAS_Simulation.Show_RALs_Deicision_Scores()
-MAS_Simulation.Show_Adjusted_Positions()
+# MAS_Simulation.Show_Adjusted_Positions()
 
 import matplotlib.pyplot as plt
 plt.show()
