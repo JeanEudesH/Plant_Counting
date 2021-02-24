@@ -173,6 +173,55 @@ def pixel_median(dataframe_coord, img):
     return coord_Pixels_img
 
 
+def list_coord(dataframe_coord, img):
+    """
+    Tranformation format list.
+
+    Parameters
+    ----------
+    dataframe_coord : PANDA DATAFRAME
+        Panda dataframe with one column for the row label, one for the X
+        coordinate, one the Y coordinate of the plants pixels.
+
+    img : IMAGE object
+        Otsu image of the field. Pre-treatment possible with the script
+        Process_image_for_FT.py in the Pre_Treatments folder.
+        Image used in DBSCAN clustering.
+
+    Returns
+    -------
+    coord_Pixels_img : LIST of LISTS
+        List of the rows coordinates. Length of the list is the number of rows.
+        In each list (row), the coordinates of the pixels are presented in
+        lists of length of 2 [X1, Y1].
+        Small example for an imaginary image with 2 rows and less than 5 pixels
+        in the rows:
+            [[[Y1, X1], [Y2, X2], [Y3, X3], [Y4, X4]],
+             [[Y5, X5], [Y6, X6], [Y7, X7]]]
+
+    """
+
+    # Get the image and transforms it into a np array
+    img_array = np.array(img)
+    img_height = img_array.shape[1]
+    img_width = img_array.shape[0]
+
+    # For each cluster determined by DBSCAN
+    label_row = np.unique(dataframe_coord[["label"]].to_numpy())
+    coord_Pixels_img = []
+
+    for row in label_row:
+        # np.array of n lines and 2 columns:
+        # n being the number of pixels in this row
+        coord_row = dataframe_coord[dataframe_coord["label"] == row][
+            ["Y", "X"]
+        ].to_numpy()
+
+        coord_Pixels_img.append(coord_row)
+
+    return coord_Pixels_img
+
+
 def distance_min_1pixel(pixel_coord, row_compared):
     """
     Calculate the minimal distance from a given pixel to another pixel from
@@ -270,12 +319,15 @@ def dist_direction_row(coord_pixels):
     directions = []
     distances = []
 
+    start_time = time.time()
     # Parse through all pixels of the starting row
     for pixel in start_row_pos:
         # Not sure that the distance minimal is really useful
         dist_min, direction = distance_min_1pixel(pixel, final_row)
         directions.append(direction)
         distances.append(dist_min)
+    print("--- %s seconds --- Start calculate vector direction" % (time.time() - start_time))
+
 
     return directions
 
@@ -329,7 +381,7 @@ def translate_row(longest_row, direction, img_array):
     # BOundaries si les coord sont hors image, lui dire tout va bien et arrêt
     # si plus aucun pixel dans l'image (fonction supplémentaire ? )
     # Move forward
-    step = 0.01
+    step = 0.1
     forward = 0
     new_longest_row = []
     size_Y, size_X = get_image_size(
@@ -547,7 +599,9 @@ def Total_Plant_Position(path_image_input, epsilon, min_point):
 
         print("DBSCAN")
         dataframe_coord = DBSCAN_clustering(img, epsilon, min_point)
-        coordPixelsMedian = pixel_median(dataframe_coord, img)
+        # coordPixelsMedian = pixel_median(dataframe_coord, img)
+        coordPixelsMedian = list_coord(dataframe_coord, img)
+        print("--- %s seconds --- Start calculate vector direction" % (time.time() - start_time_img))
         directions = dist_direction_row(coordPixelsMedian)
         print(directions)
         dir_mean = direction_mean(directions)
