@@ -148,7 +148,7 @@ def pixel_median(dataframe_coord, img):
             # List of median pixels (one per line of the image)
             # Get the median pixel for a row of pixels in a labelled row
 
-            step = 2  # Put in function of the size of the image?
+            step = 1  # Put in function of the size of the image?
             for i in range(0, img_height, step):
                 # Get all pixels in the rows whom Y coordinates is within the
                 # designated range
@@ -433,6 +433,7 @@ def calculate_dist_interRow(coordPixelsMedian, direction, img_array):
     longest_row_for = coordPixelsMedian[size_rows_sorted[0]]
     move_step_for = []
     sum_pixel_for = []
+    # To stock information on where the scanner were at specific times
     counter = 0
     list_coord_plot = []
     while (
@@ -521,46 +522,46 @@ def plot_cluster(
     )
 
     # Pixels median
-    for row in range(len(coordPixels)):
-        X = []
-        Y = []
-        for pixel in range(len(coordPixels[row])):
-            Y.append(coordPixels[row][pixel][1])
-            X.append(coordPixels[row][pixel][0])
+    # for row in range(len(coordPixels)):
+    #     X = []
+    #     Y = []
+    #     for pixel in range(len(coordPixels[row])):
+    #         Y.append(coordPixels[row][pixel][1])
+    #         X.append(coordPixels[row][pixel][0])
 
-        ax.plot(X, Y, "+", c="r")
+    #     ax.plot(X, Y, "+", c="r)
 
     index = order_size_rows(coordPixels)
     start_row = coordPixels[index[0]]
 
     # Plot start and end row of the vector direction
-    scatter_row_1 = ax.scatter(
-        np.array(start_row).T[0],
-        np.array(start_row).T[1],
-        s=0.5,
-        c="darkgreen",
-        label="Biggest row",
-    )
+    # scatter_row_1 = ax.scatter(
+    #     np.array(start_row).T[0],
+    #     np.array(start_row).T[1],
+    #     s=0.5,
+    #     c="darkgreen",
+    #     label="Biggest row",
+    # )
 
-    scatter_row_2 = ax.scatter(
-        np.array(coordPixels[index[1]]).T[0],
-        np.array(coordPixels[index[1]]).T[1],
-        s=0.5,
-        c="darkorange",
-        label="Second biggest row",
-    )
+    # scatter_row_2 = ax.scatter(
+    #     np.array(coordPixels[index[1]]).T[0],
+    #     np.array(coordPixels[index[1]]).T[1],
+    #     s=0.5,
+    #     c="darkorange",
+    #     label="Second biggest row",
+    # )
     scatter_row_3 = ax.scatter(
         np.array(list_coord_plot[0]).T[0],
         np.array(list_coord_plot[0]).T[1],
         s=0.5,
-        c="darkblue",
+        c="lightblue",
         label="Last place of the scanner",
     )
     scatter_row_4 = ax.scatter(
         np.array(list_coord_plot[1]).T[0],
         np.array(list_coord_plot[1]).T[1],
         s=0.5,
-        c="darkblue",
+        c="blue",
         label="Last place of the scanner",
     )
     scatter_row_5 = ax.scatter(
@@ -600,7 +601,7 @@ def plot_cluster(
         ec="red",
     )
 
-    ax.legend()
+    ax.legend(loc="lower left", markerscale=10.0, fontsize=10)
 
     # fig.tight_layout()
 
@@ -653,7 +654,6 @@ def Total_Plant_Position(path_image_input, epsilon, min_point):
         sum_pixel_for, move_step_for, list_coord_plot = calculate_dist_interRow(
             coordPixelsTotal, dir_mean, img_array
         )
-        print(list_coord_plot)
         plot_cluster(
             coordPixelsMedian,
             dataframe_coord,
@@ -663,6 +663,9 @@ def Total_Plant_Position(path_image_input, epsilon, min_point):
             list_coord_plot,
         )
 
+        print(move_step_for)
+        print([sum_li / sum_pixel_for[0] for sum_li in sum_pixel_for])
+        move_step_for.reverse()
         plt.plot(move_step_for, [sum_li / sum_pixel_for[0] for sum_li in sum_pixel_for])
 
         plt.show()
@@ -677,7 +680,7 @@ def Total_Plant_Position(path_image_input, epsilon, min_point):
 
 
 Total_Plant_Position(
-    path_image_input="/home/fort/Bureau/test_image",
+    path_image_input="./../../Images",
     epsilon=20,
     min_point=30,
 )
