@@ -381,9 +381,7 @@ def translate_row(longest_row, direction, img_array):
 
     # BOundaries si les coord sont hors image, lui dire tout va bien et arrêt
     # si plus aucun pixel dans l'image (fonction supplémentaire ? )
-    # Move forward
     step = 0.05
-    forward = 0
     new_longest_row = []
     size_Y, size_X = get_image_size(
         img_array
@@ -392,12 +390,11 @@ def translate_row(longest_row, direction, img_array):
     for coord in longest_row:
         coord_Y = coord[0] + direction[1] * step
         coord_X = coord[1] + direction[0] * step
-        forward = forward + sqrt(direction[0] ** 2 + direction[1] ** 2) * (step ** 2)
 
         if (coord_Y > 0 and coord_Y < size_Y) and (coord_X > 0 and coord_X < size_X):
             new_longest_row.append([int(coord_Y), int(coord_X)])
 
-    return new_longest_row, forward
+    return new_longest_row, step
 
 
 def get_image_size(img_array):
@@ -436,12 +433,14 @@ def calculate_dist_interRow(coordPixelsMedian, direction, img_array):
     # To stock information on where the scanner were at specific times
     counter = 0
     list_coord_plot = []
+    forward = 0
     while (
         len(longest_row_for) > 0
     ):  # Tant qu'il ya des points dans l'image on avant le rang
-        longest_row_for, forward = translate_row(
+        longest_row_for, step = translate_row(
             longest_row_for, direction, img_array
         )  # On obtient le nouveau nuage de points
+        forward = forward + sqrt(direction[0] ** 2 + direction[1] ** 2) * (step ** 2)
 
         # On fait la fonction sumavec le nouveau nuage de point et on ajoute forward à la liste des déplacements
         move_step_for.append(forward)
@@ -665,7 +664,6 @@ def Total_Plant_Position(path_image_input, epsilon, min_point):
 
         print(move_step_for)
         print([sum_li / sum_pixel_for[0] for sum_li in sum_pixel_for])
-        move_step_for.reverse()
         plt.plot(move_step_for, [sum_li / sum_pixel_for[0] for sum_li in sum_pixel_for])
 
         plt.show()
