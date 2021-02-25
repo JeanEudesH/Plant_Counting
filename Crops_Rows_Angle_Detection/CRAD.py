@@ -292,8 +292,8 @@ class CRAD:
         
 if __name__ == "__main__":
     path_position_files="D:/Documents/IODAA/Fil Rouge/Resultats/dIP_vs_dIR_linear/densite=5/022_088/Position_Files"
-    path_adjusted_position_files="D:/Documents/IODAA/Fil Rouge/Resultats/dIP_vs_dIR_linear/densite=5/022_088_analysis/Output/Session_1/Adjusted_Position_Files"
-    rows_real_angle=0
+    path_adjusted_position_files="D:/Documents/IODAA/Fil Rouge/Resultats/dIP_vs_dIR_linear/densite=5/022_088_analysis/Output/Session_1/Adjusted_Position_Files_90"
+    rows_real_angle=90
     path_input_rgb_img="D:/Documents/IODAA/Fil Rouge/Resultats/dIP_vs_dIR_linear/densite=5/022_088/virtual_reality"
     list_rgb_images=os.listdir(path_input_rgb_img)
     pivot = np.array([960,540])
