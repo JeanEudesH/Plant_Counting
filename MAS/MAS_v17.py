@@ -456,6 +456,9 @@ class Row_Agent(object):
                                        _field_offset = self.field_offset)
             
             self.RALs += [RAL]
+
+    def Drop_RAL(self, proba=0.5):
+        self.RALs = np.random.choice(self.RALs, size=int(proba * len(self.RALs)), replace=False).tolist()
         
     def Extensive_Init(self, _filling_step):
         """
@@ -567,6 +570,9 @@ class Row_Agent(object):
         """
         Here we link each RAL with its neighbours which are the two (maximum) closest RALs
         """
+        if len(self.RALs) < 2:
+            return
+
         distance_matrix = self.Compute_Distance_Matrix()
 
         def get_direction_of_others_RAL(RAL, list_of_RALs):
@@ -599,15 +605,18 @@ class Row_Agent(object):
             direction_of_neighbours = get_direction_of_others_RAL(_RAL, self.RALs)  # record the direction (N, W, E, S) from RAL to neighbour 
             for k in range(2 - len(_RAL.neighbours)): # get the remaining closest neighbours
                 mask = [True if n not in already_seen else False for n in range(distance_matrix.shape[0])]
-                min_dist = np.min(distance_matrix[i, mask]) # distance to closest unseen neighbour
-                closest_idx = np.nonzero(distance_matrix[i, :] == min_dist)[0] # get the index(s) of the closest neighbour
-                close_idx = closest_idx[0]
+                if True not in mask:
+                    break
+                else:
+                    min_dist = np.min(distance_matrix[i, mask]) # distance to closest unseen neighbour
+                    closest_idx = np.nonzero(distance_matrix[i, :] == min_dist)[0] # get the index(s) of the closest neighbour
+                    close_idx = closest_idx[0]
 
                 # if close_idx != i: # do not append itself in its neighbours
                 if _RAL.neighbours == []: # first neighbour found
                     if self.RALs[close_idx] not in _RAL.neighbours:
                         _RAL.neighbours.append(self.RALs[close_idx])
-                    if _RAL not in self.RALs[close_idx].neighbours:
+                    if _RAL not in self.RALs[close_idx].neighbours and len(self.RALs[close_idx].neighbours) < 2:
                         self.RALs[close_idx].neighbours.append(_RAL) # also add _RAL to its neighbour's list
                     already_seen.append(close_idx)
                 else: # second neighbour
@@ -617,14 +626,21 @@ class Row_Agent(object):
                     while True in candidates:
                         min_dist = np.min(distance_matrix[i, candidates]) # distance to closest unseen neighbour
                         closest_idx = np.nonzero(distance_matrix[i, :] == min_dist)[0] # get the index(s) of the closest neighbour
+                        
                         if closest_idx[0] not in already_seen:
                             close_idx = closest_idx[0]
                         else:
                             close_idx = closest_idx[-1]
-                        if direction_of_neighbours[close_idx] != first_neighbour_direction:
+
+                        is_closest_in_neighbour_neighbourhood = False
+                        for n in _RAL.neighbours:
+                            if self.RALs[close_idx] in n.neighbours:
+                                is_closest_in_neighbour_neighbourhood = True
+
+                        if direction_of_neighbours[close_idx] != first_neighbour_direction and not is_closest_in_neighbour_neighbourhood:
                             if self.RALs[close_idx] not in _RAL.neighbours:
                                 _RAL.neighbours.append(self.RALs[close_idx])
-                            if _RAL not in self.RALs[close_idx].neighbours:
+                            if _RAL not in self.RALs[close_idx].neighbours and len(self.RALs[close_idx].neighbours) < 2:
                                 self.RALs[close_idx].neighbours.append(_RAL)
                             break
                         already_seen.append(close_idx)
@@ -641,6 +657,11 @@ class Row_Agent(object):
                     #     _RAL.neighbours.append(self.RALs[close_idx])
                     #     self.RALs[close_idx].neighbours.append(_RAL) # also add _RAL to its neighbour's list
                     #     already_seen.append(close_idx)
+            if not len(_RAL.neighbours) <= 2:
+                print(i, _RAL.neighbours)
+                print(direction_of_neighbours)
+                # self.Show_RALs_Position()
+                # plt.show()
             assert(len(_RAL.neighbours) <= 2)
 
         # self.Show_RALs_Position()
@@ -758,14 +779,26 @@ class Row_Agent(object):
         use indices to fuse RALs in curved mode since adjacent RALs have not necessarily
         contiguous neighbours
         """
-        assert (RAL2 in RAL1.neighbours and RAL1 in RAL2.neighbours)
-        assert (RAL2 != RAL1)
+        if (RAL2 not in RAL1.neighbours and RAL1 not in RAL2.neighbours):
+            print(np.nonzero(self.RALs[k] == RAL1 for k in range(len(self.RALs))))
+            print(np.nonzero(self.RALs[k] == RAL2 for k in range(len(self.RALs))))
+            # self.Show_RALs_Position()
+            # plt.show()
 
-        for n in RAL2.neighbours:
-            assert (RAL1 not in n.neighbours)
+        if (RAL2 == RAL1):
+            print(np.nonzero(self.RALs[k] == RAL1 for k in range(len(self.RALs))))
+            # self.Show_RALs_Position()
+            # plt.show()
 
-        for n in RAL1.neighbours:
-            assert (RAL2 not in n.neighbours)
+        # for n in RAL2.neighbours:
+        #     assert (RAL1 not in n.neighbours)
+
+        # for n in RAL1.neighbours:
+        #     if (RAL2 in n.neighbours):
+        #         print(np.nonzero([self.RALs[k] == RAL1 for k in range(len(self.RALs))]))
+        #         print(np.nonzero([self.RALs[k] == RAL2 for k in range(len(self.RALs))]))
+        #         self.Show_RALs_Position()
+        #         plt.show()
 
         fusion_RAL_x = (RAL1.x + RAL2.x) / 2
         fusion_RAL_y = (RAL1.y + RAL2.y) / 2
@@ -777,27 +810,37 @@ class Row_Agent(object):
                                            _group_step = self.group_step)
 
         # update new RAL neighbours : its neighbours are the ones of the previous two RAL
+        couldnt_remove = False
         for n in RAL1.neighbours:
             if n != RAL2:
                 fusion_RAL.neighbours.append(n)
                 n.neighbours.append(fusion_RAL)
                 if RAL1 in n.neighbours: # condition OK 99.999% of the time but can happen that one neighbour is o
                     n.neighbours.remove(RAL1)
+                else: couldnt_remove = True
         for n in RAL2.neighbours:
             if n != RAL1:
-                fusion_RAL.neighbours.append(n)
-                n.neighbours.append(fusion_RAL)
+                if n not in fusion_RAL.neighbours:
+                    fusion_RAL.neighbours.append(n)
+                if fusion_RAL not in n.neighbours:
+                    n.neighbours.append(fusion_RAL)
                 if RAL2 in n.neighbours:
                     n.neighbours.remove(RAL2)
-                
+                    couldnt_remove = True
+        
         self.RALs.append(fusion_RAL)
-        self.RALs.remove(RAL1)
-        self.RALs.remove(RAL2)
+        if RAL1 in self.RALs:
+            self.RALs.remove(RAL1)
+        if RAL2 in self.RALs:
+            self.RALs.remove(RAL2)
+
+        if couldnt_remove:
+            self.Set_RALs_Neighbours()
 
         for n in fusion_RAL.neighbours:
             assert (n in self.RALs)
 
-        print(f"Fusion agent {len(self.RALs) - 1} at position : ({fusion_RAL.x},{ fusion_RAL.y})")
+        # print(f"Fusion agent {len(self.RALs) - 1} at position : ({fusion_RAL.x},{ fusion_RAL.y})")
         # self.Show_RALs_Position()
         # plt.show()
 
@@ -971,8 +1014,8 @@ class Row_Agent(object):
                 #if not idx in already_seen:
                     # idx = np.nonzero([self.RALs[k] == n for k in range(len(self.RALs))])[0][0]
             already_seen.append(j) 
-        plt.xlim(300, 1250)
-        plt.ylim(0, 1150)
+        # plt.xlim(300, 1250)
+        # plt.ylim(0, 1150)
 
             
     def Fill_or_Fuse_RALs(self, _crit_value, _fuse_factor = 0.5, _fill_factor = 1.5):
@@ -1006,12 +1049,17 @@ class Row_Agent(object):
 
             for n in self.RALs[i].neighbours:
                 # if (self.RALs[i], n) not in already_seen or (self.RALs[i], n) not in already_seen:
-                neighbour_idx = np.nonzero([self.RALs[k] == n for k in range(len(self.RALs))])[0][0]
+                try:
+                    neighbour_idx = np.nonzero([self.RALs[k] == n for k in range(len(self.RALs))])[0][0]
+                except IndexError:
+                    print(i)
+                    # self.Show_RALs_Position()
+                    # plt.show()
                 # print(f"Analyzing agent {neighbour_idx}, neighbour of {i} for FUSING.")
                 # print(f"estimated distance is {np.sqrt((self.RALs[i].x  - n.x) ** 2 + (self.RALs[i].y - n.y) ** 2)}.Y compared with {_fuse_factor * _crit_value}")
                 # print("\n")
                 if self.euclidean_distance(self.RALs[i], n) < _fuse_factor * _crit_value:
-                    print(f"Fusing agents : {i} and {neighbour_idx} into {len(self.RALs) - 2}")
+                    # print(f"Fusing agents : {i} and {neighbour_idx} into {len(self.RALs) - 2}")
                     self.Fuse_RALs(self.RALs[i], n)
                     has_been_fused = True
                     # already_seen.append((self.RALs[i], n))
@@ -1031,7 +1079,7 @@ class Row_Agent(object):
                 # print("\n")
                 # if np.sqrt((self.RALs[i].x  - n.x) ** 2 + (self.RALs[i].y - n.y) ** 2) >= int(_fill_factor * _crit_value):
                 if max(abs(self.RALs[i].x  - n.x), abs(self.RALs[i].y - n.y)) >= int(_fill_factor * _crit_value):
-                    print(f"Initializing an RAL between agent {neighbour_idx} and agent {i}...")
+                    # print(f"Initializing an RAL between agent {neighbour_idx} and agent {i}...")
                     self.Fill_RALs(self.RALs[i], n, int(1.1 * _fill_factor * _crit_value))
             
             i += 1
@@ -1190,7 +1238,7 @@ class Row_Agent(object):
         for _RAL in self.RALs:
             for n in _RAL.neighbours:
                 distances.append(self.euclidean_distance(_RAL, n))
-        mean_inter_RAL_dist = np.mean(distances)
+        mean_inter_RAL_dist = np.median(distances)
         std = np.std(distances)
 
         for i, _RAL in enumerate(self.RALs):
@@ -1609,6 +1657,13 @@ class Agents_Director(object):
             for i in range(nb_to_delete):
                 self.RowAs = self.RowAs[:to_delete[i]-i] + self.RowAs[to_delete[i]-i+1:]
 
+    def ORDER_RowAs_Drop_RAL(self, proba=0.5):
+        """
+        Used for evaluating the robustness of the MAS to missing RAL at initialization
+        """
+        for _RowA in self.RowAs:
+            _RowA.Drop_RAL(proba)
+
     # curved : used
     def ORDER_RowAs_to_Set_RALs_Neighbours(self):
         for _RowA in self.RowAs:
@@ -1764,7 +1819,8 @@ class Simulation_MAS(object):
                  _RALs_fuse_factor = 0.5, _RALs_fill_factor = 1.5,
                  _field_offset = [0,0],
                  _ADJUSTED_img_plant_positions = None,
-                 recon_policy="global"):
+                 recon_policy="global",
+                 dropout_proportion=0):
         
         print("Initializing Simulation class...", end = " ")
         
@@ -1799,6 +1855,9 @@ class Simulation_MAS(object):
         self.FP=0
         self.FN=0
         self.real_plant_detected_keys = []
+
+        # to evaluate MAS robustness to bad init
+        self.dropout_proportion = dropout_proportion
         
         print("Done")
         
@@ -1915,6 +1974,9 @@ class Simulation_MAS(object):
         
         if (_analyse_and_remove_Rows):
             self.AD.Analyse_RowAs_Kmeans()
+
+        if self.dropout_proportion > 0:
+            self.AD.ORDER_RowAs_Drop_RAL(1 - self.dropout_proportion)
 
         # Curved: either sort the RALs in the rank (harder)
         # or store the neighbours of a RAL as attributes to retrieve
@@ -2214,10 +2276,10 @@ class Simulation_MAS(object):
                                             edgecolor=_colors[i % len(_colors)],
                                             facecolor='none')
                     ax.add_patch(rect)
-                    ax.text(_RAL.active_RA_Point[0]-_RAL.group_size, 
-                            _RAL.active_RA_Point[1]-_RAL.group_size, 
-                             str(j), 
-                             color=_colors[i % len(_colors)], size=7)
+                    # ax.text(_RAL.active_RA_Point[0]-_RAL.group_size, 
+                    #         _RAL.active_RA_Point[1]-_RAL.group_size, 
+                    #          str(j), 
+                    #          color=_colors[i % len(_colors)], size=7)
                 # for n in _RAL.neighbours:
                 #     idx = np.nonzero([_RowsA.RALs[k] == n for k in range(len(_RowsA.RALs))])[0][0]
                 #     print(f"Agent {j}, neighbour : {idx}")
