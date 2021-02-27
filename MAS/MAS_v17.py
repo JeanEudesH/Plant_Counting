@@ -456,9 +456,6 @@ class Row_Agent(object):
                                        _field_offset = self.field_offset)
             
             self.RALs += [RAL]
-
-    def Drop_RAL(self, proba=0.5):
-        self.RALs = np.random.choice(self.RALs, size=int(proba * len(self.RALs)), replace=False).tolist()
         
     def Extensive_Init(self, _filling_step):
         """
@@ -1025,6 +1022,7 @@ class Row_Agent(object):
             for n in _RAL.neighbours:
                 d.append(self.euclidean_distance(_RAL, n))
         _crit_value = np.median(d)
+        print(_crit_value)
 
         nb_RALs = len(self.RALs)
 
@@ -1657,13 +1655,6 @@ class Agents_Director(object):
             for i in range(nb_to_delete):
                 self.RowAs = self.RowAs[:to_delete[i]-i] + self.RowAs[to_delete[i]-i+1:]
 
-    def ORDER_RowAs_Drop_RAL(self, proba=0.5):
-        """
-        Used for evaluating the robustness of the MAS to missing RAL at initialization
-        """
-        for _RowA in self.RowAs:
-            _RowA.Drop_RAL(proba)
-
     # curved : used
     def ORDER_RowAs_to_Set_RALs_Neighbours(self):
         for _RowA in self.RowAs:
@@ -1819,8 +1810,7 @@ class Simulation_MAS(object):
                  _RALs_fuse_factor = 0.5, _RALs_fill_factor = 1.5,
                  _field_offset = [0,0],
                  _ADJUSTED_img_plant_positions = None,
-                 recon_policy="global",
-                 dropout_proportion=0):
+                 recon_policy="global"):
         
         print("Initializing Simulation class...", end = " ")
         
@@ -1855,9 +1845,6 @@ class Simulation_MAS(object):
         self.FP=0
         self.FN=0
         self.real_plant_detected_keys = []
-
-        # to evaluate MAS robustness to bad init
-        self.dropout_proportion = dropout_proportion
         
         print("Done")
         
@@ -1974,9 +1961,6 @@ class Simulation_MAS(object):
         
         if (_analyse_and_remove_Rows):
             self.AD.Analyse_RowAs_Kmeans()
-
-        if self.dropout_proportion > 0:
-            self.AD.ORDER_RowAs_Drop_RAL(1 - self.dropout_proportion)
 
         # Curved: either sort the RALs in the rank (harder)
         # or store the neighbours of a RAL as attributes to retrieve

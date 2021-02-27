@@ -95,7 +95,7 @@ print("Done")
 # =============================================================================
 RAs_group_size = 25
 RAs_group_steps = 2
-Simulation_steps = 2
+Simulation_steps = 7
 
 ## TODO1: Fuse and fill doesn't work in curved mode...
 ## TODO2AL are not sorted along the row... Sort them to make the repositionning work : Done but maybe not the cleanest solution
@@ -104,8 +104,8 @@ Simulation_steps = 2
 # or you can maintain their neighbours as attributes
 ## TODO4 : some rows where destroyed at first step : OK added an extra parameter _check_rows_proximity
 ## TODO5: Recoding Fill and fuse functions with our new setting : to be tested
-## TODO6: What to do with the argument InterPlant_Diffs ? It seems like I can remove it completely
-RALs_fuse_factor = 0.5
+## TODO6: What to do ith the argument InterPlant_Diffs ? It seems like I can remove it completely
+RALs_fuse_factor = 0.7
 RALs_fill_factor = 1.5
 
 _image_index = 2
@@ -118,99 +118,47 @@ print(names_input_PLANT_FT_PRED[_image_index])
 # Simulation Definition
 # =============================================================================
 import matplotlib.pyplot as plt
-import seaborn as sns
-import pandas as pd
-
-sns.set_style("whitegrid")
-
-da, ca, dr = [], [], []
-nb_images = len(os.listdir(path_input_raw)[:])
-condition = "Clustering only - Separate Plants"
 
 print("Simulation Definition:")
-for _image_index in range(nb_images):
-    try:
-        # ca_img = []
-        for i in range(1):
-            print(f"Image {_image_index}")
-            # dropout_proportion = i * 0.1
-            dropout_proportion = 0
-            MAS_Simulation = MAS.Simulation_MAS(data_input_raw[_image_index],
-                                                data_input_PLANT_FT_PRED[_image_index],
-                                                data_input_OTSU[_image_index],
-                                                RAs_group_size, RAs_group_steps,
-                                                RALs_fuse_factor, RALs_fill_factor,
-                                                [0,0],
-                                                data_adjusted_position_files[_image_index],
-                                                recon_policy=recon_policy,
-                                                dropout_proportion=dropout_proportion)
-            MAS_Simulation.Initialize_AD()
-            MAS_Simulation.Perform_Simulation_newEndCrit(Simulation_steps,
-                                                        _coerced_X=True, # coerced X : permet le repositionnement
-                                                        _coerced_Y=False,
-                                                        _analyse_and_remove_Rows=False,
-                                                        _edge_exploration = False,
-                                                        _check_rows_proximity=False)
-                                                        # _edge_exploration : dit d'aller explorer vers les bords de l'image
-                                                        # au cas ou l'analyse de Fourier manque l'intialisation sur les bords
+print(f"Image {_image_index}")
+# dropout_proportion = i * 0.1
+dropout_proportion = 0
+MAS_Simulation = MAS.Simulation_MAS(data_input_raw[_image_index],
+                                    data_input_PLANT_FT_PRED[_image_index],
+                                    data_input_OTSU[_image_index],
+                                    RAs_group_size, RAs_group_steps,
+                                    RALs_fuse_factor, RALs_fill_factor,
+                                    [0,0],
+                                    data_adjusted_position_files[_image_index],
+                                    recon_policy=recon_policy,
+                                    dropout_proportion=dropout_proportion)
+MAS_Simulation.Initialize_AD()
+MAS_Simulation.Perform_Simulation_newEndCrit(Simulation_steps,
+                                            _coerced_X=True, # coerced X : permet le repositionnement
+                                            _coerced_Y=False,
+                                            _analyse_and_remove_Rows=False,
+                                            _edge_exploration = False,
+                                            _check_rows_proximity=False)
+                                            # _edge_exploration : dit d'aller explorer vers les bords de l'image
+                                            # au cas ou l'analyse de Fourier manque l'intialisation sur les bords
 
-            # =============================================================================
-            # Simulation Analysis
-            # =============================================================================
-            # =============================================================================
-            print("Computing Scores...", end = " ")
-            MAS_Simulation.Get_RALs_infos()
-            MAS_Simulation.Compute_Scores()
-            print("Done")
+# =============================================================================
+# Simulation Analysis
+# =============================================================================
+# =============================================================================
+print("Computing Scores...", end = " ")
+MAS_Simulation.Get_RALs_infos()
+MAS_Simulation.Compute_Scores()
+print("Done")
 
-            print(MAS_Simulation.simu_steps_times)
-            print("NB Rals =", MAS_Simulation.RALs_recorded_count[-1])
-            print("TP =", MAS_Simulation.TP)
-            print("FN =", MAS_Simulation.FN)
-            print("FP =", MAS_Simulation.FP)
+print(MAS_Simulation.simu_steps_times)
+print("NB Rals =", MAS_Simulation.RALs_recorded_count[-1])
+print("TP =", MAS_Simulation.TP)
+print("FN =", MAS_Simulation.FN)
+print("FP =", MAS_Simulation.FP)
 
-            detection_accuracy = MAS_Simulation.TP / (MAS_Simulation.TP + MAS_Simulation.FP)
-            detection_recall = MAS_Simulation.TP / (MAS_Simulation.TP + MAS_Simulation.FN)
-            counting_accuracy = (MAS_Simulation.TP + MAS_Simulation.FP) / (MAS_Simulation.TP + MAS_Simulation.FN)
-
-            da.append(detection_accuracy)
-            dr.append(detection_recall)
-            ca.append(counting_accuracy)
-            # ca_img.append(counting_accuracy)
-
-            MAS_Simulation.Show_Adjusted_And_RALs_positions(_save=False, _save_path=f"{path_input_root}/{unity_date}_analysis/Images_MAS/{recon_policy}_repositioning")
-            plt.show()
-        # ca.append(ca_img)
-    except:
-        continue
-    print(ca)
-    print(da)
-    print(dr)
-
-metrics = pd.DataFrame(data={"Counting Accuracy":ca, 
-                             "Detection Accuracy":da, 
-                             "Detection Recall":dr})
-sns.boxplot(data=metrics)
-
-plt.show()
-# ca = np.array(ca).reshape((6, len(ca)))
+MAS_Simulation.Show_Adjusted_And_RALs_positions(_save=False, _save_path=f"{path_input_root}/{unity_date}_analysis/Images_MAS/{recon_policy}_repositioning")
 
 # MAS_Simulation.Show_nb_RALs()
 # MAS_Simulation.Show_RALs_Deicision_Scores()
 # MAS_Simulation.Show_Adjusted_Positions()
-
-# fig, ax = plt.subplots(1, 1, figsize=(10, 10))
-
-# ax.set_title(condition)
-
-# import matplotlib.pyplot as plt
-# import numpy as np
-# l = np.array([[0.8907849829351536, 0.7918088737201365, 0.825938566552901, 0.7235494880546075, 0.7372013651877133, 0.5665529010238908], 
-# [0.9359756097560976, 0.8932926829268293, 0.8597560975609756, 0.7896341463414634, 0.8170731707317073, 0.7530487804878049], 
-# [0.8770226537216829, 0.8284789644012945, 0.8090614886731392, 0.7961165048543689, 0.7249190938511327, 0.5469255663430421]]).reshape((6, 3))
-# fig, ax = plt.subplots(1, 1, figsize=(8, 8))
-# plt.plot([0.1 * i for i in range(6)], np.mean(l, axis=1))
-# plt.fill_between([0.1 * i for i in range(6)], np.mean(l, axis=1) - np.std(l, axis=1), np.mean(l, axis=1) +  np.std(l, axis=1), color='lightgrey')
-# ax.set_xlabel("Proportion des RAL manquants à l'initialisation")
-# ax.set_ylabel("Précision de comptage")
-# plt.show()
