@@ -1409,7 +1409,7 @@ class Row_Agent(object):
         for _RAL in self.RALs:
             _RAL.Move_Based_on_AD_Order(_RAL.active_RA_Point[0],
                                         _RAL.active_RA_Point[1])
-    
+    # linear
     # def Destroy_RALs(self, _start, _stop, _nb_RALs):
     #     """
     #     _start and stop are the indices of the RALs to destroy so that they 
