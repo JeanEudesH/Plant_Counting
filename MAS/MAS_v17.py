@@ -1183,7 +1183,6 @@ class Row_Agent(object):
             to_reposition = self.Get_RALs_to_reposition_global()
             self.Global_repositioning(to_reposition)
         elif self.recon_policy.startswith("local"):
-            # n_neighbors = 5  # not used in local_XY policy
             to_reposition = self.Get_RALs_to_reposition_local()
             self.Local_repositioning(to_reposition)
         else:
@@ -1229,9 +1228,8 @@ class Row_Agent(object):
         """
         to_reposition_idx = []
         # the mean RALs distance will be used to detect which RALs are outliers
-        # mean_inter_RAL_dist = np.mean([self.euclidean_distance(self.RALs[i], self.RALs[i+1]) for i in range(len(self.RALs) - 1)])
-        # std = np.std([self.euclidean_distance(self.RALs[i], self.RALs[i+1]) for i in range(len(self.RALs) - 1)])
-        # unsorted RALs
+
+        # retrieve mean RAL distances and std deviation
         distances = []
         for _RAL in self.RALs:
             for n in _RAL.neighbours:
@@ -1240,36 +1238,6 @@ class Row_Agent(object):
         std = np.std(distances)
 
         for i, _RAL in enumerate(self.RALs):
-        # for i in range(len(self.RALs)):
-            # s = []
-            # min_idx, max_idx = max(0, i - n_neighbors), min(len(self.RALs), i + n_neighbors)
-            
-            # Repositionning criterion based only on the abscissis (obsolete)
-            # # get the local X mean
-            # for j in range(min_idx, max_idx):
-            #     s.append(self.RALs[j].active_RA_Point[0])
-            # local_mean = np.mean(np.array(s))
-            
-            # # if majority on left to local mean and RA to the right, reposition
-            # left_counter = 0
-            # for j in range(min_idx, max_idx):
-            #     if (self.RALs[j].active_RA_Point[0] < local_mean):
-            #         left_counter += 1
-            # majority_left = (left_counter/(max_idx - min_idx) > 0.5)
-
-            # if majority_left:
-            #     if self.RALs[i].active_RA_Point[0] > local_mean:
-            #         to_reposition_idx.append(i)
-            # else:
-            #     if (self.RALs[i].active_RA_Point[0] < local_mean):
-            #         to_reposition_idx.append(i)
-
-            # local_XY Repositionning criterion based on the evaluation 
-            # min_idx, max_idx = max(0, i - 1), min(len(self.RALs) - 1, i + 1) # only count the two adjacents neighbours
-            # d1, d2 = self.euclidean_distance(self.RALs[i], self.RALs[min_idx]), self.euclidean_distance(self.RALs[i], self.RALs[max_idx])
-            # if (d1 >= mean_inter_RAL_dist + 2 * std) and (d2 >= mean_inter_RAL_dist + 2 * std): # both distances are "too large" -> it is an outlier
-            #     to_reposition_idx.append(i)
-            ## When the RAL are not sorted in RALs, we use the recorder neighbours to compute distances to neighbours
             count = 0
             for n in _RAL.neighbours:
                 if self.euclidean_distance(_RAL, n) > mean_inter_RAL_dist + 2 * std:
@@ -1286,19 +1254,18 @@ class Row_Agent(object):
     def Global_repositioning(self, to_reposition_indices):
         for idx in to_reposition_indices:
             self.RALs[idx].active_RA_Point[0] = self.Row_Mean_X
-            
+    
+    # curved
     def Local_repositioning(self, to_reposition, n_neighbors=5):
         """
         Local repositioning policy for agents. Several local policies can be implemented
         """
         if self.recon_policy == "local_XY":
             self.Local_XY_Repositionning(to_reposition)
-        elif self.recon_policy == "local_weighted_X":
-            init_weight = 10
-            self.Neighbor_Weighted_Mean_X(to_reposition, init_weight, n_neighbors)
-        elif self.recon_policy == "local_threshold_X":
-            self.Neighbor_Threshold_Mean_X(to_reposition, n_neighbors)
-
+        else:
+            raise NotImplementedError("This repositioning mechanism is not yet implemented...")
+    
+    # curved
     def Local_XY_Repositionning(self, to_reposition):
         """
         Local_XY repositionning policy : the RAL to be repositionned is set at the barycenter
@@ -1309,66 +1276,15 @@ class Row_Agent(object):
         to_reposition (list) : list of indices of the RAL that need to be repositioned
         """
         for i in to_reposition:
-            # self.RALs[i].active_RA_Point[0] = (self.RALs[min_idx].active_RA_Point[0] + self.RALs[min_idx].active_RA_Point[0]) / 2
-            # self.RALs[i].active_RA_Point[1] = (self.RALs[min_idx].active_RA_Point[1] + self.RALs[min_idx].active_RA_Point[1]) / 2
-            # without the indices when RALs is not sorted
             x, y = 0, 0
             if self.RALs[i].neighbours != []:
-                for n in self.RALs[i].neighbours:
+                for n in self.RALs[i].neighbours: # barycenter of the two closest neighbours
                     x += n.active_RA_Point[0]
                     y += n.active_RA_Point[1]
-                self.RALs[i].active_RA_Point[0] = x / len(self.RALs[i].neighbours) # barycenter of the two closest neighbours
+                self.RALs[i].active_RA_Point[0] = x / len(self.RALs[i].neighbours) 
                 self.RALs[i].active_RA_Point[1] = y / len(self.RALs[i].neighbours)
             # update the neighbours ?? Will be done in PerformSimulationnewEndCrit()
               
-    def Neighbor_Weighted_Mean_X(self, to_reposition, init_weight=10, n_neighbors=5):
-        """
-        For each RAL that should be repositioned, compute the new position which is the
-        linearly weighted position of its n_neighbors closest neighbors and assigns it
-        to the RAL.
-        Parameters
-        ----------
-        to_reposition (list) : list of indices of the RAL that need to be repositioned
-        init_weight : maximum weight to take into account
-        n_neighbours : number of neighbours to take into account on each side
-        """
-        assert (init_weight > 0)
-        assert (n_neighbors > 0)
-        poids = init_weight
-        j = 1
-
-        for i in to_reposition:
-            _RAL = self.RALs[i]
-            min_idx, max_idx = max(0, i - n_neighbors), min(len(self.RALs), i + n_neighbors)
-            neighborhood = self.RALs[min_idx:max_idx]
-            neighborhood_absc = np.array([r.active_RA_Point[0] for r in neighborhood])
-            weights = []  # extend to other weights functions (non linear functions)
-            for j in range(min_idx, max_idx):  # fonction rampe
-                if j < i:
-                    weights.append(init_weight / max(0.1, i - min_idx) * (j - min_idx))
-                else:
-                    weights.append(- init_weight / max(0.1, max_idx - i) * (j - max_idx))
-            
-            if len(weights) != 0:
-                weights_ar = np.array(weights)
-                new_pos = np.mean(weights_ar * neighborhood_absc)
-
-                self.RALs[i].active_RA_Point[0] = new_pos
-
-    def Neighbor_Threshold_Mean_X(self, to_reposition, n_neighbors):
-        """
-        Repositioning each RAL by taking the mean abscissis of its n_neighbors closest neighbors
-        giving the same weight to each neighbor (threshold policy).
-        Parameters
-        ----------
-        to_reposition : list of indices of RALs that should be repositioned
-        n_neighbors : number of neighbours to take into account on each side
-        """
-        for i in to_reposition:
-            min_idx, max_idx = max(i - n_neighbors, 0), min(i + n_neighbors, len(self.RALs))
-            RAL_absc = np.array([_r.active_RA_Point[0] for _r in self.RALs[min_idx:max_idx]])
-            self.RALs[i].active_RA_Point[0] = np.mean(RAL_absc)
-
     def Get_Mean_Majority_Y_movement(self, _direction):
         """
         computes the average of the movement of the RALs moving in the
@@ -1438,7 +1354,7 @@ class Row_Agent(object):
                 n.neighbours.remove(to_be_destroyed)
                 # doesn't append n himself in his neighbours
                 for k in to_be_destroyed.neighbours: # link the neighbours together
-                    if k != n:
+                    if k != n and k != to_be_destroyed: # in case to_be_destroyed is in its neighbours
                         n.neighbours.append(k)
         # destroy the RAL
         self.RALs.pop(RAL_idx)
@@ -1890,13 +1806,16 @@ class Simulation_MAS(object):
             self.AD.ORDER_RowAs_for_RALs_mean_points()
             time_detailed += [time.time()-t0]
             
+            # local repositionning mechanism in reached from here
             if (_coerced_X):
                 t0 = time.time()
                 self.AD.ORDER_RowAs_to_Correct_RALs_X()
                 time_detailed += [time.time()-t0]
             else:
                 time_detailed += [0]
-                
+            
+            # always False in curved mode (the local repositionning
+            # mechanism is only called from _coerced_X)
             if (_coerced_Y):
                 print("Order RowAs to correct RALs")
                 t0 = time.time()
