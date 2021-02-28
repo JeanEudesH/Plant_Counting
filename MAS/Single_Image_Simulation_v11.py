@@ -34,15 +34,15 @@ def get_file_lines(path_csv_file):
     file_content = file_object.readlines()
     file_object.close()
     return(file_content)
-    
+
 # =============================================================================
 # General Path Definition
 # =============================================================================
-#path of the images 
+#path of the images
 ### TO BE CHANGED AS PER USER NEED
 session_number = 3
 unity_date = "2020_7_30_15_10_36"
-    
+
 path_input_root = "C:/Users/eliot/Documents/Scolarité/AgroParisTech/3A/Stage_Tournesols"
 # =============================================================================
 # path_input_raw = path_input_root+"/Unity/Screenshots/"+unity_date+"/virtual_reality"
@@ -63,9 +63,17 @@ path_input_PLANT_FT_PRED = path_input_root+"/Travaux_Fil_Rouge/code_tournesol_4/
                             "/Plant_FT_Predictions"
 
 names_input_raw = os.listdir(path_input_raw)
+if '.DS_Store' in names_input_raw:
+    names_input_raw.remove('.DS_Store')
 names_input_adjusted_position_files = os.listdir(path_input_adjusted_position_files)
+if '.DS_Store' in names_input_adjusted_position_files:
+    names_input_adjusted_position_files.remove('.DS_Store')
 names_input_OTSU = os.listdir(path_input_OTSU)
+if '.DS_Store' in names_input_OTSU:
+    names_input_OTSU.remove('.DS_Store')
 names_input_PLANT_FT_PRED = os.listdir(path_input_PLANT_FT_PRED)
+if '.DS_Store' in names_input_PLANT_FT_PRED:
+    names_input_PLANT_FT_PRED.remove('.DS_Store')
 
 # =============================================================================
 # Data Collection
@@ -138,7 +146,7 @@ MAS_Simulation.Perform_Simulation_newEndCrit(Simulation_steps,
 # MAS_Simulation.Get_RALs_infos()
 # MAS_Simulation.Compute_Scores()
 # print("Done")
-# 
+#
 # print(MAS_Simulation.simu_steps_times)
 # print("NB Rals =", MAS_Simulation.RALs_recorded_count[-1])
 # print("TP =", MAS_Simulation.TP)
