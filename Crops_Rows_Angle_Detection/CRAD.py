@@ -25,7 +25,8 @@ def Produce_Adjusted_Position_Files( _path_position_files,
 
     position_files = os.listdir(_path_position_files)
     nb_imgs = len(_list_rgb_images)
-    position_files.remove('.DS_Store')
+    if '.DS_Store' in position_files:
+      position_files.remove('.DS_Store')
     assert len(position_files) == nb_imgs
 
     _theta = np.deg2rad(_rows_real_angle)
