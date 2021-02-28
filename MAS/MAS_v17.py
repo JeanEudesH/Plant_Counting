@@ -659,7 +659,7 @@ class Row_Agent(object):
             #     self.Show_RALs_Position(title=f"Three neighbours or more for agent {i}")
             assert(len(_RAL.neighbours) <= 2)
 
-    # Curved rows
+    # curved
     # def Sort_RALs(self):
     #     """
     #     The sorting stepis used initially, to have the RALs sorted in the right
@@ -849,6 +849,13 @@ class Row_Agent(object):
 
     # curved
     def Fill_or_Fuse_RALs(self, _crit_value, _fuse_factor = 0.5, _fill_factor = 1.5):
+        """
+        Calls the Fill and Fuse mechanisms for each RAL of the Row. 
+        _crit_value (float) : The inter-plant distance
+        _fuse_factor (float) : fraction of the _crit_value under which two RALs will be fused
+        _fill_factor (float) : Fraction of the _crit_value over which new RALs will be 
+        instantiated between two RALs
+        """
         # potentiellmeent dangereux : peut tendre vers 0 et initialiser trop d'agents...
         # Mais meilleurs resultats empiriques lorsque fill_factor > 1.1
         if len(self.RALs) > 1:
