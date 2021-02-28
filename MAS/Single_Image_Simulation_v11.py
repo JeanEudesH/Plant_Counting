@@ -64,13 +64,17 @@ path_input_PLANT_FT_PRED = path_input_root+"/Travaux_Fil_Rouge/code_tournesol_4/
                             "/Plant_FT_Predictions"
 
 names_input_raw = os.listdir(path_input_raw)
-names_input_raw.remove('.DS_Store')
+if '.DS_Store' in names_input_raw:
+    names_input_raw.remove('.DS_Store')
 names_input_adjusted_position_files = os.listdir(path_input_adjusted_position_files)
-names_input_adjusted_position_files.remove('.DS_Store')
+if '.DS_Store' in names_input_adjusted_position_files:
+    names_input_adjusted_position_files.remove('.DS_Store')
 names_input_OTSU = os.listdir(path_input_OTSU)
-names_input_OTSU.remove('.DS_Store')
+if '.DS_Store' in names_input_OTSU:
+    names_input_OTSU.remove('.DS_Store')
 names_input_PLANT_FT_PRED = os.listdir(path_input_PLANT_FT_PRED)
-names_input_PLANT_FT_PRED.remove('.DS_Store')
+if '.DS_Store' in names_input_PLANT_FT_PRED:
+    names_input_PLANT_FT_PRED.remove('.DS_Store')
 
 # =============================================================================
 # Data Collection
