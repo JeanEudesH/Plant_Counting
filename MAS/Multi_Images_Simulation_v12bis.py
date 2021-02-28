@@ -60,12 +60,14 @@ def All_Simulations(_path_input_rgb_img, _path_PreTreatment_and_FA,
     # =============================================================================
 
     names_input_raw = os.listdir(_path_input_rgb_img)
-    names_input_raw.remove('.DS_Store')
-    #
+    if '.DS_Store' in names_input_raw:
+        names_input_raw.remove('.DS_Store')
     names_input_OTSU = os.listdir(path_input_OTSU)
-    #names_input_OTSU.remove('.DS_Store')
+    if '.DS_Store' in names_input_OTSU:
+        names_input_OTSU.remove('.DS_Store')
     names_input_PLANT_FT_PRED = os.listdir(path_input_PLANT_FT_PRED)
-    #names_input_PLANT_FT_PRED.remove('.DS_Store')
+    if '.DS_Store' in names_input_PLANT_FT_PRED:
+        names_input_PLANT_FT_PRED.remove('.DS_Store')
 
     # =============================================================================
     # Data Collection
