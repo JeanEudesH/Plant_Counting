@@ -468,13 +468,15 @@ def sum_plant_pixels(coord_row, img_matrix):
     coord_row : LIST
         List ofg coordinates of pixels.
 
-    img_matrix : ...
-       Information on all pixels of the image to compare with the row.
+    img_matrix : NUMPY ARRAY
+       Numpy array of the image of the field : used to see if the pixels of the
+       scanner row cover plant pixels.
 
     Returns
     -------
-    count : TYPE
-        DESCRIPTION.
+    count : INTEGER
+        Integer, number of pixels covering plants, maximal value is the number
+        of pixels in the row used as a scanner.
 
     """
     count = 0
@@ -485,9 +487,13 @@ def sum_plant_pixels(coord_row, img_matrix):
 
 
 def Fourier_inter_row(X, Y):
+    """
+    Not finished:
+        Function supposed to do the Fourier analysis of the periodic signal to
+        get the distance inter-row (and eventually inter-plants but with a lot
+                                    of corrections)
+    """
     # Fourier calculation
-    # X: all steps of the scan (its position?)
-    # Y: Number of white pixels
     # Use the "line" from median pixel
 
     # Use sum_plant_pixels et translate_row
@@ -497,9 +503,40 @@ def Fourier_inter_row(X, Y):
 
 
 def calculate_dist_interRow(coordPixelsMedian, direction, img_array):
-    # on a l'index pour ordonner les rangs du plus grand au plus petit
+    """
+    Calculate the distance between the rows
+
+    Parameters
+    ----------
+    coordPixelsMedian : LIST
+        List of the coordinates of the pixels in the row.
+
+    direction : LIST
+        List of length 2, with the direction in the Y and X axis.
+
+    img_array : NUMPY ARRAY
+        Numpy array of the image of the field with pixels of values of 255 or 0
+        and the dimension of the image is Height x  Width.
+
+    Returns
+    -------
+    sum_pixel_for : INTEGER
+        Number of pixels plants in the image covered by the row-scanner.
+
+Those output are used to follow where the scanner went in the image.
+In the end, it is destined to be removed as it uses memory.
+    move_step_for : LIST
+        List of all values of translations of the row scanner.
+    list_coord_plot : LIST
+        At precise times (at 0, 20, 50 and 140 translations of the row),
+        the coordinates of the row are registered in this list, to register its
+        different positions when moved.
+
+    """
+
+    # Sort the index of the rows in the image according to their size
     size_rows_sorted = order_size_rows(coordPixelsMedian)
-    # On prend le rang le plus grand
+    # CHoose the longer row
     longest_row_for = coordPixelsMedian[size_rows_sorted[0]]
     move_step_for = []
     sum_pixel_for = []
@@ -509,13 +546,17 @@ def calculate_dist_interRow(coordPixelsMedian, direction, img_array):
     forward = 0
     while (
         len(longest_row_for) > 0
-    ):  # Tant qu'il ya des points dans l'image on avant le rang
+    ):  # As long there are pixels in the row, it continues to move.
+    # When pixels are out of the image, they are removed from this list.
         longest_row_for, step = translate_row(
             longest_row_for, direction, img_array
-        )  # On obtient le nouveau nuage de points
-        forward = forward + sqrt(direction[0] ** 2 + direction[1] ** 2) * (step ** 2)
+        )  # We get a new list of coordinates of pixels
+        forward = forward + sqrt(direction[0] ** 2 +
+                                 direction[1] ** 2) * (step ** 2)
 
-        # On fait la fonction sumavec le nouveau nuage de point et on ajoute forward à la liste des déplacements
+        # Sum the plant pixels with the new updated list of pixels coordinates.
+        # The distance of translation (Forward) is added to the list keeping
+        # track of the deplacements of the row.
         move_step_for.append(forward)
 
         sum_pixel = sum_plant_pixels(longest_row_for, img_array)
@@ -530,32 +571,56 @@ def calculate_dist_interRow(coordPixelsMedian, direction, img_array):
     #    longest_row_back > 0
     # ):  # Tant qu'il y a des points dans l'image on recule le rang
     #    direction_back = [direction[0] * (-1), direction[1] * (-1)]
-    # longest_row_back, backward = translate_row(longest_row, direction_back, img_array)
-    print(counter, direction, step)
+    # longest_row_back, backward = translate_row(longest_row, direction_back,
+    #                                            img_array)
+    # print(counter, direction, step)
     return sum_pixel_for, move_step_for, list_coord_plot
 
 
 def plot_fft():
+    """
+    Not done, is supposed to plot the results of the Fourier analysis, useful ?
+    """
     # plot la distance inter-rang
     pass
 
 
 def row_fusion():
-    # if the scan recover 2 clusters, we can estimate they belong to the same row
+    """
+    Function used to fusion 2 clusters if they are covered by the row scanner
+    when it supposed to be at the emplacement of a row. (determined by the
+                                                         Fourier analysis)
+    If so, the hypothesis is that the 2 clusters belongs to the same row.
+    Could make the whole method work even if the initial DBSCAN clustering was
+    not well parametrized.
+    """
     pass
 
 
 def iteration_row_fusion():
+    """
+    Use the function row_fusion.
+    Fusion of row iteratively. Each time, the scanner move through the image
+    and fusion the clusters of rows. At each run through the image, the longer
+    row is chosen to be the scanner.
+    Stopping condition is when clusters are no longer fusionned.
+    """
     # For each iteration take the longer row
     # loop row_fusion
     pass
 
 
 def calculate_dist_interPlant():
+    """
+    When all rows are whole, the distance inter-plant could be calculated on
+    the area defined by the scanner, for each position of rows defined by the
+    previous Fourier analysis.
+    May need to define a more constant scanner, not just the pixels
+    corresponding to the plants of the longer row.
+    Get a constant and mean width of the scanner?
+    """
     # Get an area of constant size, thickness constant and a row going from
     # side to side of the image
-    # X:
-    # Y:
     pass
 
 
@@ -706,6 +771,33 @@ def plot_cluster(
 
 
 def Total_Plant_Position(path_image_input, epsilon, min_point):
+    """
+    Main function executing the whole script for all images detained in the
+    input path given by the user.
+
+    -------
+
+    Parameters
+    ----------
+    path_image_input : STRING
+        Path to the folder with the images whose we want the inter-row and
+        inter-plant distances.
+
+     epsilon : FLOAT
+        Parameter for the DBSCAN function of the scikit-learn library.
+        The maximum distance between two samples for one to be considered as in
+        the neighborhood of the other. This is not a maximum bound on the
+        distances of points within a cluster. This is the most important DBSCAN
+        parameter to choose appropriately for your data set and distance
+        function.
+        https://scikit-learn.org/stable/modules/generated/sklearn.cluster.DBSCAN.html
+
+    min_point : INTEGER
+        Parameter for the DBSCAN function of the scikit-learn library.
+        The number of samples (or total weight) in a neighborhood for a point
+        to be considered as a core point. This includes the point itself.
+        https://scikit-learn.org/stable/modules/generated/sklearn.cluster.DBSCAN.html
+    """
 
     start_time = time.time()
 
@@ -730,7 +822,7 @@ def Total_Plant_Position(path_image_input, epsilon, min_point):
             % (time.time() - start_time_img)
         )
         directions = dist_direction_row(coordPixelsMedian)
-        print(directions)
+        #print(directions)
         dir_mean = direction_mean(directions)
         dir_med = direction_med(directions)
         print("dirMean", dir_mean, "dir_med", dir_med)
