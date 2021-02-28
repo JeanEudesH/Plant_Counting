@@ -458,12 +458,12 @@ def calculate_dist_interRow(coordPixelsMedian, direction, img_array):
     # ):  # Tant qu'il y a des points dans l'image on recule le rang
     #    direction_back = [direction[0] * (-1), direction[1] * (-1)]
     # longest_row_back, backward = translate_row(longest_row, direction_back, img_array)
-
+    print(counter, direction, step)
     return sum_pixel_for, move_step_for, list_coord_plot
 
 
 def plot_fft():
-    # plot la distance inter rang
+    # plot la distance inter-rang
     pass
 
 
@@ -494,6 +494,30 @@ def plot_cluster(
     direction_mean,
     list_coord_plot,
 ):
+    """
+    Plot plants and rows with the appropriate information obtained with the
+    whole script.
+
+    Parameters
+    ----------
+    coordPixels : LIST
+        List of the rows coordinates obtained with the function pixel_median.
+        Length of the list is the number of rows and in each list (row), the
+        coordinates of the pixels are presented in lists of length of 2.
+
+    dataframe_coord : PANDA DATAFRAME
+        Pixels coordinates with their row label.
+
+    size_img : TUPPLE
+        Height and width of the image.
+    direction_med : LIST
+        List of size 2 with Y and X directions, median of the pixels directions.
+
+    direction_mean : LIST
+        List of size 2 with Y and X directions, mean of the pixels directions.
+
+    list_coord_plot : LIST
+    """
 
     fig = plt.figure(figsize=(8, 10))
     ax = fig.add_subplot()
@@ -521,34 +545,36 @@ def plot_cluster(
     )
 
     # Pixels median
-    # for row in range(len(coordPixels)):
-    #     X = []
-    #     Y = []
-    #     for pixel in range(len(coordPixels[row])):
-    #         Y.append(coordPixels[row][pixel][1])
-    #         X.append(coordPixels[row][pixel][0])
+    for row in range(len(coordPixels)):
+        X = []
+        Y = []
+        for pixel in range(len(coordPixels[row])):
+            Y.append(coordPixels[row][pixel][1])
+            X.append(coordPixels[row][pixel][0])
 
-    #     ax.plot(X, Y, "+", c="r)
+        ax.plot(X, Y, "+", c="r")
 
     index = order_size_rows(coordPixels)
     start_row = coordPixels[index[0]]
 
     # Plot start and end row of the vector direction
-    # scatter_row_1 = ax.scatter(
-    #     np.array(start_row).T[0],
-    #     np.array(start_row).T[1],
-    #     s=0.5,
-    #     c="darkgreen",
-    #     label="Biggest row",
-    # )
+    scatter_row_1 = ax.scatter(
+        np.array(start_row).T[0],
+        np.array(start_row).T[1],
+        s=0.5,
+        c="darkgreen",
+        label="Biggest row",
+    )
 
-    # scatter_row_2 = ax.scatter(
-    #     np.array(coordPixels[index[1]]).T[0],
-    #     np.array(coordPixels[index[1]]).T[1],
-    #     s=0.5,
-    #     c="darkorange",
-    #     label="Second biggest row",
-    # )
+    scatter_row_2 = ax.scatter(
+        np.array(coordPixels[index[1]]).T[0],
+        np.array(coordPixels[index[1]]).T[1],
+        s=0.5,
+        c="darkorange",
+        label="Second biggest row",
+    )
+
+    # Plot scanner after a certain amount of translations
     scatter_row_3 = ax.scatter(
         np.array(list_coord_plot[0]).T[0],
         np.array(list_coord_plot[0]).T[1],
@@ -602,10 +628,7 @@ def plot_cluster(
 
     ax.legend(loc="lower left", markerscale=10.0, fontsize=10)
 
-    # fig.tight_layout()
-
     plt.show()
-    # fig.savefig("/home/fort/Bureau/results/" + image.split(".")[0] + ".png")
     return
 
 
@@ -623,15 +646,7 @@ def Total_Plant_Position(path_image_input, epsilon, min_point):
         # Be sure to be in a greyscale images, with only one channel
         img = imgColor.convert(mode="L")
 
-        # Temporaire
         img_array = np.array(img)
-        # plt.plot(img_array, '+', c='k')
-        # print(img_array)
-        unique, counts = np.unique(img_array, return_counts=True)
-        # odict = dict(zip(unique, counts))
-        # print(odict)
-        # plt.plot(odict.keys(), odict.values(), '+')
-        # print(np.unique(img_array, return_counts=True))
 
         print("DBSCAN")
         dataframe_coord = DBSCAN_clustering(img, epsilon, min_point)
@@ -662,8 +677,6 @@ def Total_Plant_Position(path_image_input, epsilon, min_point):
             list_coord_plot,
         )
 
-        print(move_step_for)
-        print([sum_li / sum_pixel_for[0] for sum_li in sum_pixel_for])
         plt.plot(move_step_for, [sum_li / sum_pixel_for[0] for sum_li in sum_pixel_for])
 
         plt.show()
