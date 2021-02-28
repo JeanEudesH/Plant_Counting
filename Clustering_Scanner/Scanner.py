@@ -366,15 +366,55 @@ def direction_mean(directions_all_pixels):
 
 
 def direction_med(directions_all_pixels):
+    """
+    Get the median vector direction of all direction vectors given in input.
 
+    Parameters
+    ----------
+    directions_all_pixels : LIST
+        List of all the direction vectors (list of lists of length 2).
+
+    Returns
+    -------
+    med_direction_vector : LIST
+        Median direction vector of dimension 2, [Ymed, Xmed].
+    """
     # Transposed array to get all X in the same list and all Y together
     Y_med = statistics.median(np.array(directions_all_pixels).T[0])
     X_med = statistics.median(np.array(directions_all_pixels).T[1])
+    med_direction_vector = [Y_med, X_med]
 
-    return [Y_med, X_med]
+    return med_direction_vector
 
 
-def translate_row(longest_row, direction, img_array):
+def translate_row(row, direction, img_array):
+    """
+    Move in a given direction a given row.
+
+    Parameters
+    ----------
+    row : LIST
+        Row to translate: list of lists. It is composed of all the coordinates
+        of the plant pixels of the row. Their coordinates are list of length 2.
+
+    direction : LIST
+        Direction vector in which the row has to be translated. List of length
+        2 and of the following shape: [Ydirection, Xdirection]
+
+    img_array : NUMPY ARRAY
+        Array of the binary image of the field (OTSU process)
+
+    Returns
+    -------
+    new_row : LIST
+        Translated row, list of all new coordinates of its points, translated
+        according to the direction vector.
+
+    step : FLOAT
+        Determine the quantity of translation. Float to give a proportion of
+        the direction vector setting the length of translation.
+
+    """
     # Move the bigger row with a certain step to determine
     # Direction chosen and move with translate row
     # Step is a poroportion of the vector direction
@@ -382,28 +422,61 @@ def translate_row(longest_row, direction, img_array):
     # BOundaries si les coord sont hors image, lui dire tout va bien et arrêt
     # si plus aucun pixel dans l'image (fonction supplémentaire ? )
     step = 0.05
-    new_longest_row = []
+    new_row = []
     size_Y, size_X = get_image_size(
         img_array
     )  # attention a voir si les Y et les X sont inversé
 
-    for coord in longest_row:
+    for coord in row:
         coord_Y = coord[0] + direction[1] * step
         coord_X = coord[1] + direction[0] * step
 
         if (coord_Y > 0 and coord_Y < size_Y) and (coord_X > 0 and coord_X < size_X):
-            new_longest_row.append([int(coord_Y), int(coord_X)])
+            new_row.append([int(coord_Y), int(coord_X)])
 
-    return new_longest_row, step
+    return new_row, step
 
 
 def get_image_size(img_array):
+    """
+    Gives the dimensions of an image transformed as an numpy array.
+
+    Parameters
+    ----------
+    img_array : NUMPY ARRAY
+        Numpy array of an image.
+
+    Returns
+    -------
+    Y : INTEGER
+        Height of the image.
+    X : INTERGER
+        Width of the image.
+
+    """
     Y, X = img_array.shape
 
     return Y, X
 
 
 def sum_plant_pixels(coord_row, img_matrix):
+    """
+    Count all pixels that matches plants in a list of pixels coordinates.
+
+    Parameters
+    ----------
+    coord_row : LIST
+        List ofg coordinates of pixels.
+
+    img_matrix : ...
+       Information on all pixels of the image to compare with the row.
+
+    Returns
+    -------
+    count : TYPE
+        DESCRIPTION.
+
+    """
     count = 0
     for coord_pixel in coord_row:
         if img_matrix[coord_pixel[0]][coord_pixel[1]] > 0:
