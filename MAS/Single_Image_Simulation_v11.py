@@ -45,18 +45,18 @@ def get_file_lines(path_csv_file):
 #path of the images 
 ### TO BE CHANGED AS PER USER NEED
 path_input_root = "D:/Documents/IODAA/Fil Rouge/Resultats"
-unity_date = "dIP_vs_dIR_linear"
-densite = 5
-dIP_dIR = "022_088"
+unity_date = "dIP_vs_dIR_curved_more_ratio"
+densite = 7
+dIP_dIR = "02_07_disjoint"
 session_number = 1
 
 recon_policy = "local_XY"
 
 path_input_raw = f"{path_input_root}/{unity_date}/densite={densite}/{dIP_dIR}/virtual_reality"
-path_input_adjusted_position_files = f"{path_input_root}/{unity_date}/densite={densite}/{dIP_dIR}_analysis/Output/Session_1/Adjusted_Position_Files"
+path_input_adjusted_position_files = f"{path_input_root}/{unity_date}/densite={densite}/{dIP_dIR}_analysis/Output/Session_1/Adjusted_Position_Files_0"
 path_input_OTSU = f"{path_input_root}/{unity_date}/densite={densite}/{dIP_dIR}_analysis/Output/Session_1/Otsu"
 # path_input_PLANT_FT_PRED = f"{path_input_root}/{unity_date}/densite={densite}/{dIP_dIR}_analysis/Output_FA/Session_1/Plant_FT_Predictions"
-path_input_PLANT_FT_PRED = f"{path_input_root}/{unity_date}/densite={densite}/{dIP_dIR}_analysis/Session_4_022_088"
+path_input_PLANT_FT_PRED = f"{path_input_root}/{unity_date}/densite={densite}/{dIP_dIR}_analysis/Resultats_Clustering/Position_Files_0"
 
 # path_input_raw = f"{path_input_root}/{unity_date}/virtual_reality"
 # path_input_adjusted_position_files = f"{path_input_root}/{unity_date}_analysis/Output/Session_1/Adjusted_Position_Files"
@@ -93,9 +93,9 @@ print("Done")
 # =============================================================================
 # Simulation Parameters Definition
 # =============================================================================
-RAs_group_size = 25
+RAs_group_size = 15
 RAs_group_steps = 2
-Simulation_steps = 7
+Simulation_steps = 10
 
 ## TODO1: Fuse and fill doesn't work in curved mode...
 ## TODO2AL are not sorted along the row... Sort them to make the repositionning work : Done but maybe not the cleanest solution
@@ -105,10 +105,10 @@ Simulation_steps = 7
 ## TODO4 : some rows where destroyed at first step : OK added an extra parameter _check_rows_proximity
 ## TODO5: Recoding Fill and fuse functions with our new setting : to be tested
 ## TODO6: What to do ith the argument InterPlant_Diffs ? It seems like I can remove it completely
-RALs_fuse_factor = 0.7
-RALs_fill_factor = 1.5
+RALs_fuse_factor = 0.5
+RALs_fill_factor = 1.15
 
-_image_index = 2
+_image_index = 0
 
 print(names_input_OTSU[_image_index])
 print(names_input_adjusted_position_files[_image_index])
@@ -130,8 +130,7 @@ MAS_Simulation = MAS.Simulation_MAS(data_input_raw[_image_index],
                                     RALs_fuse_factor, RALs_fill_factor,
                                     [0,0],
                                     data_adjusted_position_files[_image_index],
-                                    recon_policy=recon_policy,
-                                    dropout_proportion=dropout_proportion)
+                                    recon_policy=recon_policy)
 MAS_Simulation.Initialize_AD()
 MAS_Simulation.Perform_Simulation_newEndCrit(Simulation_steps,
                                             _coerced_X=True, # coerced X : permet le repositionnement
@@ -158,7 +157,7 @@ print("FN =", MAS_Simulation.FN)
 print("FP =", MAS_Simulation.FP)
 
 MAS_Simulation.Show_Adjusted_And_RALs_positions(_save=False, _save_path=f"{path_input_root}/{unity_date}_analysis/Images_MAS/{recon_policy}_repositioning")
-
+plt.show()
 # MAS_Simulation.Show_nb_RALs()
 # MAS_Simulation.Show_RALs_Deicision_Scores()
 # MAS_Simulation.Show_Adjusted_Positions()
