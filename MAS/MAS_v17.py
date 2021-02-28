@@ -418,14 +418,8 @@ class Row_Agent(object):
         
         self.extensive_init = False
 
-        self.recon_policy = recon_policy
-
         # curved rows
-        # we use those list to store which RAL has to be destroyed, fused etc.
-        # to modify them only in the end of each round
-        self.to_be_fused = []
-        self.to_initialize_between = []
-        self.to_be_destroyed = []
+        self.recon_policy = recon_policy
         
 # =============================================================================
 #         print("Done")
