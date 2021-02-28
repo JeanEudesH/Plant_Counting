@@ -854,13 +854,16 @@ class Row_Agent(object):
     # curved
     def Fill_or_Fuse_RALs(self, _crit_value, _fuse_factor = 0.5, _fill_factor = 1.5):
         # potentiellmeent dangereux : peut tendre vers 0 et initialiser trop d'agents...
-        d = []
-        for _RAL in self.RALs:
-            for n in _RAL.neighbours:
-                d.append(self.euclidean_distance(_RAL, n))
-        _crit_value = np.median(d)
-        print(_crit_value)
-        nb_RALs = len(self.RALs)
+        # Mais meilleurs resultats empiriques lorsque fill_factor > 1.1
+        if len(self.RALs) > 1:
+            d = []
+            for _RAL in self.RALs:
+                for n in _RAL.neighbours:
+                    d.append(self.euclidean_distance(_RAL, n))
+            _crit_value = np.median(d)
+            nb_RALs = len(self.RALs)
+        else:
+            return
 
         i = 0
         already_seen = []

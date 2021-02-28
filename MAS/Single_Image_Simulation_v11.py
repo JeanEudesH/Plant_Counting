@@ -95,7 +95,7 @@ print("Done")
 # =============================================================================
 RAs_group_size = 15
 RAs_group_steps = 2
-Simulation_steps = 10
+Simulation_steps = 20
 
 ## TODO1: Fuse and fill doesn't work in curved mode...
 ## TODO2AL are not sorted along the row... Sort them to make the repositionning work : Done but maybe not the cleanest solution
@@ -106,9 +106,9 @@ Simulation_steps = 10
 ## TODO5: Recoding Fill and fuse functions with our new setting : to be tested
 ## TODO6: What to do ith the argument InterPlant_Diffs ? It seems like I can remove it completely
 RALs_fuse_factor = 0.5
-RALs_fill_factor = 1.15
+RALs_fill_factor = 1.2
 
-_image_index = 0
+_image_index = 6
 
 print(names_input_OTSU[_image_index])
 print(names_input_adjusted_position_files[_image_index])
