@@ -565,16 +565,18 @@ class Row_Agent(object):
     # curved
     def Set_RALs_Neighbours(self):
         """
-        Here we link each RAL with its neighbours which are the two (maximum) closest RALs
+        Here we link each RAL with its neighbours which are the two (maximum) closest RALs. One potential
+        issue comes when deciding whether an RAL is an extremity (then it should have only one neighbour)
+        or not (then it should have two). To do this, use the following thumb: if the second closest RAL
+        is in the same direction than the closest (NE, NW, SE, SW), then the target RAL is an extremity.
+        It is not a perfect rule but works 99% of the time for quasi-linear rows.
         """
         if len(self.RALs) < 2:
             return
 
-        distance_matrix = self.Compute_Distance_Matrix()
-
         def get_direction_of_others_RAL(RAL, list_of_RALs):
             """
-            Return the direction of each RAL compared with one RAL
+            Return the direction of each RAL in list_of_RALs compared with one RAL.
             """
             directions = []
             for other in range(len(list_of_RALs)):
@@ -588,35 +590,45 @@ class Row_Agent(object):
                 else:
                     direction  += "N"
                 directions.append(direction)
-            return directions            
+            return directions        
+        
+        # use to compute the neighbours
+        distance_matrix = self.Compute_Distance_Matrix()    
 
-        for _RAL in self.RALs: # reinitialize the neighbours at each turn to avoid cumulatign
+        for _RAL in self.RALs: # reinitialize the neighbours at each turn to avoid cumulating
             _RAL.neighbours = []
 
+        # to avoid visiting the same neighbour twice
         for i, _RAL in enumerate(self.RALs):
-            already_seen = [i]  # to avoid visiting the same neighbour twice
+            if len(self.RALs[i].neighbours) == 2: # already found two neighbours
+                continue
+
+            already_seen = [i]  # contains the idx of the already seen RAL, including itself
             for n in _RAL.neighbours: # we already saw the neighbours that saw the RAL before
                 idx = np.nonzero([self.RALs[k] == n for k in range(len(self.RALs))])[0]
                 already_seen.extend([i for i in idx])
 
+            # get the remaining closest neighbours
             direction_of_neighbours = get_direction_of_others_RAL(_RAL, self.RALs)  # record the direction (N, W, E, S) from RAL to neighbour 
-            for k in range(2 - len(_RAL.neighbours)): # get the remaining closest neighbours
+            for k in range(2 - len(_RAL.neighbours)): 
+
+                # finding the next closest RAL
                 mask = [True if n not in already_seen else False for n in range(distance_matrix.shape[0])]
-                if True not in mask:
+                if True not in mask: # if we exhausted the RAL list
                     break
                 else:
                     min_dist = np.min(distance_matrix[i, mask]) # distance to closest unseen neighbour
                     closest_idx = np.nonzero(distance_matrix[i, :] == min_dist)[0] # get the index(s) of the closest neighbour
                     close_idx = closest_idx[0]
 
-                # if close_idx != i: # do not append itself in its neighbours
                 if _RAL.neighbours == []: # first neighbour found
                     if self.RALs[close_idx] not in _RAL.neighbours:
                         _RAL.neighbours.append(self.RALs[close_idx])
                     if _RAL not in self.RALs[close_idx].neighbours and len(self.RALs[close_idx].neighbours) < 2:
                         self.RALs[close_idx].neighbours.append(_RAL) # also add _RAL to its neighbour's list
                     already_seen.append(close_idx)
-                else: # second neighbour
+
+                else: # find the second neighbour
                     first_neighbour_direction = direction_of_neighbours[already_seen[-1]]
                     candidates = [True if n not in already_seen else False for n in range(distance_matrix.shape[0])]
                     
@@ -624,105 +636,94 @@ class Row_Agent(object):
                         min_dist = np.min(distance_matrix[i, candidates]) # distance to closest unseen neighbour
                         closest_idx = np.nonzero(distance_matrix[i, :] == min_dist)[0] # get the index(s) of the closest neighbour
                         
+                        # get the second closest neighbour for sure
                         if closest_idx[0] not in already_seen:
                             close_idx = closest_idx[0]
                         else:
                             close_idx = closest_idx[-1]
 
+                        # the second closest is a neighbour of one RAL neighbour -> extremity
                         is_closest_in_neighbour_neighbourhood = False
                         for n in _RAL.neighbours:
                             if self.RALs[close_idx] in n.neighbours:
                                 is_closest_in_neighbour_neighbourhood = True
 
                         if direction_of_neighbours[close_idx] != first_neighbour_direction and not is_closest_in_neighbour_neighbourhood:
-                            if self.RALs[close_idx] not in _RAL.neighbours:
+                            if self.RALs[close_idx] not in _RAL.neighbours and len(_RAL.neighbours) < 2:
                                 _RAL.neighbours.append(self.RALs[close_idx])
                             if _RAL not in self.RALs[close_idx].neighbours and len(self.RALs[close_idx].neighbours) < 2:
                                 self.RALs[close_idx].neighbours.append(_RAL)
-                            break
+                            break # the second neighbour has been found -> get out of the while loop
+
                         already_seen.append(close_idx)
                         candidates = [True if n not in already_seen else False for n in range(distance_matrix.shape[0])]
 
-                    # if _RAL.neighbours != []:
-                    #     for n in _RAL.neighbours: # if we already added one neighbour, check if the Agent is on the extremity of the row
-                            # if self.euclidean_distance(self.RALs[close_idx], n) > self.euclidean_distance(_RAL, self.RALs[close_idx]): # the RAL is not at an extremity of the row
-                            #     _RAL.neighbours.append(self.RALs[close_idx])
-                            #     self.RALs[close_idx].neighbours.append(_RAL)
-                            #     already_seen.append(close_idx)
-                            # else: # can be troubles with extremities...
-                    # else: # if it is the first neighbour that we see, we add it anyway
-                    #     _RAL.neighbours.append(self.RALs[close_idx])
-                    #     self.RALs[close_idx].neighbours.append(_RAL) # also add _RAL to its neighbour's list
-                    #     already_seen.append(close_idx)
-            if not len(_RAL.neighbours) <= 2:
-                print(i, _RAL.neighbours)
-                print(direction_of_neighbours)
-                self.Show_RALs_Position(title=f"Three neighbours or more for agent {i}")
+            # if not len(_RAL.neighbours) <= 2:
+            #     print(i, _RAL.neighbours)
+            #     print(direction_of_neighbours)
+            #     self.Show_RALs_Position(title=f"Three neighbours or more for agent {i}")
             assert(len(_RAL.neighbours) <= 2)
 
-        # self.Show_RALs_Position()
-        # plt.show()
-
     # Curved rows
-    def Sort_RALs(self):
-        """
-        The sorting stepis used initially, to have the RALs sorted in the right
-        order. This step is required since after we make several computations
-        using RALs indices (distances between i and i+1)
-        """
-        distance_matrix = self.Compute_Distance_Matrix()
+    # def Sort_RALs(self):
+    #     """
+    #     The sorting stepis used initially, to have the RALs sorted in the right
+    #     order. This step is required since after we make several computations
+    #     using RALs indices (distances between i and i+1)
+    #     """
+    #     distance_matrix = self.Compute_Distance_Matrix()
         
-        # we sequentially visit the neighboors de proche en proche, on both sides of the origin agent and store the indices
-        origin = 0
-        closest_idx1 = np.argmin(distance_matrix[0, 1:]) + 1 # closest neighbour (without itself)
-        mask = [True if n > 0 and n != closest_idx1 else False for n in range(distance_matrix.shape[0])]
-        dist = np.min(distance_matrix[0, mask]) # second closest neighbour
-        closest_idx2 = np.argwhere(distance_matrix[0, :] == dist)[0, 0] # get the index of the second closest neighbour
+    #     # we sequentially visit the neighboors de proche en proche, on both sides of the origin agent and store the indices
+    #     origin = 0
+    #     closest_idx1 = np.argmin(distance_matrix[0, 1:]) + 1 # closest neighbour (without itself)
+    #     mask = [True if n > 0 and n != closest_idx1 else False for n in range(distance_matrix.shape[0])]
+    #     dist = np.min(distance_matrix[0, mask]) # second closest neighbour
+    #     closest_idx2 = np.argwhere(distance_matrix[0, :] == dist)[0, 0] # get the index of the second closest neighbour
 
-        # closest1 and closest2 are on each side of origin : we visit each side separatly and give negative indices to the left list (visited2) and positive to the 
-        # right list (visited1) 
-        if distance_matrix[closest_idx1, closest_idx2] > distance_matrix[origin, closest_idx1] and distance_matrix[closest_idx1, closest_idx2] > distance_matrix[origin, closest_idx2]:
-            visited1, visited2 = [origin], []  # origin is already visited, stored in the first list
-            ref1, ref2 = closest_idx1, closest_idx2 # we now examine the neighbours of closest_idx_1 and closest_idx_2
-            while len(visited1) + len(visited2) < len(self.RALs): # not visited all the RALs
-                for ref, visited in zip([ref1, ref2], [visited1, visited2]):
-                    closest_neighbour_dist = distance_matrix[origin, ref]
-                    memory = closest_neighbour_dist # memory helps to stop adding RALs to visited when we arrived at an extremity of the row
-                    non_visited_neighbours = [True if n not in visited1 and n not in visited2 else False for n in range(distance_matrix.shape[0])] # mask to get only non visited RALs
-                    while True in non_visited_neighbours:
-                        visited.append(ref)
-                        non_visited_neighbours = [True if n not in visited1 and n not in visited2 else False for n in range(distance_matrix.shape[0])] # mask to get only non visited RALs
-                        if not True in non_visited_neighbours: # when everythind is visited
-                            break
-                        closest_neighbour_dist = np.min(distance_matrix[ref, non_visited_neighbours]) # get closest neighbour among non visited RALs
-                        if closest_neighbour_dist > 2 * memory:  # TODO:improve this condition
-                            break
-                        closest_neighbour_idx = np.argwhere(distance_matrix[ref, :] == closest_neighbour_dist)[0, 0]  # get the closest neighbour idx in RALs
-                        ref = closest_neighbour_idx # pass to next RALs
-                        memory = closest_neighbour_dist
-            # build sorted list of RALs and assign it to self.RALs
-            sorted_RALs = [0 for i in range(len(self.RALs))] 
-            for i in range(len(self.RALs)):
-                if i < len(visited1):
-                    sorted_RALs[i] = self.RALs[visited1[i]]
-                else:
-                    sorted_RALs[i] = self.RALs[visited2[-(i - len(visited1) + 1)]] # count the elements in visited2 starting from the end (modular counting over the row)
-            self.RALs = sorted_RALs
-        else: # 0 is on the extremity of the row, so we do only one pass
-            visited = [origin, closest_idx1]
-            ref = closest_idx2
-            while len(visited) < len(self.RALs): # while not visited all the RALs
-                visited.append(ref)
-                non_visited_neighbours = [True if n not in visited else False for n in range(distance_matrix.shape[0])] # mask to get only non visited RALs
-                if not True in non_visited_neighbours:
-                    break
-                closest_neighbour_dist = np.min(distance_matrix[ref, non_visited_neighbours]) # get closest neighbour among non visited RALs
-                closest_neighbour_idx = np.argwhere(distance_matrix[ref, :] == closest_neighbour_dist)[0, 0]  # get the closest neighbour idx in RALs
-                ref = closest_neighbour_idx # pass to next RAL
-            sorted_RALs = [0 for i in range(len(self.RALs))] # visited is ordered so now the RALs are sorted in RALs.
-            for i in range(len(sorted_RALs)):
-                sorted_RALs[i] = self.RALs[visited[i]]
-            self.RALs = sorted_RALs
+    #     # closest1 and closest2 are on each side of origin : we visit each side separatly and give negative indices to the left list (visited2) and positive to the 
+    #     # right list (visited1) 
+    #     if distance_matrix[closest_idx1, closest_idx2] > distance_matrix[origin, closest_idx1] and distance_matrix[closest_idx1, closest_idx2] > distance_matrix[origin, closest_idx2]:
+    #         visited1, visited2 = [origin], []  # origin is already visited, stored in the first list
+    #         ref1, ref2 = closest_idx1, closest_idx2 # we now examine the neighbours of closest_idx_1 and closest_idx_2
+    #         while len(visited1) + len(visited2) < len(self.RALs): # not visited all the RALs
+    #             for ref, visited in zip([ref1, ref2], [visited1, visited2]):
+    #                 closest_neighbour_dist = distance_matrix[origin, ref]
+    #                 memory = closest_neighbour_dist # memory helps to stop adding RALs to visited when we arrived at an extremity of the row
+    #                 non_visited_neighbours = [True if n not in visited1 and n not in visited2 else False for n in range(distance_matrix.shape[0])] # mask to get only non visited RALs
+    #                 while True in non_visited_neighbours:
+    #                     visited.append(ref)
+    #                     non_visited_neighbours = [True if n not in visited1 and n not in visited2 else False for n in range(distance_matrix.shape[0])] # mask to get only non visited RALs
+    #                     if not True in non_visited_neighbours: # when everythind is visited
+    #                         break
+    #                     closest_neighbour_dist = np.min(distance_matrix[ref, non_visited_neighbours]) # get closest neighbour among non visited RALs
+    #                     if closest_neighbour_dist > 2 * memory:  # TODO:improve this condition
+    #                         break
+    #                     closest_neighbour_idx = np.argwhere(distance_matrix[ref, :] == closest_neighbour_dist)[0, 0]  # get the closest neighbour idx in RALs
+    #                     ref = closest_neighbour_idx # pass to next RALs
+    #                     memory = closest_neighbour_dist
+    #         # build sorted list of RALs and assign it to self.RALs
+    #         sorted_RALs = [0 for i in range(len(self.RALs))] 
+    #         for i in range(len(self.RALs)):
+    #             if i < len(visited1):
+    #                 sorted_RALs[i] = self.RALs[visited1[i]]
+    #             else:
+    #                 sorted_RALs[i] = self.RALs[visited2[-(i - len(visited1) + 1)]] # count the elements in visited2 starting from the end (modular counting over the row)
+    #         self.RALs = sorted_RALs
+    #     else: # 0 is on the extremity of the row, so we do only one pass
+    #         visited = [origin, closest_idx1]
+    #         ref = closest_idx2
+    #         while len(visited) < len(self.RALs): # while not visited all the RALs
+    #             visited.append(ref)
+    #             non_visited_neighbours = [True if n not in visited else False for n in range(distance_matrix.shape[0])] # mask to get only non visited RALs
+    #             if not True in non_visited_neighbours:
+    #                 break
+    #             closest_neighbour_dist = np.min(distance_matrix[ref, non_visited_neighbours]) # get closest neighbour among non visited RALs
+    #             closest_neighbour_idx = np.argwhere(distance_matrix[ref, :] == closest_neighbour_dist)[0, 0]  # get the closest neighbour idx in RALs
+    #             ref = closest_neighbour_idx # pass to next RAL
+    #         sorted_RALs = [0 for i in range(len(self.RALs))] # visited is ordered so now the RALs are sorted in RALs.
+    #         for i in range(len(sorted_RALs)):
+    #             sorted_RALs[i] = self.RALs[visited[i]]
+    #         self.RALs = sorted_RALs
 
     # curved
     def Fuse_RALs(self, RAL1, RAL2):
