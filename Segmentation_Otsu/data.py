@@ -9,11 +9,16 @@ import os
 import glob
 from skimage.util import random_noise
 path_scripts = os.path.dirname(os.path.abspath(__file__))
-os.chdir(path_scripts)
+# os.chdir(path_scripts)
+# import otsu as o
 import Segmentation_Otsu.otsu as o
 
+<<<<<<< HEAD
 
 import numpy as np
+=======
+import numpy as np 
+>>>>>>> MAS_local_repositionning
 import matplotlib.pyplot as plt
 import cv2
 from PIL import Image, ImageFilter
@@ -220,9 +225,15 @@ class Data:
 
         if not hasattr(self, object_name):
             indice=indices.index(object_name)
+<<<<<<< HEAD
             fonctions[indice](*args)
         _to_save=Image.fromarray(np.uint8(getattr(self, object_name))).convert("RGB")
 
+=======
+            fonctions[indice](*args)            
+        _to_save=Image.fromarray(np.uint8(getattr(self, object_name))).convert("RGB")
+        
+>>>>>>> MAS_local_repositionning
         #Si un chemin est spécifié, on le joint au nom de l'image
         if path!=None:
             name=file_name.split(".")[0]

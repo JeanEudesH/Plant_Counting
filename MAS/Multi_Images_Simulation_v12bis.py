@@ -5,6 +5,11 @@ Created on Sat May 23 11:55:31 2020
 @author: eliot
 """
 
+import sys
+
+if not "D:/Documents/IODAA/Fil Rouge/Plant_Counting" in sys.path:
+    sys.path.append("D:/Documents/IODAA/Fil Rouge/Plant_Counting")
+
 import os
 import json
 import numpy as np
@@ -13,8 +18,8 @@ from PIL import Image
 import MAS.MAS_v17 as MAS
 
 # os.chdir("../Utility")
+# import general_IO as gIO
 import Utility.general_IO as gIO
-
 
 # =============================================================================
 # Utility Functions Definition
@@ -26,8 +31,9 @@ def import_data(_path, _file_names, _import_function):
     return data
 
 def get_json_file_content(_path_json_file):
-    f = open(_path_json_file)
-    return json.load(f)
+    if _path_json_file.endswith(".json"):
+        f = open(_path_json_file)
+        return json.load(f)
 
 def get_img_array(path_img):
     if path_img.endswith("onetoc2"):
@@ -37,16 +43,18 @@ def get_img_array(path_img):
         return np.array(img)
 
 def get_file_lines(path_csv_file):
-    file_object = open(path_csv_file, 'r')
-    file_content = file_object.readlines()
-    file_object.close()
-    return(file_content)
+    if path_csv_file.endswith(".csv"):
+        file_object = open(path_csv_file, 'r')
+        file_content = file_object.readlines()
+        file_object.close()
+        return(file_content)
 
 def All_Simulations(_path_input_rgb_img, _path_PreTreatment_and_FA,
                     _labelled_images = False,
                     _session_number=1,
                     _RAs_group_size=20, _RAs_group_steps=2, _Simulation_steps=50,
-                    _RALs_fuse_factor=0.5, _RALs_fill_factor=1.5):
+                    _RALs_fuse_factor=0.5, _RALs_fill_factor=1.5,
+                    densite=None, experiment=None):
 
     # =============================================================================
     # General Path Definition
@@ -97,7 +105,13 @@ def All_Simulations(_path_input_rgb_img, _path_PreTreatment_and_FA,
     print("Done")
 
     meta_simu_name = "Session_"+str(_session_number)
+<<<<<<< HEAD
 
+=======
+    
+    # recon_policy = input("Please enter the type of model to be implemented (global or local)")
+    
+>>>>>>> MAS_local_repositionning
     # =============================================================================
     # Meta Simulation Definition
     # =============================================================================
@@ -106,7 +120,6 @@ def All_Simulations(_path_input_rgb_img, _path_PreTreatment_and_FA,
 
 >>>>>>> 89083254dbebb9b5eb68d56a5a1ce6c4c9fba488
     MetaSimulation = MAS.MetaSimulation(meta_simu_name,
-
                                         path_output,
                                         names_input_raw,
                                         data_input_raw,
@@ -117,8 +130,15 @@ def All_Simulations(_path_input_rgb_img, _path_PreTreatment_and_FA,
                                         _RALs_fuse_factor,
                                         _RALs_fill_factor,
                                         _simulation_step=_Simulation_steps,
+<<<<<<< HEAD
                                         _data_adjusted_position_files=data_adjusted_position_files)
 
+=======
+                                        _data_adjusted_position_files=data_adjusted_position_files,
+                                        densite=densite,
+                                        experiment=experiment)
+    
+>>>>>>> MAS_local_repositionning
     if (_labelled_images):
 
         MetaSimulation.Launch_Meta_Simu_Labels(
@@ -141,9 +161,8 @@ def All_Simulations(_path_input_rgb_img, _path_PreTreatment_and_FA,
 
 if (__name__=="__main__"):
 
-    All_Simulations(_path_input_rgb_img="D:/Projet/Unity/HDRP_PGoCF/Datasets/X_Bell5Keys_Z_InversedBell5Keys/virtual_reality",
-                    _path_PreTreatment_and_FA="D:/Projet/Unity/HDRP_PGoCF/Datasets/X_Bell5Keys_Z_InversedBell5Keys/Ouput_General",
-                    _labelled_images = True,
+    All_Simulations(_path_input_rgb_img="D:/Documents/IODAA/Fil Rouge/Resultats/2021_1_9_18_37_46/virtual_reality",
+                    _path_PreTreatment_and_FA="D:/Documents/IODAA/Fil Rouge/Resultats/2021_1_9_18_37_46_analysis",
                     _session_number=1,
                     _RAs_group_size=10, _RAs_group_steps=2, _Simulation_steps=50,
                     _RALs_fuse_factor=0.5, _RALs_fill_factor=1.5)

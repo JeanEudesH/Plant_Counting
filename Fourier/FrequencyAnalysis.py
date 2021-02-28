@@ -29,6 +29,7 @@ import numpy as np
 #import matplotlib.pyplot as plt
 
 # os.chdir("../Utility")
+# import general_IO as gIO
 import Utility.general_IO as gIO
 
 # =============================================================================
@@ -223,16 +224,14 @@ def All_Fourier_Analysis(_path_input_output,
 
     path_output_FT_predictions = path_output_root+"/Plant_FT_Predictions"
     gIO.check_make_directory(path_output_FT_predictions)
-
-    subset_size = 6
-
+    
 ################## Import Data
     data_bsas_dir0 = import_data(path_input_bsas_dir0,
-                                 names_input_bsas_dir0[:subset_size],
+                                 names_input_bsas_dir0[:],
                                  get_file_lines)
 
     data_bsas_dir1 = import_data(path_input_bsas_dir1,
-                                 names_input_bsas_dir1[:subset_size],
+                                 names_input_bsas_dir1[:],
                                  get_file_lines)
 
     nb_images = len(data_bsas_dir0)

@@ -7,13 +7,22 @@ Created on Mon Oct 26 15:55:35 2020
 import os
 import sys
 
-if "D:/Documents/IODAA/Fil Rouge/Plant_Counting" not in sys.path:
+from numpy.lib.function_base import _CORE_DIMENSION_LIST
+
+# os.chdir("../Pre_Treatments")
+# import Process_image_for_FT as PiFT
+
+# os.chdir("../Fourier")
+# import FrequencyAnalysis as FA
+
+# os.chdir("../MAS")
+# import Multi_Images_Simulation_v12bis as MIS
+
+if not "D:/Documents/IODAA/Fil Rouge/Plant_Counting" in sys.path:
     sys.path.append("D:/Documents/IODAA/Fil Rouge/Plant_Counting")
 
 import Pre_Treatments.Process_image_for_FT as PiFT
-
 import Fourier.FrequencyAnalysis as FA
-
 import MAS.Multi_Images_Simulation_v12bis as MIS
 
 def CompleteProcess(_path_input_rgb_img, _path_output_root,
@@ -61,15 +70,17 @@ if (__name__=="__main__"):
                      _rows_real_angle=80,
 
                     _make_unique_folder_per_session=False, _session=1,
-                    _do_Otsu=True, _do_AD=True,
+                    _do_Otsu=True, _do_AD=False, # ici pour desactiver la rotation
                     _save_AD_score_images=False, _save_BSAS_images=False,
                     _bsas_threshold=1,
 
                     _bin_div_X=2, _bin_div_Y=4,
-
-                    _RAs_group_size=10, _RAs_group_steps=2, _Simulation_steps=50,
+                    
+                    _RAs_group_size=20, _RAs_group_steps=2, _Simulation_steps=50,
                     # nombre de PXA sous les ordres d'agent plante
-                    # RAs_group_size = 2 * cote du carre => 
+                    # RAs_group_size * 2 = cote du carre => 
                     # passer a 25 augmente la taille du PA.
 
+                    # see MAS.MetaSimulation
                     _RALs_fuse_factor=0.5, _RALs_fill_factor=1.5)
+    
