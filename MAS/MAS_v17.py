@@ -856,10 +856,10 @@ class Row_Agent(object):
                 for n in _RAL.neighbours:
                     d.append(self.euclidean_distance(_RAL, n))
             _crit_value = np.median(d)
-            nb_RALs = len(self.RALs)
         else:
             return
 
+        nb_RALs = len(self.RALs)
         i = 0
         already_seen = []
         while i < nb_RALs-1:
@@ -1717,6 +1717,7 @@ class Simulation_MAS(object):
 # PERFORM SIMULATION NEW END CRIT                   # 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # 
     
+    # curved : _coerced_Y and _check_rows_proximity have to be False
     def Perform_Simulation_newEndCrit(self, _steps = 10,
                                       _coerced_X = False,
                                       _coerced_Y = False,
@@ -1731,10 +1732,7 @@ class Simulation_MAS(object):
         if (_analyse_and_remove_Rows):
             self.AD.Analyse_RowAs_Kmeans()
 
-        # Curved: either sort the RALs in the rank (harder)
-        # or store the neighbours of a RAL as attributes to retrieve
-        # them when desired
-        # self.AD.ORDER_RowAs_to_Sort_RALs()
+        # curved
         self.AD.ORDER_RowAs_to_Set_RALs_Neighbours()
         
         self.AD.ORDER_RowAs_to_Update_InterPlant_Y()
@@ -1785,19 +1783,17 @@ class Simulation_MAS(object):
             t0 = time.time()
             self.AD.ORDER_RowAs_Fill_or_Fuse_RALs()
             time_detailed += [time.time()-t0]
-
+            
+            # curved
             t0 = time.time()
             self.AD.ORDER_RowAs_to_Set_RALs_Neighbours()
             time_detailed += [time.time()-t0]
-
-            # t0 = time.time()
-            # self.AD.ORDER_RowAs_to_Update_InterPlant_Y()
-            # time_detailed += [time.time()-t0]
             
             t0 = time.time()
             self.AD.ORDER_RowAs_to_Destroy_Low_Activity_RALs()
             time_detailed += [time.time()-t0]
 
+            # curved
             # update the neighbours : set the neigbours of the recently created RAL
             # and update the neighbours of the neighbours of destroyed RALs
             # Takes one second on one image approximately
@@ -1805,9 +1801,9 @@ class Simulation_MAS(object):
             self.AD.ORDER_RowAs_to_Set_RALs_Neighbours()
             time_detailed += [time.time()-t0]
 
-            # t0 = time.time()
-            # self.AD.ORDER_RowAs_to_Update_InterPlant_Y()
-            # time_detailed += [time.time()-t0]
+            t0 = time.time()
+            self.AD.ORDER_RowAs_to_Update_InterPlant_Y()
+            time_detailed += [time.time()-t0]
             
             # Removes some of the rows at first step... Issue when a
             # row is fragmented, estimates that the two rows are too

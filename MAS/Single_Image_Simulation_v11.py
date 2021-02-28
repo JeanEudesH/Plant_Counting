@@ -121,7 +121,6 @@ import matplotlib.pyplot as plt
 
 print("Simulation Definition:")
 print(f"Image {_image_index}")
-# dropout_proportion = i * 0.1
 dropout_proportion = 0
 MAS_Simulation = MAS.Simulation_MAS(data_input_raw[_image_index],
                                     data_input_PLANT_FT_PRED[_image_index],
