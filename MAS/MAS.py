@@ -8,12 +8,9 @@ import time
 import json
 from sklearn.cluster import KMeans
 from scipy.stats import ttest_ind
-import sys
 
-# os.chdir("../Utility")
-# import general_IO as gIO
-
-import Utility.general_IO as gIO
+os.chdir("../Utility")
+import general_IO as gIO
 
 # =============================================================================
 # Utility Functions
@@ -348,7 +345,8 @@ class Row_Agent(object):
         
         for _plant_pred in self.plant_FT_pred_in_crop_row:
             RAL = ReactiveAgent_Leader(_x = _plant_pred[0],
-                                       _y = self.OTSU_img_array.shape[0] - _plant_pred[1],
+                                       #_y = self.OTSU_img_array.shape[0] - _plant_pred[1],
+                                       _y = _plant_pred[1],
                                        _img_array = self.OTSU_img_array,
                                        _group_size = self.group_size,
                                        _group_step = self.group_step,
@@ -1413,7 +1411,6 @@ class Simulation_MAS(object):
             ax.add_patch(circle)
     
     def Show_Adjusted_And_RALs_positions(self,
-                                        _recorded_position_indeces = -1,
                                         _colors_recorded = 'g',
                                         _color_adjusted = "r",
                                         _save=False,

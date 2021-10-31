@@ -45,19 +45,15 @@ variables the user can change:
 """
 
 import os
-import sys
 
-# os.chdir("../Utility")
-# import general_IO as gIO
-import Utility.general_IO as gIO
+os.chdir("../Utility")
+import general_IO as gIO
 
-# os.chdir("../Segmentation_Otsu")
-# import data
-import Segmentation_Otsu.data as data
+os.chdir("../Segmentation_Otsu")
+import data
 
-# os.chdir("../BSAS")
-# import bsas
-import BSAS.bsas as bsas
+os.chdir("../BSAS")
+import bsas
 
 os.chdir("../Crops_Rows_Angle_Detection")
 import CRAD
@@ -183,7 +179,6 @@ def All_Pre_Treatment(_path_input_rgb_img, _path_output_root,
 # We need the position_files somewhere and Inidicate it in the _path_labelled_position
 # =============================================================================
     if (_path_position_files!=None):
-        print("in")
         path_output_adjusted_position_files = path_output + "/Adjusted_Position_Files"
         gIO.check_make_directory(path_output_adjusted_position_files)
         

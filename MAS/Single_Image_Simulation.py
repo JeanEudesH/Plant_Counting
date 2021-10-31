@@ -5,7 +5,7 @@ import json
 import numpy as np
 from PIL import Image
 
-import MAS
+import MAS_curved
 
 
 # =============================================================================
@@ -81,7 +81,7 @@ print("Done")
 # =============================================================================
 RAs_group_size = 20
 RAs_group_steps = 2
-Search_Simulation_steps = 50
+Search_Simulation_steps = 2
 
 RALs_fuse_factor = 0.5
 RALs_fill_factor = 1.5
@@ -102,7 +102,7 @@ print(names_input_PLANT_FT_PRED[_image_index])
 # Simulation Definition
 # =============================================================================
 print("Simulation Definition:")
-MAS_Simulation = MAS.Simulation_MAS(data_input_raw[_image_index],
+MAS_Simulation = MAS_curved.Simulation_MAS(data_input_raw[_image_index],
                                     data_input_PLANT_FT_PRED[_image_index],
                                     data_input_OTSU[_image_index],
                                     RAs_group_size, RAs_group_steps,
@@ -114,7 +114,7 @@ MAS_Simulation = MAS.Simulation_MAS(data_input_raw[_image_index],
                                     simu_name)
 MAS_Simulation.Initialize_AD()
 MAS_Simulation.Perform_Search_Simulation(Search_Simulation_steps,
-                                             _coerced_X=True,
+                                             _coerced_X=False,
                                              _coerced_Y=False,
                                              _analyse_and_remove_Rows=True,
                                              _edge_exploration = True)

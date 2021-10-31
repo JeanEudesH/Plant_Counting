@@ -1,34 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Tue Jun  9 11:11:12 2020
 
-@author: eliot
-
-v14 :
-    - goal to add a feature to destroy unwanted rows
-    - new "end of simulation criterion" --> we re-evaluate the InterYdist. If
-    there is no evolution in the number of RALs after it, we stop the simulation.
-
-v15 :
-    - Add the exploration behaviour to cover the edges of the rows and make up
-    for the bad predictions of the FT in this area. It is basically the extensive
-    approach but only on hte edges.
-
-v16 :
-    - Extended fusing condition to the case where to RALs are into each others
-    scanning zones
-    - p value for Row analysis changed from 0.05 to 0.0001
-
-v17 :
-    -Implement a growing algorithm more efficient for the plant agents.
-    -Implement a way to measure the surface of the white surfaces inside the
-    plant agent's scanning zone.
-"""
-import sys
-if not "D:/Documents/IODAA/Fil Rouge/Plant_Counting" in sys.path:
-    sys.path.append("D:/Documents/IODAA/Fil Rouge/Plant_Counting")
-
-# from MAS.Single_Image_Simulation_v11 import RAs_group_size, RAs_group_steps
 import os
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
@@ -38,9 +9,8 @@ import json
 from sklearn.cluster import KMeans
 from scipy.stats import ttest_ind
 
-# os.chdir("../Utility")
-# import general_IO as gIO
-import Utility.general_IO as gIO
+os.chdir("../Utility")
+import general_IO as gIO
 
 # =============================================================================
 # Utility Functions
@@ -442,61 +412,15 @@ class Row_Agent(object):
 # =============================================================================
 
         for _plant_pred in self.plant_FT_pred_in_crop_row:
-            RAL = ReactiveAgent_Leader(_x = _plant_pred[1],
-                                    #    _y = self.OTSU_img_array.shape[0] - _plant_pred[1],
-                                       _y = _plant_pred[0],
+            RAL = ReactiveAgent_Leader(_x = _plant_pred[0],
+                                       #_y = self.OTSU_img_array.shape[0] - _plant_pred[1],
+                                       _y = _plant_pred[1],
                                        _img_array = self.OTSU_img_array,
                                        _group_size = self.group_size,
                                        _group_step = self.group_step,
                                        _field_offset = self.field_offset)
 
             self.RALs += [RAL]
-
-    def Extensive_Init(self, _filling_step):
-        """
-        Uses the first RAL in the self.RALs list to extensively instanciate
-        RALs between the bottom and the top of the image.
-        """
-        self.extensive_init = True
-
-        _RAL_ref_index = 0
-        _RAL_ref = self.RALs[_RAL_ref_index]
-
-        y_init = _RAL_ref.y
-        while y_init + _filling_step < self.OTSU_img_array.shape[0]:
-            new_RAL = ReactiveAgent_Leader(_x = self.Row_Mean_X,
-                                           _y = int(y_init + _filling_step),
-                                           _img_array = self.OTSU_img_array,
-                                           _group_size = self.group_size,
-                                           _group_step = self.group_step,
-                                           _field_offset = self.field_offset)
-            new_RAL.used_as_filling_bound = False
-            y_init += _filling_step
-
-            self.RALs += [new_RAL]
-
-
-        y_init = _RAL_ref.y
-        new_RALs = []
-        new_diffs = []
-        while y_init - _filling_step > 0:
-            new_RAL = ReactiveAgent_Leader(_x = self.Row_Mean_X,
-                                           _y = int(y_init + _filling_step),
-                                           _img_array = self.OTSU_img_array,
-                                           _group_size = self.group_size,
-                                           _group_step = self.group_step)
-            new_RAL.used_as_filling_bound = False
-
-            new_RALs += [new_RAL]
-            new_diffs += [_filling_step]
-
-            y_init -= _filling_step
-
-        self.RALs = new_RALs + self.RALs
-
-        a = np.array([RAL.y for RAL in self.RALs])
-        b = np.argsort(a)
-        self.RALs = list(np.array(self.RALs)[b])
 
     def Edge_Exploration(self, _filling_step):
         """
@@ -553,6 +477,10 @@ class Row_Agent(object):
         distance_matrix = np.zeros((len(self.RALs), len(self.RALs)))
         for i in range(len(self.RALs)):
             for j in range(len(self.RALs)):
+# =============================================================================
+#                 print((self.RALs[i].x, self.RALs[i].y),
+#                       (self.RALs[j].x, self.RALs[j].y))
+# =============================================================================
                 if distance_matrix[i, j] == 0:
                     distance_matrix[i, j] = self.euclidean_distance(self.RALs[i], self.RALs[j])
         return distance_matrix
@@ -566,6 +494,9 @@ class Row_Agent(object):
         is in the same direction than the closest (NE, NW, SE, SW), then the target RAL is an extremity.
         It is not a perfect rule but works 99% of the time for quasi-linear rows.
         """
+        
+        #print("In Set_RALs_Neighbours")
+        
         if len(self.RALs) < 2:
             return
 
@@ -589,12 +520,14 @@ class Row_Agent(object):
         
         # use to compute the neighbours
         distance_matrix = self.Compute_Distance_Matrix()    
+        #print(distance_matrix)
 
         for _RAL in self.RALs: # reinitialize the neighbours at each turn to avoid cumulating
             _RAL.neighbours = []
 
         # to avoid visiting the same neighbour twice
         for i, _RAL in enumerate(self.RALs):
+            #print(i, self.RALs[i].neighbours)
             if len(self.RALs[i].neighbours) == 2: # already found two neighbours
                 continue
 
@@ -622,7 +555,8 @@ class Row_Agent(object):
                     if _RAL not in self.RALs[close_idx].neighbours and len(self.RALs[close_idx].neighbours) < 2:
                         self.RALs[close_idx].neighbours.append(_RAL) # also add _RAL to its neighbour's list
                     already_seen.append(close_idx)
-
+                    
+                    #print(i, self.RALs[i].neighbours)
                 else: # find the second neighbour
                     first_neighbour_direction = direction_of_neighbours[already_seen[-1]]
                     candidates = [True if n not in already_seen else False for n in range(distance_matrix.shape[0])]
@@ -630,19 +564,25 @@ class Row_Agent(object):
                     while True in candidates:
                         min_dist = np.min(distance_matrix[i, candidates]) # distance to closest unseen neighbour
                         closest_idx = np.nonzero(distance_matrix[i, :] == min_dist)[0] # get the index(s) of the closest neighbour
-                        
+                        #print("closest_idx", closest_idx)
                         # get the second closest neighbour for sure
-                        if closest_idx[0] not in already_seen:
-                            close_idx = closest_idx[0]
-                        else:
-                            close_idx = closest_idx[-1]
-
+# =============================================================================
+#                         if closest_idx[0] not in already_seen:
+#                             close_idx = closest_idx[0]
+#                         else:
+#                             close_idx = closest_idx[-1]
+# =============================================================================
+                        for ii in closest_idx:
+                            if (ii not in already_seen):
+                                close_idx = ii
+                                break
                         # the second closest is a neighbour of one RAL neighbour -> extremity
                         is_closest_in_neighbour_neighbourhood = False
                         for n in _RAL.neighbours:
                             if self.RALs[close_idx] in n.neighbours:
                                 is_closest_in_neighbour_neighbourhood = True
-
+                        
+                        #print(direction_of_neighbours[close_idx], first_neighbour_direction, is_closest_in_neighbour_neighbourhood)
                         if direction_of_neighbours[close_idx] != first_neighbour_direction and not is_closest_in_neighbour_neighbourhood:
                             if self.RALs[close_idx] not in _RAL.neighbours and len(_RAL.neighbours) < 2:
                                 _RAL.neighbours.append(self.RALs[close_idx])
@@ -652,6 +592,7 @@ class Row_Agent(object):
 
                         already_seen.append(close_idx)
                         candidates = [True if n not in already_seen else False for n in range(distance_matrix.shape[0])]
+                        #print(already_seen)
 
             # if not len(_RAL.neighbours) <= 2:
             #     print(i, _RAL.neighbours)
@@ -744,7 +685,11 @@ class Row_Agent(object):
                                            _img_array = self.OTSU_img_array,
                                            _group_size = self.group_size,
                                            _group_step = self.group_step)
-
+        
+        if (RAL1.used_as_filling_bound and
+            RAL2.used_as_filling_bound):
+                fusion_RAL.used_as_filling_bound = True
+        
         # update new RAL neighbours : its neighbours are the ones of the previous two RAL
         for n in RAL1.neighbours:
             if n != RAL2:
@@ -782,70 +727,79 @@ class Row_Agent(object):
         The new RALs are initialized on a straight line between RAL1 and RAL2, and evenly spaced.
         The step's composantes are computed along each axis (step_x and step_y variables).
         """
-        x_0, x_f = RAL1.x, RAL2.x 
-        y_0, y_f = RAL1.y, RAL2.y
-        new_RALs = []
-        nb_new_RALs = 0
-
-        def get_direction(x_init, x_final):
-            if x_final - x_init >= 0:
-                return 1
-            else:
-                return -1
-
-        step_x = np.abs(RAL2.x - RAL1.x) / self.euclidean_distance(RAL1, RAL2) * (_filling_step / 2)
-        step_y = np.abs(RAL2.y - RAL1.y) / self.euclidean_distance(RAL1, RAL2) * (_filling_step / 2)
-        k_x, k_y = 1, 1
-        delta_x, delta_y = get_direction(x_0, x_f) * step_x, get_direction(y_0, y_f) * step_y
-
-        previous_RAL = RAL1
-
-        while self.euclidean_distance(previous_RAL, RAL2) >= _filling_step \
-               and ((x_0 <= x_0 + k_x * delta_x <= x_f) or (x_f <= x_0 + k_x * delta_x <= x_0)) \
-               and ((y_0 <= y_0 + k_y * delta_y <= y_f) or (y_f <= y_0 + k_y * delta_y <= y_0)):
-            
-            new_RAL = ReactiveAgent_Leader(_x = int(x_0 + (k_x) * delta_x),
-                                _y = int(y_0 + (k_y) * delta_y),
-                                _img_array = self.OTSU_img_array,
-                                _group_size = self.group_size,
-                                _group_step = self.group_step)
-            
-            new_RALs.append(new_RAL)
-            nb_new_RALs += 1
-
-            # update the neighbours
-            previous_RAL.neighbours.append(new_RAL)
-            new_RAL.neighbours.append(previous_RAL)
-            previous_RAL = new_RAL
-
-            k_x += 1
-            k_y += 1
-            # update the deltas
-            delta_x, delta_y = get_direction(x_0 + k_x * step_x, x_f) * step_x, get_direction(y_0 + k_y * step_y, y_f) * step_y
-            # print(f"new_x : {x_0 + k_x * delta_x}, new_y : {y_0 + k_y * delta_y}")
-            # print(f"New distance : {np.sqrt((x_f - (x_0 + k_x * delta_x)) ** 2 + (y_f - (x_0 + k_y * delta_y)) ** 2)}")
-
-        # close neighbours updates
-        if (nb_new_RALs > 0):
-            # to update neighbours of RAL1 and RAL2
-            if RAL2 in RAL1.neighbours:
-                RAL1.neighbours.remove(RAL2)
-            if RAL1 in RAL2.neighbours:
-                RAL2.neighbours.remove(RAL1)
-
-            # link the last initialized RAL with RAL2
-            RAL2.neighbours.append(new_RALs[-1])
-            new_RALs[-1].neighbours.append(RAL2)
-            
-            # print(f"Initialized {len(new_RALs)} new RALs, indices : {len(self.RALs)}  to {len(self.RALs) + len(new_RALs) - 1} at position : ({new_RALs[-1].x},{new_RALs[-1].y}).")
-            self.RALs.extend(new_RALs)
-            # print("\n")
-
-            assert (RAL1 in new_RALs[0].neighbours and RAL2 in new_RALs[-1].neighbours
-                    and new_RALs[0] in RAL1.neighbours and new_RALs[-1] in RAL2.neighbours)
         
-        # if len(new_RALs) != 0:
-            # self.Show_RALs_Position(title=f"Initialized {len(new_RALs)} new RALs, indices : {len(self.RALs) - len(new_RALs)}  to {len(self.RALs) - 1} at position : ({new_RALs[-1].x},{new_RALs[-1].y}).")
+        if (not RAL1.used_as_filling_bound or
+            not RAL2.used_as_filling_bound):
+            x_0, x_f = RAL1.x, RAL2.x 
+            y_0, y_f = RAL1.y, RAL2.y
+            new_RALs = []
+            nb_new_RALs = 0
+    
+            def get_direction(x_init, x_final):
+                if x_final - x_init >= 0:
+                    return 1
+                else:
+                    return -1
+            
+            step_x = np.abs(RAL2.x - RAL1.x) / self.euclidean_distance(RAL1, RAL2) * (_filling_step / 2)
+            step_y = np.abs(RAL2.y - RAL1.y) / self.euclidean_distance(RAL1, RAL2) * (_filling_step / 2)
+            k_x, k_y = 1, 1
+            delta_x, delta_y = get_direction(x_0, x_f) * step_x, get_direction(y_0, y_f) * step_y
+    
+            previous_RAL = RAL1
+    
+            while self.euclidean_distance(previous_RAL, RAL2) >= _filling_step \
+                   and ((x_0 <= x_0 + k_x * delta_x <= x_f) or (x_f <= x_0 + k_x * delta_x <= x_0)) \
+                   and ((y_0 <= y_0 + k_y * delta_y <= y_f) or (y_f <= y_0 + k_y * delta_y <= y_0)):
+    
+                new_RAL = ReactiveAgent_Leader(_x = int(x_0 + (k_x) * delta_x),
+                                    _y = int(y_0 + (k_y) * delta_y),
+                                    _img_array = self.OTSU_img_array,
+                                    _group_size = self.group_size,
+                                    _group_step = self.group_step)
+                
+                new_RAL.used_as_filling_bound = True
+                
+                new_RALs.append(new_RAL)
+                nb_new_RALs += 1
+    
+                # update the neighbours
+                previous_RAL.neighbours.append(new_RAL)
+                new_RAL.neighbours.append(previous_RAL)
+                previous_RAL = new_RAL
+    
+                k_x += 1
+                k_y += 1
+                # update the deltas
+                delta_x, delta_y = get_direction(x_0 + k_x * step_x, x_f) * step_x, get_direction(y_0 + k_y * step_y, y_f) * step_y
+                #print(f"step_x = {step_x}, step_y = {step_y}")
+                #print(f"new_x : {x_0 + k_x * delta_x}, new_y : {y_0 + k_y * delta_y}")
+                #print(f"New distance : {np.sqrt((x_f - (x_0 + k_x * delta_x)) ** 2 + (y_f - (x_0 + k_y * delta_y)) ** 2)}")
+            
+            RAL1.used_as_filling_bound = True
+            RAL2.used_as_filling_bound = True
+            
+            # close neighbours updates
+            if (nb_new_RALs > 0):
+                # to update neighbours of RAL1 and RAL2
+                if RAL2 in RAL1.neighbours:
+                    RAL1.neighbours.remove(RAL2)
+                if RAL1 in RAL2.neighbours:
+                    RAL2.neighbours.remove(RAL1)
+    
+                # link the last initialized RAL with RAL2
+                RAL2.neighbours.append(new_RALs[-1])
+                new_RALs[-1].neighbours.append(RAL2)
+                
+                # print(f"Initialized {len(new_RALs)} new RALs, indices : {len(self.RALs)}  to {len(self.RALs) + len(new_RALs) - 1} at position : ({new_RALs[-1].x},{new_RALs[-1].y}).")
+                self.RALs.extend(new_RALs)
+                # print("\n")
+    
+                assert (RAL1 in new_RALs[0].neighbours and RAL2 in new_RALs[-1].neighbours
+                        and new_RALs[0] in RAL1.neighbours and new_RALs[-1] in RAL2.neighbours)
+            
+            # if len(new_RALs) != 0:
+                # self.Show_RALs_Position(title=f"Initialized {len(new_RALs)} new RALs, indices : {len(self.RALs) - len(new_RALs)}  to {len(self.RALs) - 1} at position : ({new_RALs[-1].x},{new_RALs[-1].y}).")
 
     # curved
     def Fill_or_Fuse_RALs(self, _crit_value, _fuse_factor = 0.5, _fill_factor = 1.5):
@@ -858,20 +812,21 @@ class Row_Agent(object):
         """
         # potentiellmeent dangereux : peut tendre vers 0 et initialiser trop d'agents...
         # Mais meilleurs resultats empiriques lorsque fill_factor > 1.1
-        if len(self.RALs) > 1:
-            d = []
-            for _RAL in self.RALs:
-                for n in _RAL.neighbours:
-                    d.append(self.euclidean_distance(_RAL, n))
-            _crit_value = np.median(d)
-        else:
-            return
+# =============================================================================
+#         if len(self.RALs) > 1:
+#             d = []
+#             for _RAL in self.RALs:
+#                 for n in _RAL.neighbours:
+#                     d.append(self.euclidean_distance(_RAL, n))
+#             _crit_value = np.median(d)
+#         else:
+#             return
+# =============================================================================
 
         nb_RALs = len(self.RALs)
         i = 0
-        already_seen = []
         while i < nb_RALs-1:
-            # print(f"Analyzing agent {i}")            
+            #print(f"Analyzing agent {i}")            
             has_been_fused = False
 
             for n in self.RALs[i].neighbours:
@@ -883,7 +838,8 @@ class Row_Agent(object):
                 # print(f"Analyzing agent {neighbour_idx}, neighbour of {i} for FUSING.")
                 # print(f"estimated distance is {self.euclidean_distance(self.RALs[i], n)}.Y compared with {0.9 * _fuse_factor * _crit_value}")
                 if self.euclidean_distance(self.RALs[i], n) < 0.9 * _fuse_factor * _crit_value:
-                    # print(f"Fusing agents : {i} and {neighbour_idx} into {len(self.RALs) - 2} into agent {len(self.RALs) - 1} at position ({self.RALs[i].x}, {self.RALs[i].y})")
+                    #print(f"Fusing agents : {i} and {neighbour_idx} into {len(self.RALs) - 2} into agent {len(self.RALs) - 1} at position ({self.RALs[i].x}, {self.RALs[i].y})")
+                    #print (_crit_value)
                     self.Fuse_RALs(self.RALs[i], n)
                     has_been_fused = True
                     break
@@ -894,18 +850,57 @@ class Row_Agent(object):
                 continue
             
             for n in self.RALs[i].neighbours:
-                neighbour_idx = np.nonzero([self.RALs[k] == n for k in range(len(self.RALs))])[0][0]
+                #neighbour_idx = np.nonzero([self.RALs[k] == n for k in range(len(self.RALs))])[0][0]
                 # print(f"Analyzing agent {neighbour_idx}, neighbour of {i} for FILLING")
                 # print(f"estimated distance is {self.euclidean_distance(self.RALs[i], n)} compared with {1.1 * _fill_factor * _crit_value}")
                 if self.euclidean_distance(self.RALs[i], n) >= int(1.1 * _fill_factor * _crit_value):
-                    # print(f"Initializing an RAL between agent {neighbour_idx} and agent {i}...")
-                    # print("\n")
+                    #print(f"Initializing a RAL between agent {neighbour_idx} and agent {i}...")
+                    #print("\n")
                     self.Fill_RALs(self.RALs[i], n, int(1.1 * _fill_factor * _crit_value))
             
             i += 1
             nb_RALs = len(self.RALs)
-
+    
     def Show_RALs_Position(self,
+                           _ax = None,
+                           _color = 'g',
+                           title = ""):
+        """
+        Display the Otsu image with overlaying rectangles centered on RALs. The
+        size of the rectangle corespond to the area covered by the RAs under the 
+        RALs supervision.
+        
+        _ax (matplotlib.pyplot.axes, optional):
+            The axes of an image on which we wish to draw the adjusted 
+            position of the plants
+        
+        _color (optional,list of color references):
+            The color of the rectangle representing a RAL.
+        """
+        
+        if (_ax == None):
+            fig, ax = plt.subplots(1)
+            ax.imshow(self.OTSU_img_array)
+        else:
+            ax = _ax
+
+        for _RAL in self.RALs:
+            #coordinates are the upper left corner of the rectangle
+            rect = patches.Rectangle((_RAL.x-_RAL.group_size,
+                                      _RAL.y-_RAL.group_size),
+                                      2*_RAL.group_size,
+                                      2*_RAL.group_size,
+                                     linewidth=1,
+                                     edgecolor=_color,
+                                     facecolor='none')
+            ax.add_patch(rect)
+        
+# =============================================================================
+#         plt.xlim(170, 270)
+#         plt.ylim(1350, 1450)
+# =============================================================================
+
+    def Show_RALs_Position_2(self,
                            _ax = None,
                            _recorded_position_indeces = [0, -1],
                            _colors = ['r', 'g'], title = "" ):
@@ -939,11 +934,11 @@ class Row_Agent(object):
         _colors = ["r", "g", "b", "c", "m", "y", "darkorange", "lime", "royalblue",
                    "mediumslateblue", "mediumpurple", "plum", "violet", "crimson",
                    "dodgerblue", "chartreuse", "peru", "lightcoral"]
-        already_seen = []
+        #already_seen = []
         for j, _RAL in enumerate(self.RALs):    
             # for k in range (nb_indeces):
-            rect = patches.Rectangle((_RAL.recorded_positions[_recorded_position_indeces[-1]][0]-_RAL.group_size,
-                                      _RAL.recorded_positions[_recorded_position_indeces[-1]][1]-_RAL.group_size),
+            rect = patches.Rectangle((_RAL.x-_RAL.group_size,
+                                      _RAL.y-_RAL.group_size),
                                       2*_RAL.group_size,2*_RAL.group_size,
                                       linewidth=2,
                                     #  edgecolor=_colors[k],
@@ -960,10 +955,10 @@ class Row_Agent(object):
                     print(f"Agent {j}, neighbour : {idx}")
                     ax.plot([_RAL.x + np.random.random() * 10, n.x + np.random.random() * 10], [_RAL.y+ np.random.random() * 10, n.y+ np.random.random() * 10], c=_colors[j % len(_colors)])
                 except IndexError:
-                    print(f"Agent, Non-existing neighbour...")
+                    print("Agent, Non-existing neighbour...")
                 #if not idx in already_seen:
                     # idx = np.nonzero([self.RALs[k] == n for k in range(len(self.RALs))])[0][0]
-            already_seen.append(j) 
+            #already_seen.append(j) 
         ax.set_title(title)
         # fig.tight_layout()
         plt.xlim(250, 1300)
@@ -1479,10 +1474,6 @@ class Agents_Director(object):
         for _RowA in self.RowAs:#[10:11]:
             _RowA.Adapt_RALs_group_size()
 
-    def ORDER_RowAs_for_Extensive_RALs_Init(self):
-        for _RowA in self.RowAs:#[10:11]:
-            _RowA.Extensive_Init(1.1*self.RALs_fuse_factor*self.InterPlant_Y)
-
     def ORDER_RowAs_for_Edges_Exploration(self):
         for _RowA in self.RowAs:#[10:11]:
             _RowA.Edge_Exploration(1.1*self.RALs_fuse_factor*self.InterPlant_Y)
@@ -1560,6 +1551,23 @@ class Simulation_MAS(object):
     _ADJUSTED_img_plant_positions (list, optional with default value = None):
         The list containing the adjusted positions of the plants coming from
         the csv files. So the positions are still in the string format.
+    
+    _follow_simulation (bool, optional with default value = False):
+        Generates the plot showing all RALs and target positions at every steps
+        of the simulation to follow the movements and theevolution of the number
+        RALs
+    
+    _follow_simulation_save_path(string, optional with default value ""):
+        The path where the plots following the steps of the simulation will be 
+        saved.
+    
+    _simulation_name (string, optional with default value = ""):
+        Name given to the simulation. used as a prefix of the some saved files.
+        
+    _recon_policy (string, optional with default value = "local_XY"):
+        keyword to chose which policy RAL agents should use to control their
+        positions.
+        TODO describe values
     """
 
     def __init__(self, _RAW_img_array,
@@ -1568,7 +1576,10 @@ class Simulation_MAS(object):
                  _RALs_fuse_factor = 0.5, _RALs_fill_factor = 1.5,
                  _field_offset = [0,0],
                  _ADJUSTED_img_plant_positions = None,
-                 recon_policy="local_XY"):
+                 _follow_simulation = False,
+                 _follow_simulation_save_path = "",
+                 _simulation_name = "",
+                 _recon_policy="local_XY"):
         
         print("Initializing Simulation class...", end = " ")
 
@@ -1584,7 +1595,7 @@ class Simulation_MAS(object):
         self.RALs_fuse_factor = _RALs_fuse_factor
         self.RALs_fill_factor = _RALs_fill_factor
 
-        self.recon_policy = recon_policy
+        self.recon_policy = _recon_policy
         
         self.ADJUSTED_img_plant_positions = _ADJUSTED_img_plant_positions
         if (self.ADJUSTED_img_plant_positions != None):
@@ -1603,6 +1614,13 @@ class Simulation_MAS(object):
         self.FP=0
         self.FN=0
         self.real_plant_detected_keys = []
+        
+        self.follow_simulation = _follow_simulation
+        if (_follow_simulation):
+            self.follow_simulation_save_path = _follow_simulation_save_path
+            gIO.check_make_directory(self.follow_simulation_save_path)
+            
+        self.simulation_name = _simulation_name
 
         print("Done")
 
@@ -1614,110 +1632,21 @@ class Simulation_MAS(object):
                              self.field_offset, recon_policy=self.recon_policy)
         self.AD.Initialize_RowAs()
 
-    def Perform_Simulation(self, _steps = 10,
-                           _coerced_X = False,
-                           _coerced_Y = False,
-                           _analyse_and_remove_Rows = False,
-                           _edge_exploration = False):
-
-        print("Starting MAS simulation:")
-        self.steps = _steps
-        self.max_steps_reached = False
-
-        if (_analyse_and_remove_Rows):
-            self.AD.Analyse_RowAs_Kmeans()
-
-        self.AD.ORDER_RowAs_to_Update_InterPlant_Y()
-        self.AD.Summarize_RowAs_InterPlant_Y()
-
-        if (_edge_exploration):
-            self.AD.ORDER_RowAs_for_Edges_Exploration()
-
-        self.AD.ORDER_RowAs_to_Update_InterPlant_Y()
-
-        self.Count_RALs()
-
-        diff_nb_RALs = -1
-        i = 0
-        while i < self.steps and diff_nb_RALs != 0:
-            print("Simulation step {0}/{1} (max)".format(i+1, _steps))
-
-            time_detailed=[]
-
-            t0 = time.time()
-            self.AD.ORDER_RowAs_for_RALs_mean_points()
-            time_detailed += [time.time()-t0]
-            
-            # local repositionning mechanism in reached from here
-            if (_coerced_X):
-                t0 = time.time()
-                self.AD.ORDER_RowAs_to_Correct_RALs_X()
-                time_detailed += [time.time()-t0]
-            else:
-                time_detailed += [0]
-            
-            # always False in curved mode (the local repositionning
-            # mechanism is only called from _coerced_X)
-            if (_coerced_Y):
-                print("Order RowAs to correct RALs")
-                t0 = time.time()
-                self.AD.ORDER_RowAs_to_Correct_RALs_Y()
-                time_detailed += [time.time()-t0]
-            else:
-                time_detailed += [0]
-
-            t0 = time.time()
-            self.AD.ORDER_RowAs_for_Moving_RALs_to_active_points()
-            time_detailed += [time.time()-t0]
-
-            t0 = time.time()
-            self.AD.ORDER_RowAs_to_Adapt_RALs_sizes()
-            time_detailed += [time.time()-t0]
-
-            t0 = time.time()
-            self.AD.ORDER_RowAs_Fill_or_Fuse_RALs()
-            time_detailed += [time.time()-t0]
-
-            t0 = time.time()
-            self.AD.ORDER_RowAs_to_Destroy_Low_Activity_RALs()
-            time_detailed += [time.time()-t0]
-
-            t0 = time.time()
-            self.AD.Check_RowAs_Proximity()
-            time_detailed += [time.time()-t0]
-
-            t0 = time.time()
-            self.AD.ORDER_RowAs_to_Update_InterPlant_Y()
-            time_detailed += [time.time()-t0]
-
-            self.simu_steps_time_detailed += [time_detailed]
-            self.simu_steps_times += [np.sum(time_detailed)]
-
-            self.Count_RALs()
-
-            diff_nb_RALs = self.RALs_recorded_count[-1] - self.RALs_recorded_count[-2]
-
-            i += 1
-
-        if (i == self.steps):
-            self.max_steps_reached = True
-            print("MAS simulation Finished with max steps reached.")
-        else:
-            print("MAS simulation Finished")
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 # PERFORM SIMULATION NEW END CRIT                   # 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # 
     
     # curved : _coerced_Y and _check_rows_proximity have to be False
-    def Perform_Simulation_newEndCrit(self, _steps = 10,
-                                      _coerced_X = False,
-                                      _coerced_Y = False,
-                                      _analyse_and_remove_Rows = False,
-                                      _edge_exploration = False,
-                                      _check_rows_proximity=False):
+    def Perform_Search_Simulation(self, _steps = 10,
+                                  _coerced_X = False,
+                                  _coerced_Y = False,
+                                  _analyse_and_remove_Rows = False,
+                                  _edge_exploration = False,
+                                  _check_rows_proximity=False):
         
-        print("Starting MAS simulation with new end Criterion:")
+        print()
+        print("Starting MAS Search Simulation:")
         self.steps = _steps
         self.max_steps_reached = False
 
@@ -1729,9 +1658,16 @@ class Simulation_MAS(object):
         
         self.AD.ORDER_RowAs_to_Update_InterPlant_Y()
         self.AD.Summarize_RowAs_InterPlant_Y()
+        
+        if (self.follow_simulation):
+            self.Show_Adjusted_And_RALs_positions(_save=True,
+                                                  _save_name=self.simulation_name+"_A")
 
         if (_edge_exploration):
             self.AD.ORDER_RowAs_for_Edges_Exploration()
+            if (self.follow_simulation):
+                self.Show_Adjusted_And_RALs_positions(_save=True,
+                                                      _save_name=self.simulation_name+"_B")
 
         self.AD.ORDER_RowAs_to_Update_InterPlant_Y()
 
@@ -1745,8 +1681,8 @@ class Simulation_MAS(object):
             print("Simulation step {0}/{1} (max)".format(i+1, _steps))
 
             time_detailed=[]
+            
             t0 = time.time()
-
             self.AD.ORDER_RowAs_for_RALs_mean_points()
             time_detailed += [time.time()-t0]
 
@@ -1763,27 +1699,44 @@ class Simulation_MAS(object):
                 time_detailed += [time.time()-t0]
             else:
                 time_detailed += [0]
-
+                
             t0 = time.time()
             self.AD.ORDER_RowAs_for_Moving_RALs_to_active_points()
             time_detailed += [time.time()-t0]
+            
+            if (self.follow_simulation):
+                self.Show_Adjusted_And_RALs_positions(_save=True,
+                                                      _save_name=self.simulation_name+"_C_{0}_1".format(i+1))
 
             t0 = time.time()
             self.AD.ORDER_RowAs_to_Adapt_RALs_sizes()
             time_detailed += [time.time()-t0]
+            
+            if (self.follow_simulation):
+                self.Show_Adjusted_And_RALs_positions(_save=True,
+                                                      _save_name=self.simulation_name+"_C_{0}_2".format(i+1))
 
             t0 = time.time()
             self.AD.ORDER_RowAs_Fill_or_Fuse_RALs()
             time_detailed += [time.time()-t0]
             
+            if (self.follow_simulation):
+                self.Show_Adjusted_And_RALs_positions(_save=True,
+                                                      _save_name=self.simulation_name+"_C_{0}_3".format(i+1))
+            
             # curved
-            t0 = time.time()
-            self.AD.ORDER_RowAs_to_Set_RALs_Neighbours()
-            time_detailed += [time.time()-t0]
-
+# =============================================================================
+#             t0 = time.time()
+#             self.AD.ORDER_RowAs_to_Set_RALs_Neighbours()
+#             time_detailed += [time.time()-t0]
+# =============================================================================
             t0 = time.time()
             self.AD.ORDER_RowAs_to_Destroy_Low_Activity_RALs()
             time_detailed += [time.time()-t0]
+            
+            if (self.follow_simulation):
+                self.Show_Adjusted_And_RALs_positions(_save=True,
+                                                      _save_name=self.simulation_name+"_C_{0}_4".format(i+1))
 
             # curved
             # update the neighbours : set the neigbours of the recently created RAL
@@ -1800,8 +1753,8 @@ class Simulation_MAS(object):
             # Removes some of the rows at first step... Issue when a
             # row is fragmented, estimates that the two rows are too
             # close 
-            t0 = time.time()
             if _check_rows_proximity:
+                t0 = time.time()
                 self.AD.Check_RowAs_Proximity()
                 time_detailed += [time.time()-t0]
             
@@ -1835,62 +1788,6 @@ class Simulation_MAS(object):
         else:
             print("MAS simulation Finished")
 
-    def Perform_Simulation_Extensive_Init(self, _steps = 10,
-                                          _coerced_X = False,
-                                          _coerced_Y = False,
-                                          _analyse_and_remove_Rows = False):
-
-        print("Starting MAS simulation with Extensive Init:")
-        self.steps = _steps
-        self.max_steps_reached = False
-
-        if (_analyse_and_remove_Rows):
-            self.AD.Analyse_RowAs_Kmeans()
-
-        self.AD.ORDER_RowAs_to_Update_InterPlant_Y()
-        self.AD.Summarize_RowAs_InterPlant_Y()
-
-        self.AD.ORDER_RowAs_for_Extensive_RALs_Init()
-
-        self.Count_RALs()
-
-        diff_nb_RALs = -1
-        i = 0
-        while i < self.steps and diff_nb_RALs != 0:
-            print("Simulation step {0}/{1} (max)".format(i+1, _steps))
-
-            t0 = time.time()
-
-            self.AD.ORDER_RowAs_to_Adapt_RALs_sizes()
-
-            self.AD.ORDER_RowAs_to_Destroy_Low_Activity_RALs()
-
-            self.AD.ORDER_RowAs_to_Update_InterPlant_Y()
-
-            self.AD.ORDER_RowAs_Fill_or_Fuse_RALs()
-
-            self.AD.ORDER_RowAs_for_RALs_mean_points()
-            if (_coerced_X):
-                print("Coerced X")
-                self.AD.ORDER_RowAs_to_Correct_RALs_X()
-            if (_coerced_Y):
-                print("Coerced Y")
-                self.AD.ORDER_RowAs_to_Correct_RALs_Y()
-            self.AD.ORDER_RowAs_for_Moving_RALs_to_active_points()
-
-            self.simu_steps_times += [time.time()-t0]
-
-            self.Count_RALs()
-
-            diff_nb_RALs = self.RALs_recorded_count[-1] - self.RALs_recorded_count[-2]
-            i += 1
-
-        if (i == self.steps):
-            self.max_steps_reached = True
-            print("MAS simulation Finished with max steps reached.")
-        else:
-            print("MAS simulation Finished")
-
     def Correct_Adjusted_plant_positions(self):
         """
         Transform the plants position at the string format to integer.
@@ -1899,9 +1796,9 @@ class Simulation_MAS(object):
         self.corrected_adjusted_plant_positions = []
         self.real_plant_keys = []
         for adj_pos_string in self.ADJUSTED_img_plant_positions:
-            [_rx, _ry, x, y] = adj_pos_string.split(",")
-            self.corrected_adjusted_plant_positions += [[int(x), int(y)]]
-            self.real_plant_keys += [_rx + "_" + _ry]
+            self.corrected_adjusted_plant_positions += [[int(adj_pos_string["rotated_x"]),
+                                                        int(adj_pos_string["rotated_y"])]]
+            self.real_plant_keys += [str(adj_pos_string["instance_id"])]
 
     def Count_RALs(self):
         RALs_Count = 0
@@ -1972,59 +1869,43 @@ class Simulation_MAS(object):
     
     def Show_RALs_Position(self,
                            _ax = None,
-                           _recorded_position_indeces = [0, -1],
-                           _colors = ['r', 'g'] ):
+                           _color = 'g'):
         """
         Display the Otsu image with overlaying rectangles centered on RALs. The
-        size of the rectangle corespond to the area covered by the RAs under the
+        size of the rectangle corespond to the area covered by the RAs under the 
         RALs supervision.
-
+        
         _ax (matplotlib.pyplot.axes, optional):
-            The axes of an image on which we wish to draw the adjusted
+            The axes of an image on which we wish to draw the adjusted 
             position of the plants
-
-        _recorded_position_indeces (optional,list of int):
-            indeces of the recored positions of the RALs we wish to see. By defaullt,
-            the first and last one
-
-        _colors (optional,list of color references):
-            Colors of the rectangles ordered indentically to the recorded positons
-            of interest. By default red for the first and green for the last
-            recorded position.
+        
+        _color (optional,list of color references):
+            The color of the rectangle representing a RAL.
         """
-
+        
         if (_ax == None):
-            fig, ax = plt.subplots(1, figsize=(10, 10))
+            fig, ax = plt.subplots(1)
             ax.imshow(self.OTSU_img_array)
         else:
             ax = _ax
-
-        nb_indeces = len(_recorded_position_indeces)
-
-        _colors = ["r", "g", "b", "c", "m", "y", "darkorange", "lime", "royalblue",
-                   "mediumslateblue", "mediumpurple", "plum", "violet", "crimson",
-                   "dodgerblue", "chartreuse", "peru", "lightcoral"]
         
-        for i, _RowsA in enumerate(self.AD.RowAs):
-            for j, _RAL in enumerate(_RowsA.RALs):     
-                for k in range (nb_indeces):
-                    rect = patches.Rectangle((_RAL.recorded_positions[_recorded_position_indeces[k]][0]-_RAL.group_size,
-                                              _RAL.recorded_positions[_recorded_position_indeces[k]][1]-_RAL.group_size),
-                                             2*_RAL.group_size,2*_RAL.group_size,
-                                             linewidth=1,
-                                            #  edgecolor=_colors[k],
-                                            edgecolor=_colors[i % len(_colors)],
-                                            facecolor='none')
-                    ax.add_patch(rect)
-                    # ax.text(_RAL.active_RA_Point[0]-_RAL.group_size, 
-                    #         _RAL.active_RA_Point[1]-_RAL.group_size, 
-                    #          str(j), 
-                    #          color=_colors[i % len(_colors)], size=7)
-                # for n in _RAL.neighbours:
-                #     idx = np.nonzero([_RowsA.RALs[k] == n for k in range(len(_RowsA.RALs))])[0][0]
-                #     print(f"Agent {j}, neighbour : {idx}")
-                #     ax.plot([_RAL.x + np.random.random() * 10, n.x + np.random.random() * 10], [_RAL.y+ np.random.random() * 10, n.y+ np.random.random() * 10], c=_colors[j % len(_colors)], linestyle=":")
-
+        for _RowsA in self.AD.RowAs:
+            
+            for _RAL in _RowsA.RALs:
+                #coordinates are the upper left corner of the rectangle
+                rect = patches.Rectangle((_RAL.x-_RAL.group_size,
+                                          _RAL.y-_RAL.group_size),
+                                          2*_RAL.group_size,
+                                          2*_RAL.group_size,
+                                         linewidth=1,
+                                         edgecolor=_color,
+                                         facecolor='none')
+                ax.add_patch(rect)
+        
+# =============================================================================
+#         plt.xlim(170, 270)
+#         plt.ylim(1350, 1450)
+# =============================================================================
 
     def Show_Adjusted_Positions(self, _ax = None, _color = "b"):
         """
@@ -2054,25 +1935,25 @@ class Simulation_MAS(object):
             ax.add_patch(circle)
 
     def Show_Adjusted_And_RALs_positions(self,
-                                        _recorded_position_indeces = [-1],
-                                        _colors_recorded = ['g'],
+                                        _colors_recorded = 'g',
                                         _color_adjusted = "r",
                                         _save=False,
-                                        _save_path=""):
-
+                                        _save_name=""):
+        
         fig = plt.figure(figsize=(5,5),dpi=300)
         ax = fig.add_subplot(111)
         ax.imshow(self.OTSU_img_array)
-        ax.set_title("Adjusted and RALs positions")
         
         self.Show_RALs_Position(_ax = ax,
-                                _recorded_position_indeces = _recorded_position_indeces,
-                                _colors = _colors_recorded)
-        self.Show_Adjusted_Positions(_ax = ax,
-                                     _color = _color_adjusted)
-
+                                _color = _colors_recorded)
+# =============================================================================
+#         self.Show_Adjusted_Positions(_ax = ax,
+#                                      _color = _color_adjusted)
+# =============================================================================
+        
         if (_save):
-            fig.savefig(_save_path+"/Otsu_Adjusted_and_RALs_positions.jpg")
+            fig.savefig(self.follow_simulation_save_path+"/"+_save_name)
+            plt.close()
 
     def Show_RALs_Deicision_Scores(self):
         """
@@ -2259,8 +2140,6 @@ class MetaSimulation(object):
     def Launch_Meta_Simu_Labels(self,
                              _coerced_X = False,
                              _coerced_Y = False,
-                             _extensive_Init = False,
-                             _new_end_crit = False,
                              _analyse_and_remove_Rows = False,
                              _rows_edges_exploration = True):
 
@@ -2272,8 +2151,6 @@ class MetaSimulation(object):
 
         self.coerced_X = _coerced_X
         self.coerced_Y = _coerced_Y
-        self.extensive_Init = _extensive_Init
-        self.new_end_crit = _new_end_crit
         self.analyse_and_remove_Rows = _analyse_and_remove_Rows
         self.rows_edges_exploration = _rows_edges_exploration
 
@@ -2299,24 +2176,12 @@ class MetaSimulation(object):
                                         [0,0],
                                         self.data_adjusted_position_files[i])
                 MAS_Simulation.Initialize_AD()
-
-                if (self.extensive_Init):
-                    MAS_Simulation.Perform_Simulation_Extensive_Init(self.simulation_step,
-                                                                      self.coerced_X,
-                                                                      self.coerced_Y,
-                                                                      self.analyse_and_remove_Rows)
-                elif (self.new_end_crit):
-                    MAS_Simulation.Perform_Simulation_newEndCrit(self.simulation_step,
-                                                                      self.coerced_X,
-                                                                      self.coerced_Y,
-                                                                      self.analyse_and_remove_Rows,
-                                                                      self.rows_edges_exploration)
-                else:
-                    MAS_Simulation.Perform_Simulation(self.simulation_step,
-                                                       self.coerced_X,
-                                                       self.coerced_Y,
-                                                       self.analyse_and_remove_Rows,
-                                                       self.rows_edges_exploration)
+                
+                MAS_Simulation.Perform_Search_Simulation(self.simulation_step,
+                                                         self.coerced_X,
+                                                         self.coerced_Y,
+                                                         self.analyse_and_remove_Rows,
+                                                         self.rows_edges_exploration)
 
                 MAS_Simulation.Get_RALs_infos()
                 self.Add_Simulation_Results(i, MAS_Simulation)
@@ -2340,8 +2205,6 @@ class MetaSimulation(object):
     def Launch_Meta_Simu_NoLabels(self,
                              _coerced_X = False,
                              _coerced_Y = False,
-                             _extensive_Init = False,
-                             _new_end_crit = False,
                              _analyse_and_remove_Rows = False,
                              _rows_edges_exploration = False):
 
@@ -2353,8 +2216,6 @@ class MetaSimulation(object):
 
         self.coerced_X = _coerced_X
         self.coerced_Y = _coerced_Y
-        self.extensive_Init = _extensive_Init
-        self.new_end_crit = _new_end_crit
         self.analyse_and_remove_Rows = _analyse_and_remove_Rows
         self.rows_edges_exploration = _rows_edges_exploration
 
@@ -2380,24 +2241,12 @@ class MetaSimulation(object):
                                         [0,0],
                                         self.data_adjusted_position_files)
                 MAS_Simulation.Initialize_AD()
-
-                if (self.extensive_Init):
-                    MAS_Simulation.Perform_Simulation_Extensive_Init(self.simulation_step,
-                                                                      self.coerced_X,
-                                                                      self.coerced_Y,
-                                                                      self.analyse_and_remove_Rows)
-                elif (self.new_end_crit):
-                    MAS_Simulation.Perform_Simulation_newEndCrit(self.simulation_step,
-                                                                      self.coerced_X,
-                                                                      self.coerced_Y,
-                                                                      self.analyse_and_remove_Rows,
-                                                                      self.rows_edges_exploration)
-                else:
-                    MAS_Simulation.Perform_Simulation(self.simulation_step,
-                                                       self.coerced_X,
-                                                       self.coerced_Y,
-                                                       self.analyse_and_remove_Rows,
-                                                       self.rows_edges_exploration)
+                
+                MAS_Simulation.Perform_Search_Simulation(self.simulation_step,
+                                                         self.coerced_X,
+                                                         self.coerced_Y,
+                                                         self.analyse_and_remove_Rows,
+                                                         self.rows_edges_exploration)
 
                 MAS_Simulation.Get_RALs_infos()
                 self.Add_Simulation_Results(i, MAS_Simulation)
@@ -2456,8 +2305,7 @@ class MetaSimulation(object):
         """
         for i in range (self.nb_images):
             for adj_pos_string in self.data_adjusted_position_files[i]:
-                [_rx, _ry, x, y] = adj_pos_string.split(",")
-                self.whole_field_counted_plants[_rx + "_" + _ry]=0
+                self.whole_field_counted_plants[str(adj_pos_string["instance_id"])]=0
 
     def Add_Simulation_Results(self, _image_index, _MAS_Simulation):
         """
@@ -2488,10 +2336,6 @@ class MetaSimulation(object):
             _name+= "_cX"
         if (self.coerced_Y):
             _name+= "_cY"
-        if (self.extensive_Init):
-            _name+= "_extInit"
-        if (self.new_end_crit):
-            _name+= "_nEC"
         if (self.analyse_and_remove_Rows):
             _name+="_anrR2"
         if (self.rows_edges_exploration):
@@ -2503,7 +2347,7 @@ class MetaSimulation(object):
         saves the results of the MAS simulations stored in the
         meta_simulation_results dictionary as a JSON file.
         """
-        name = self.Make_File_Name("MetaSimulationResults_v16_"+self.simu_name)
+        name = self.Make_File_Name("MetaSimulationResults_Curve_"+self.simu_name)
 
         file = open(self.path_output+"/"+name+".json", "w")
         json.dump(self.meta_simulation_results, file, indent = 3)
@@ -2514,7 +2358,7 @@ class MetaSimulation(object):
         saves the results of the MAS simulations stored in the
         meta_simulation_results dictionary as a JSON file.
         """
-        name = self.Make_File_Name("RALs_Infos_v16_"+self.simu_name)
+        name = self.Make_File_Name("RALs_Infos_Curve_"+self.simu_name)
         file = open(self.path_output+"/"+name+".json", "w")
         json.dump(self.RALs_data, file, indent = 2)
         file.close()
@@ -2525,7 +2369,7 @@ class MetaSimulation(object):
         image. The json file is in the exact same format as The plant predictions
         on
         """
-        name = self.Make_File_Name("RALs_NestedPositions_v16_"+self.simu_name)
+        name = self.Make_File_Name("RALs_NestedPositions_Curve_"+self.simu_name)
         _path=self.path_output+"/"+name
         gIO.check_make_directory(_path)
         counter = 0
@@ -2541,11 +2385,11 @@ class MetaSimulation(object):
         saves the results of the MAS simulations stored in the
         whole_field_counted_plants dictionary as a JSON file.
         """
-        name = self.Make_File_Name("WholeFieldResults_v16_"+self.simu_name)
+        name = self.Make_File_Name("WholeFieldResults_Curve_"+self.simu_name)
         file = open(self.path_output+"/"+name+".json", "w")
         json.dump(self.whole_field_counted_plants, file, indent = 2)
         file.close()
 
     def Save_Log(self):
-        name = self.Make_File_Name("LOG_MetaSimulationResults_v16_"+self.simu_name)
+        name = self.Make_File_Name("LOG_MetaSimulationResults_Curve_"+self.simu_name)
         gIO.writer(self.path_output, name+".txt", self.log, True, True)

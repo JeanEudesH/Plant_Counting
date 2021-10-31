@@ -5,7 +5,7 @@ import json
 import numpy as np
 from PIL import Image
 
-import MAS
+import MAS_curved
 
 os.chdir("../Utility")
 import general_IO as gIO
@@ -89,7 +89,7 @@ def All_Simulations(_path_input_rgb_img, _path_PreTreatment_and_FA,
     # Meta Simulation Definition
     # =============================================================================
     
-    MetaSimulation = MAS.MetaSimulation(meta_simu_name,
+    MetaSimulation = MAS_curved.MetaSimulation(meta_simu_name,
                                         path_output,
                                         names_input_raw,
                                         data_input_raw,
@@ -103,19 +103,17 @@ def All_Simulations(_path_input_rgb_img, _path_PreTreatment_and_FA,
                                         _data_adjusted_position_files=data_adjusted_position_files)
     
     if (_labelled_images):
-        MetaSimulation.Launch_Meta_Simu_Labels(
-                                    _coerced_X = True,
-                                    _coerced_Y = False,
-                                    _analyse_and_remove_Rows = True,
-                                    _rows_edges_exploration = True)
+        MetaSimulation.Launch_Meta_Simu_Labels(_coerced_X = False,
+                                               _coerced_Y = False,
+                                               _analyse_and_remove_Rows = True,
+                                               _rows_edges_exploration = True)
     
     else:
     
-        MetaSimulation.Launch_Meta_Simu_NoLabels(
-                                    _coerced_X = True,
-                                    _coerced_Y = False,
-                                    _analyse_and_remove_Rows = True,
-                                    _rows_edges_exploration = True)
+        MetaSimulation.Launch_Meta_Simu_NoLabels(_coerced_X = False,
+                                                 _coerced_Y = False,
+                                                 _analyse_and_remove_Rows = True,
+                                                 _rows_edges_exploration = True)
     
 if (__name__=="__main__"):
 # ========================== FOR NON-LABELLED IMAGES ======================== #
