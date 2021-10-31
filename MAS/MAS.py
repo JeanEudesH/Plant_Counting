@@ -1,24 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Tue Jun  9 11:11:12 2020
-
-@author: eliot
-
-v14 :
-    - goal to add a feature to destroy unwanted rows
-    - new "end of simulation criterion" --> we re-evaluate the InterYdist. If
-    there is no evolution in the number of RALs after it, we stop the simulation.
-
-v15 :
-    - Add the exploration behaviour to cover the edges of the rows and make up
-    for the bad predictions of the FT in this area. It is basically the extensive 
-    approach but only on hte edges.
-
-v16 :
-    - Extended fusing condition to the case where to RALs are into each others
-    scanning zones
-    - p value for Row analysis changed from 0.05 to 0.0001
-"""
 
 import os
 import matplotlib.pyplot as plt
@@ -104,13 +84,13 @@ class ReactiveAgent(object):
     
     def Move_Based_On_RAL(self, _RAL_x, _RAL_y):
         """
-        Update the position of the RAL based on the order given by the AD (agent
-        director).
-        _ADO_x (int):
-            X coordinate of the target point (column of the image array)
+        Update the position of the RA based on the position of its RAL (Reactive
+        Agent Leader).
+        _RAL_x (int):
+            X coordinate of the RAL (column of the image array)
         
-        _ADO_y (int):
-            Y coordinate of the target point (line of the image array)
+        _RAL_y (int):
+            Y coordinate of the RAL (line of the image array)
         """
         self.global_x = _RAL_x + self.local_x
         self.global_y = _RAL_y + self.local_y
@@ -1094,6 +1074,18 @@ class Simulation_MAS(object):
     _ADJUSTED_img_plant_positions (list, optional with default value = None):
         The list containing the adjusted positions of the plants coming from
         the csv files. So the positions are still in the string format.
+    
+    _follow_simulation (bool, optional with default value = False):
+        Generates the plot showing all RALs and target positions at every steps
+        of the simulation to follow the movements and theevolution of the number
+        RALs
+    
+    _follow_simulation_save_path(string, optional with default value ""):
+        The path where the plots following the steps of the simulation will be 
+        saved.
+    
+    _simulation_name (string, optional with default value = ""):
+        Name given to the simulation. used as a prefix of the some saved files.
     """
     
     def __init__(self, recon_policy, _RAW_img_array,
@@ -1101,7 +1093,10 @@ class Simulation_MAS(object):
                  _group_size = 50, _group_step = 5,
                  _RALs_fuse_factor = 0.5, _RALs_fill_factor = 1.5,
                  _field_offset = [0,0],
-                 _ADJUSTED_img_plant_positions = None):
+                 _ADJUSTED_img_plant_positions = None,
+                 _follow_simulation = False,
+                 _follow_simulation_save_path = "",
+                 _simulation_name = ""):
         
         print("Initializing Simulation class...", end = " ")
         
@@ -1137,6 +1132,13 @@ class Simulation_MAS(object):
         self.FN=0
         self.real_plant_detected_keys = []
         
+        self.follow_simulation = _follow_simulation
+        if (_follow_simulation):
+            self.follow_simulation_save_path = _follow_simulation_save_path
+            gIO.check_make_directory(self.follow_simulation_save_path)
+            
+        self.simulation_name = _simulation_name
+        
         print("Done")
         
     def Initialize_AD(self):
@@ -1148,13 +1150,13 @@ class Simulation_MAS(object):
                              self.field_offset)
         self.AD.Initialize_RowAs()
     
-    def Perform_Simulation(self, _steps = 10,
-                           _coerced_X = False,
-                           _coerced_Y = False,
-                           _analyse_and_remove_Rows = False,
-                           _edge_exploration = False):
-        
-        print("Starting MAS simulation:")
+    def Perform_Search_Simulation(self, _steps = 10,
+                                   _coerced_X = False,
+                                   _coerced_Y = False,
+                                   _analyse_and_remove_Rows = False,
+                                   _edge_exploration = False):
+        print()
+        print("Starting Search simulation:")
         self.steps = _steps
         self.max_steps_reached = False
         
@@ -1164,95 +1166,15 @@ class Simulation_MAS(object):
         self.AD.ORDER_RowAs_to_Update_InterPlant_Y()
         self.AD.Summarize_RowAs_InterPlant_Y()
         
-        if (_edge_exploration):
-            self.AD.ORDER_Rows_for_Edges_Exploration()
-        
-        self.AD.ORDER_RowAs_to_Update_InterPlant_Y()
-        
-        self.Count_RALs()
-        
-        diff_nb_RALs = -1
-        i = 0
-        while i < self.steps and diff_nb_RALs != 0:
-            print("Simulation step {0}/{1} (max)".format(i+1, _steps))
-            
-            time_detailed=[]
-            
-            t0 = time.time()
-            self.AD.ORDER_RowAs_for_RALs_mean_points()
-            time_detailed += [time.time()-t0]
-            
-            if (_coerced_X):
-                t0 = time.time()
-                self.AD.ORDER_RowAs_to_Correct_RALs_X()
-                time_detailed += [time.time()-t0]
-            else:
-                time_detailed += [0]
-                
-            if (_coerced_Y):
-                t0 = time.time()
-                self.AD.ORDER_RowAs_to_Correct_RALs_Y()
-                time_detailed += [time.time()-t0]
-            else:
-                time_detailed += [0]
-            
-            t0 = time.time()
-            self.AD.ORDER_RowAs_for_Moving_RALs_to_active_points()
-            time_detailed += [time.time()-t0]
-            
-            t0 = time.time()
-            self.AD.ORDER_RowAs_to_Adapt_RALs_sizes()
-            time_detailed += [time.time()-t0]
-            
-            t0 = time.time()
-            self.AD.ORDER_RowAs_Fill_or_Fuse_RALs()
-            time_detailed += [time.time()-t0]
-            
-            t0 = time.time()
-            self.AD.ORDER_RowAs_to_Destroy_Low_Activity_RALs()
-            time_detailed += [time.time()-t0]
-            
-            t0 = time.time()
-            self.AD.Check_Rows_Proximity()
-            time_detailed += [time.time()-t0]
-            
-            t0 = time.time()
-            self.AD.ORDER_RowAs_to_Update_InterPlant_Y()
-            time_detailed += [time.time()-t0]
-            
-            self.simu_steps_time_detailed += [time_detailed]
-            self.simu_steps_times += [np.sum(time_detailed)]
-            
-            self.Count_RALs()
-            
-            diff_nb_RALs = self.RALs_recorded_count[-1] - self.RALs_recorded_count[-2]
-            
-            i += 1
-        
-        if (i == self.steps):
-            self.max_steps_reached = True
-            print("MAS simulation Finished with max steps reached.")
-        else:
-            print("MAS simulation Finished")
-    
-    def Perform_Simulation_newEndCrit(self, _steps = 10,
-                                      _coerced_X = False,
-                                      _coerced_Y = False,
-                                      _analyse_and_remove_Rows = False,
-                                      _edge_exploration = False):
-        
-        print("Starting MAS simulation with new end Criterion:")
-        self.steps = _steps
-        self.max_steps_reached = False
-        
-        if (_analyse_and_remove_Rows):
-            self.AD.Analyse_RowAs_Kmeans()
-        
-        self.AD.ORDER_RowAs_to_Update_InterPlant_Y()
-        self.AD.Summarize_RowAs_InterPlant_Y()
+        if (self.follow_simulation):
+            self.Show_Adjusted_And_RALs_positions(_save=True,
+                                                  _save_name=self.simulation_name+"_A")
         
         if (_edge_exploration):
             self.AD.ORDER_Rows_for_Edges_Exploration()
+            if (self.follow_simulation):
+                self.Show_Adjusted_And_RALs_positions(_save=True,
+                                                      _save_name=self.simulation_name+"_B")
         
         self.AD.ORDER_RowAs_to_Update_InterPlant_Y()
         
@@ -1266,8 +1188,8 @@ class Simulation_MAS(object):
             print("Simulation step {0}/{1} (max)".format(i+1, _steps))
             
             time_detailed=[]
-            t0 = time.time()
             
+            t0 = time.time()
             self.AD.ORDER_RowAs_for_RALs_mean_points()
             time_detailed += [time.time()-t0]
             
@@ -1289,17 +1211,33 @@ class Simulation_MAS(object):
             self.AD.ORDER_RowAs_for_Moving_RALs_to_active_points()
             time_detailed += [time.time()-t0]
             
+            if (self.follow_simulation):
+                self.Show_Adjusted_And_RALs_positions(_save=True,
+                                                      _save_name=self.simulation_name+"_C_{0}_1".format(i+1))
+            
             t0 = time.time()
             self.AD.ORDER_RowAs_to_Adapt_RALs_sizes()
             time_detailed += [time.time()-t0]
+            
+            if (self.follow_simulation):
+                self.Show_Adjusted_And_RALs_positions(_save=True,
+                                                      _save_name=self.simulation_name+"_C_{0}_2".format(i+1))
             
             t0 = time.time()
             self.AD.ORDER_RowAs_Fill_or_Fuse_RALs()
             time_detailed += [time.time()-t0]
             
+            if (self.follow_simulation):
+                self.Show_Adjusted_And_RALs_positions(_save=True,
+                                                      _save_name=self.simulation_name+"_C_{0}_3".format(i+1))
+            
             t0 = time.time()
             self.AD.ORDER_RowAs_to_Destroy_Low_Activity_RALs()
             time_detailed += [time.time()-t0]
+            
+            if (self.follow_simulation):
+                self.Show_Adjusted_And_RALs_positions(_save=True,
+                                                      _save_name=self.simulation_name+"_C_{0}_4".format(i+1))
             
             t0 = time.time()
             self.AD.Check_Rows_Proximity()
@@ -1333,60 +1271,6 @@ class Simulation_MAS(object):
         else:
             print("MAS simulation Finished")
     
-    def Perform_Simulation_Extensive_Init(self, _steps = 10,
-                                          _coerced_X = False,
-                                          _coerced_Y = False,
-                                          _analyse_and_remove_Rows = False):
-        
-        print("Starting MAS simulation with Extensive Init:")
-        self.steps = _steps
-        self.max_steps_reached = False
-        
-        if (_analyse_and_remove_Rows):
-            self.AD.Analyse_RowAs_Kmeans()
-        
-        self.AD.ORDER_RowAs_to_Update_InterPlant_Y()
-        self.AD.Summarize_RowAs_InterPlant_Y()
-        
-        self.AD.ORDER_Rows_for_Extensive_RALs_Init()
-        
-        self.Count_RALs()
-        
-        diff_nb_RALs = -1
-        i = 0
-        while i < self.steps and diff_nb_RALs != 0:
-            print("Simulation step {0}/{1} (max)".format(i+1, _steps))
-            
-            t0 = time.time()
-            
-            self.AD.ORDER_RowAs_to_Adapt_RALs_sizes()
-            
-            self.AD.ORDER_RowAs_to_Destroy_Low_Activity_RALs()
-            
-            self.AD.ORDER_RowAs_to_Update_InterPlant_Y()
-            
-            self.AD.ORDER_RowAs_Fill_or_Fuse_RALs()
-            
-            self.AD.ORDER_RowAs_for_RALs_mean_points()
-            if (_coerced_X):
-                self.AD.ORDER_RowAs_to_Correct_RALs_X()
-            if (_coerced_Y):
-                self.AD.ORDER_RowAs_to_Correct_RALs_Y()
-            self.AD.ORDER_RowAs_for_Moving_RALs_to_active_points()
-            
-            self.simu_steps_times += [time.time()-t0]
-            
-            self.Count_RALs()
-            
-            diff_nb_RALs = self.RALs_recorded_count[-1] - self.RALs_recorded_count[-2]
-            i += 1
-            
-        if (i == self.steps):
-            self.max_steps_reached = True
-            print("MAS simulation Finished with max steps reached.")
-        else:
-            print("MAS simulation Finished")
-    
     def Correct_Adjusted_plant_positions(self):
         """
         Transform the plants position at the string format to integer.
@@ -1395,10 +1279,9 @@ class Simulation_MAS(object):
         self.corrected_adjusted_plant_positions = []
         self.real_plant_keys = []
         for adj_pos_string in self.ADJUSTED_img_plant_positions:
-            [_rx, _ry, x, y] = adj_pos_string.split(",")
-            self.corrected_adjusted_plant_positions += [[int(x),
-                                                        self.OTSU_img_array.shape[0]-int(y)]]
-            self.real_plant_keys += [_rx + "_" + _ry]
+            self.corrected_adjusted_plant_positions += [[int(adj_pos_string["rotated_x"]),
+                                                        int(adj_pos_string["rotated_y"])]]
+            self.real_plant_keys += [str(adj_pos_string["instance_id"])]
         
     def Count_RALs(self):
         RALs_Count = 0
@@ -1465,8 +1348,7 @@ class Simulation_MAS(object):
     
     def Show_RALs_Position(self,
                            _ax = None,
-                           _recorded_position_indeces = [0, -1],
-                           _colors = ['r', 'g'] ):
+                           _color = 'g'):
         """
         Display the Otsu image with overlaying rectangles centered on RALs. The
         size of the rectangle corespond to the area covered by the RAs under the 
@@ -1476,14 +1358,8 @@ class Simulation_MAS(object):
             The axes of an image on which we wish to draw the adjusted 
             position of the plants
         
-        _recorded_position_indeces (optional,list of int):
-            indeces of the recored positions of the RALs we wish to see. By defaullt,
-            the first and last one
-        
-        _colors (optional,list of color references):
-            Colors of the rectangles ordered indentically to the recorded positons
-            of interest. By default red for the first and green for the last 
-            recorded position.
+        _color (optional,list of color references):
+            The color of the rectangle representing a RAL.
         """
         
         if (_ax == None):
@@ -1492,19 +1368,23 @@ class Simulation_MAS(object):
         else:
             ax = _ax
         
-        nb_indeces = len(_recorded_position_indeces)
-        
         for _RowsA in self.AD.RowAs:
+            
             for _RAL in _RowsA.RALs:
-                
-                for k in range (nb_indeces):
-                    rect = patches.Rectangle((_RAL.recorded_positions[_recorded_position_indeces[k]][0]-_RAL.group_size,
-                                              _RAL.recorded_positions[_recorded_position_indeces[k]][1]-_RAL.group_size),
-                                             2*_RAL.group_size,2*_RAL.group_size,
-                                             linewidth=1,
-                                             edgecolor=_colors[k],
-                                             facecolor='none')
-                    ax.add_patch(rect)
+                #coordinates are the upper left corner of the rectangle
+                rect = patches.Rectangle((_RAL.x-_RAL.group_size,
+                                          _RAL.y-_RAL.group_size),
+                                          2*_RAL.group_size,
+                                          2*_RAL.group_size,
+                                         linewidth=1,
+                                         edgecolor=_color,
+                                         facecolor='none')
+                ax.add_patch(rect)
+        
+# =============================================================================
+#         plt.xlim(170, 270)
+#         plt.ylim(1350, 1450)
+# =============================================================================
     
     def Show_Adjusted_Positions(self, _ax = None, _color = "b"):
         """
@@ -1526,31 +1406,33 @@ class Simulation_MAS(object):
         
         for [x,y] in self.corrected_adjusted_plant_positions:
             circle = patches.Circle((x,y),
-                                    radius = 2,
+                                    radius = 10,
                                     linewidth = 2,
                                     edgecolor = None,
                                     facecolor = _color)
             ax.add_patch(circle)
     
     def Show_Adjusted_And_RALs_positions(self,
-                                        _recorded_position_indeces = [-1],
-                                        _colors_recorded = ['g'],
-                                        _color_adjusted = "b",
+                                        _recorded_position_indeces = -1,
+                                        _colors_recorded = 'g',
+                                        _color_adjusted = "r",
                                         _save=False,
-                                        _save_path=""):
+                                        _save_name=""):
         
         fig = plt.figure(figsize=(5,5),dpi=300)
         ax = fig.add_subplot(111)
         ax.imshow(self.OTSU_img_array)
         
         self.Show_RALs_Position(_ax = ax,
-                                _recorded_position_indeces = _recorded_position_indeces,
-                                _colors = _colors_recorded)
-        self.Show_Adjusted_Positions(_ax = ax,
-                                     _color = _color_adjusted)
+                                _color = _colors_recorded)
+# =============================================================================
+#         self.Show_Adjusted_Positions(_ax = ax,
+#                                      _color = _color_adjusted)
+# =============================================================================
         
         if (_save):
-            fig.savefig(_save_path+"/Otsu_Adjusted_and_RALs_positions.jpg")
+            fig.savefig(self.follow_simulation_save_path+"/"+_save_name)
+            plt.close()
     
     def Show_RALs_Deicision_Scores(self):
         """
@@ -1740,8 +1622,6 @@ class MetaSimulation(object):
                                 recon_policy,
                              _coerced_X = False,
                              _coerced_Y = False,
-                             _extensive_Init = False,
-                             _new_end_crit = False,
                              _analyse_and_remove_Rows = False,
                              _rows_edges_exploration = False
                              ):
@@ -1754,8 +1634,6 @@ class MetaSimulation(object):
         
         self.coerced_X = _coerced_X
         self.coerced_Y = _coerced_Y
-        self.extensive_Init = _extensive_Init
-        self.new_end_crit = _new_end_crit
         self.analyse_and_remove_Rows = _analyse_and_remove_Rows
         self.rows_edges_exploration = _rows_edges_exploration
         
@@ -1780,19 +1658,7 @@ class MetaSimulation(object):
                                         self.data_adjusted_position_files[i])
                 MAS_Simulation.Initialize_AD()
                 
-                if (self.extensive_Init):
-                    MAS_Simulation.Perform_Simulation_Extensive_Init(self.simulation_step,
-                                                                      self.coerced_X,
-                                                                      self.coerced_Y,
-                                                                      self.analyse_and_remove_Rows)
-                elif (self.new_end_crit):
-                    MAS_Simulation.Perform_Simulation_newEndCrit(self.simulation_step,
-                                                                      self.coerced_X,
-                                                                      self.coerced_Y,
-                                                                      self.analyse_and_remove_Rows,
-                                                                      self.rows_edges_exploration)
-                else:
-                    MAS_Simulation.Perform_Simulation(self.simulation_step,
+                MAS_Simulation.Perform_Search_Simulation(self.simulation_step,
                                                        self.coerced_X,
                                                        self.coerced_Y,
                                                        self.analyse_and_remove_Rows,
@@ -1820,8 +1686,6 @@ class MetaSimulation(object):
     def Launch_Meta_Simu_NoLabels(self,
                              _coerced_X = False,
                              _coerced_Y = False,
-                             _extensive_Init = False,
-                             _new_end_crit = False,
                              _analyse_and_remove_Rows = False,
                              _rows_edges_exploration = False):
 
@@ -1833,8 +1697,6 @@ class MetaSimulation(object):
         
         self.coerced_X = _coerced_X
         self.coerced_Y = _coerced_Y
-        self.extensive_Init = _extensive_Init
-        self.new_end_crit = _new_end_crit
         self.analyse_and_remove_Rows = _analyse_and_remove_Rows
         self.rows_edges_exploration = _rows_edges_exploration
         
@@ -1861,23 +1723,11 @@ class MetaSimulation(object):
                                         self.data_adjusted_position_files)
                 MAS_Simulation.Initialize_AD()
                 
-                if (self.extensive_Init):
-                    MAS_Simulation.Perform_Simulation_Extensive_Init(self.simulation_step,
-                                                                      self.coerced_X,
-                                                                      self.coerced_Y,
-                                                                      self.analyse_and_remove_Rows)
-                elif (self.new_end_crit):
-                    MAS_Simulation.Perform_Simulation_newEndCrit(self.simulation_step,
-                                                                      self.coerced_X,
-                                                                      self.coerced_Y,
-                                                                      self.analyse_and_remove_Rows,
-                                                                      self.rows_edges_exploration)
-                else:
-                    MAS_Simulation.Perform_Simulation(self.simulation_step,
-                                                       self.coerced_X,
-                                                       self.coerced_Y,
-                                                       self.analyse_and_remove_Rows,
-                                                       self.rows_edges_exploration)
+                MAS_Simulation.Perform_Simulation(self.simulation_step,
+                                                  self.coerced_X,
+                                                  self.coerced_Y,
+                                                  self.analyse_and_remove_Rows,
+                                                  self.rows_edges_exploration)
                 
                 MAS_Simulation.Get_RALs_infos()
                 self.Add_Simulation_Results(i, MAS_Simulation)
@@ -1936,8 +1786,12 @@ class MetaSimulation(object):
         """
         for i in range (self.nb_images):
             for adj_pos_string in self.data_adjusted_position_files[i]:
-                [_rx, _ry, x, y] = adj_pos_string.split(",")
-                self.whole_field_counted_plants[_rx + "_" + _ry]=0
+# =============================================================================
+#                 [_rx, _ry, x, y] = adj_pos_string.split(",")
+#                 self.whole_field_counted_plants[_rx + "_" + _ry]=0
+# =============================================================================
+                self.whole_field_counted_plants[str(adj_pos_string["instance_id"])]=0
+
     
     def Add_Simulation_Results(self, _image_index, _MAS_Simulation):
         """
@@ -1968,10 +1822,6 @@ class MetaSimulation(object):
             _name+= "_cX"
         if (self.coerced_Y):
             _name+= "_cY"
-        if (self.extensive_Init):
-            _name+= "_extInit"
-        if (self.new_end_crit):
-            _name+= "_nEC"
         if (self.analyse_and_remove_Rows):
             _name+="_anrR2"
         if (self.rows_edges_exploration):

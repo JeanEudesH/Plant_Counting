@@ -7,105 +7,13 @@ Created on Fri May 29 10:23:23 2020
 The classes are built to contain the method automatically looking for the crops
 rows angle.
 """
-import os
+# =============================================================================
+# from sklearn.cluster import DBSCAN
+# =============================================================================
 import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image #, ImageDraw
 import sys
-
-from numpy.core.einsumfunc import _einsum_path_dispatcher 
-
-if not "D:/Documents/IODAA/Fil Rouge/Plant_Counting" in sys.path:
-    sys.path.append("D:/Documents/IODAA/Fil Rouge/Plant_Counting")
-
-# os.chdir("../Utility")
-# import general_IO as gIO
-
-import Utility.general_IO as gIO
-
-def Produce_Adjusted_Position_Files( _path_position_files,
-                                     _path_adjusted_position_files,
-                                     _rows_real_angle,
-                                     _path_input_rgb_img,
-                                     _list_rgb_images,
-                                     _pivot = np.array([960,540])
-                                     ):
-
-    position_files = os.listdir(_path_position_files)
-    nb_imgs = len(_list_rgb_images)
-    if '.DS_Store' in position_files:
-      position_files.remove('.DS_Store')
-    assert len(position_files) == nb_imgs
-    
-    print(f"Rows real angle: {_rows_real_angle}")
-
-    _theta = np.deg2rad(_rows_real_angle)
-    R = np.array([[np.cos(_theta), np.sin(_theta)],
-                         [-np.sin(_theta),  np.cos(_theta)]])
-
-    print(f"Theta: {_theta}")
-    print(f"R: {R}")   
-    
-    for i in range (nb_imgs):
-        _img = Image.open(_path_input_rgb_img+\
-                          "/" + _list_rgb_images[i])
-        _img_rot = _img.rotate(_rows_real_angle, expand=True)
-        
-        a = np.array([_img.width, 0])
-        b = np.array([0, 0])
-        #offset to have only positives coordinates
-        y_offset_p = (np.dot(R, a-_pivot))+_pivot
-        x_offset_p = (np.dot(R, -_pivot))+_pivot#         
-        # plt.figure()
-        # plt.imshow(_img.rotate(_rows_real_angle, expand=True))
-        # plt.scatter(x_offset_p[0]-x_offset_p[0],x_offset_p[1]-y_offset_p[1])
-        # plt.scatter(y_offset_p[0]-x_offset_p[0],y_offset_p[1]-y_offset_p[1])
-        print(x_offset_p, y_offset_p)
-        
-        posFile_content = gIO.reader(_path_position_files, position_files[i])
-        nb_lines = len(posFile_content)
-        y_offset = y_offset_p[1]
-        x_offset = x_offset_p[0]
-        
-        _adjusted_pos = []
-        _x = []
-        _y = []
-        for _i in range(nb_lines):
-            _line_split = posFile_content[_i].split(",")
-            _screen_prop = np.array([float(_line_split[2]), float(_line_split[3])])
-            
-            _rot_coord = np.dot(R, np.array([_screen_prop[0] *_img.width,
-                                             (1-_screen_prop[1])*_img.height])-_pivot)+\
-                        _pivot + np.array([-x_offset, -y_offset])
-
-
-                        
-            _adjusted_pos  += [_line_split[0] + "," + \
-                             _line_split[1] + "," + \
-                             str(int(_rot_coord[0])) + "," + \
-                             str(int(_rot_coord[1]))]
-            _x.append(_rot_coord[0])
-            _y.append(_rot_coord[1])
-        
-        # gIO.check_make_directory(_path_adjusted_position_files)
-        gIO.writer(_path_adjusted_position_files, 
-                   "Adjusted_plant_positions_"+_list_rgb_images[i].split(".")[0]+".csv",
-                   _adjusted_pos,
-                   True, True)
-# # =============================================================================
-        # plt.figure()
-        # plt.imshow(_img.rotate(_rows_real_angle, expand=True))
-        # plt.scatter(_x, _y)
-        # plt.show()
-# =============================================================================
-        
-
-# Produce_Adjusted_Position_Files(
-#         "D:/Documents/IODAA/Fil Rouge/Resultats/2021_2_2_17_28_22/Position_Files",
-#         "D:/Documents/IODAA\Fil Rouge/Resultats/2021_2_2_17_28_22_analysis/Adjusted_Position_Files",
-#         90,
-#         "D:/Documents/IODAA/Fil Rouge/Resultats/2021_2_2_17_28_22/virtual_reality",
-#         os.listdir("D:/Documents/IODAA/Fil Rouge/Resultats/2021_2_2_17_28_22/virtual_reality"))
 
 
 class CRAD_Voting:
@@ -149,6 +57,7 @@ class CRAD_Voting:
 
                 _AD.coord_centroid_map_Rot = np.dot(_AD.coord_map,
                                                      _AD.angle_min_rotation_matrix)
+                
 
 class CRAD:
 
@@ -160,13 +69,7 @@ class CRAD:
                 _path_output_histogram
                ):
         """
-        _path_original_img leads to the original picture of the field
-
-        _path_txt leads to a text files which contains the coordinates of all centroids
-        obtained through bsas implementation or dbscan
-
-        _display_all_steps should be set to True if the user wants to see the results of the successive steps of the process
-        (images with the detected lines are displayed)
+        TO DO
         """
 
         self.img_id = img_id
