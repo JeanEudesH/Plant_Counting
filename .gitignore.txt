@@ -1,4 +1,0 @@
-.gitattributes
-.gitignore
-cut_image.py
-Tutorial/*
