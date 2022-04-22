@@ -214,7 +214,7 @@ def All_Fourier_Analysis(_path_input_output,
     path_input_root = _path_input_output+"/Output/Session_"+str(_session_number)
     path_output_root = _path_input_output+"/Output_FA/Session_"+str(_session_number)
     
-    path_input_bsas = path_input_root+"/BSAS/"+_bsas_threshold+"_R/Output_Positions"
+    path_input_bsas = path_input_root+"/BSAS/"+ _bsas_threshold +"_R/Output_Positions"
     path_input_bsas_dir0 = path_input_bsas+"/direction_0"
     path_input_bsas_dir1 = path_input_bsas+"/direction_1"
     
