@@ -51,8 +51,8 @@ if (__name__=="__main__"):
                     
                     _make_unique_folder_per_session=False, _session=1,
                     _do_Otsu=False, _do_AD=False,
-                    _save_AD_score_images=False, _save_BSAS_images=False,
-                    _bsas_threshold=1,
+                    _save_AD_score_images=False, _save_BSAS_images=True,
+                    _bsas_threshold=50,
                     
                     _bin_div_X=20, _bin_div_Y=40,
                     
